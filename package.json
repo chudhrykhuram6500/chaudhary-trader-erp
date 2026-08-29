@@ -1,0 +1,16 @@
+{
+  "name": "chaudhary-trader-erp-sync-service",
+  "version": "2.5.0",
+  "description": "Chaudhary Trader PepsiCo FMCG Distribution Sync Engine",
+  "main": "sync_server.js",
+  "scripts": {
+    "start": "node sync_server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "keywords": ["erp", "distribution", "pepsico", "fmcg"],
+  "author": "Chaudhary Trader",
+  "license": "ISC"
+}

@@ -1,0 +1,2747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Chaudhary Trader App - PepsiCo FMCG Distribution System</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- SheetJS XLSX Library for Native .xlsx Excel Support -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js Library for Business Intelligence & Interactive ERP Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- HTML2PDF Library for Direct Client-Side PDF Generation & Downloading -->
+    <script src="html2pdf.bundle.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="chaudhary_logo.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="chaudhary_logo.ico">
+    <link rel="apple-touch-icon" href="chaudhary_logo.png">
+    <style>
+        @media screen {
+            .print-only, #printArea, #printPickListArea, .a4-invoice-container {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="light-glass anim-active">
+
+    <!-- Adobe Photoshop / Creative Cloud Style Splash Loading Screen -->
+    <div id="adobeSplashOverlay" class="adobe-splash-overlay" style="display: none !important;">
+        <div class="adobe-splash-card">
+            <div class="splash-logo-wrapper">
+                <img src="chaudhary_logo.png" alt="Chaudhary Traders Shield Logo" class="splash-logo-img">
+                <div class="splash-logo-glow-ring"></div>
+                <div class="splash-logo-core-particle"></div>
+            </div>
+            <div class="splash-brand-title">CHAUDHARY TRADERS</div>
+            <div class="splash-brand-subtitle">PEPSICO / LAYS AUTHORIZED MAIN DISTRIBUTOR ENTERPRISE SUITE</div>
+            <div class="splash-loading-bar-track">
+                <div class="splash-loading-bar-fill" id="splashBarFill"></div>
+            </div>
+            <div class="splash-status-row">
+                <span id="splashStatusText">Initializing High-Performance Business Engine...</span>
+                <span id="splashPercentText">0%</span>
+            </div>
+            <div class="splash-footer-info">
+                <span><i class="fa-solid fa-shield-halved"></i> Licensed to Chaudhary Trader, Chund Adda, Jhang</span>
+                <span>Offline Enterprise Edition v2.1</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ambient Animated Background Particles Mesh -->
+    <div class="ambient-bg-glow"></div>
+
+    <!-- Top App Navigation Bar -->
+    <header class="app-header">
+        <div class="header-brand">
+            <div class="brand-info">
+                <h1>CHAUDHARY TRADER</h1>
+                <span class="sub-heading">SARGODHA ROAD ADDA CHUND BHARWANA NIZD PSO PUMP BILMUKABILL ALLAH NAWAZ HOSPITAL JHANG | PH: 03446035632</span>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button class="btn btn-warning" onclick="toggleThemePanel()" title="Change Theme Studio & FX"><i class="fa-solid fa-palette"></i> Theme & FX</button>
+            <button class="btn btn-outline" onclick="exportBackupJSON()" title="Backup Data"><i class="fa-solid fa-download"></i> Backup Data</button>
+            <div class="status-badge live-status"><i class="fa-solid fa-wifi"></i> Live Production Ready</div>
+        </div>
+    </header>
+
+    <!-- Sliding Side Theme Drawer Panel -->
+    <div id="themeSidePanel" class="theme-side-panel">
+        <div class="panel-drawer-header">
+            <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Theme Studio & FX</h3>
+            <button class="panel-close-btn" onclick="toggleThemePanel()">&times;</button>
+        </div>
+        <div class="panel-drawer-body">
+            <p class="drawer-subtext">Choose your visual aesthetic & liquid animation style:</p>
+            
+            <div class="theme-cards-grid">
+                <div class="theme-card-option active" data-theme="chaudhary-royal" onclick="selectAppTheme('chaudhary-royal', this)">
+                    <div class="theme-preview-circle royal-shield-preview"></div>
+                    <div class="theme-name">🛡️ Chaudhary Traders Royal Shield</div>
+                    <span class="theme-desc">Crimson Red Banner, Metallic Gold & Globe Blue</span>
+                </div>
+
+                <div class="theme-card-option" data-theme="dark-glass" onclick="selectAppTheme('dark-glass', this)">
+                    <div class="theme-preview-circle dark-preview"></div>
+                    <div class="theme-name">✨ Liquid Dark Glass</div>
+                    <span class="theme-desc">Obsidian Navy with Neon Gold Blur</span>
+                </div>
+
+                <div class="theme-card-option" data-theme="light-glass" onclick="selectAppTheme('light-glass', this)">
+                    <div class="theme-preview-circle light-preview"></div>
+                    <div class="theme-name">☀️ Executive Crisp Light</div>
+                    <span class="theme-desc">Clean White Glass & Soft Shadows</span>
+                </div>
+
+                <div class="theme-card-option" data-theme="cyber-gold" onclick="selectAppTheme('cyber-gold', this)">
+                    <div class="theme-preview-circle gold-preview"></div>
+                    <div class="theme-name">👑 Royal Gold Obsidian</div>
+                    <span class="theme-desc">Luxury Gold Glow & Deep Black</span>
+                </div>
+
+                <div class="theme-card-option" data-theme="cosmic-blue" onclick="selectAppTheme('cosmic-blue', this)">
+                    <div class="theme-preview-circle cosmic-preview"></div>
+                    <div class="theme-name">🌌 Cosmic Midnight</div>
+                    <span class="theme-desc">Deep Sapphire & Stellar Glow</span>
+                </div>
+
+                <div class="theme-card-option" data-theme="pepsi-red" onclick="selectAppTheme('pepsi-red', this)">
+                    <div class="theme-preview-circle red-preview"></div>
+                    <div class="theme-name">🔥 PepsiCo Red & Gold</div>
+                    <span class="theme-desc">Official Brand Signature Colors</span>
+                </div>
+
+                <div class="theme-card-option" data-theme="neon-sunset" onclick="selectAppTheme('neon-sunset', this)">
+                    <div class="theme-preview-circle sunset-preview"></div>
+                    <div class="theme-name">🌆 Neon Cyber Sunset</div>
+                    <span class="theme-desc">Vibrant Magenta & Sunset Orange</span>
+                </div>
+
+                <div class="theme-card-option" data-theme="emerald-glass" onclick="selectAppTheme('emerald-glass', this)">
+                    <div class="theme-preview-circle emerald-preview"></div>
+                    <div class="theme-name">🌿 Emerald Mint Glass</div>
+                    <span class="theme-desc">Lush Dark Green & Glowing Mint</span>
+                </div>
+
+                <div class="theme-card-option" data-theme="aurora-glow" onclick="selectAppTheme('aurora-glow', this)">
+                    <div class="theme-preview-circle aurora-preview"></div>
+                    <div class="theme-name">🌌 Aurora Nordic Cyan</div>
+                    <span class="theme-desc">Polar Lights Cyan & Purple Glow</span>
+                </div>
+
+                <div class="theme-card-option" data-theme="pearl-rosegold" onclick="selectAppTheme('pearl-rosegold', this)">
+                    <div class="theme-preview-circle pearl-preview"></div>
+                    <div class="theme-name">🌸 Pearl & Rose Gold</div>
+                    <span class="theme-desc">Ultra-Clean Rose Metallic Light</span>
+                </div>
+
+                <div class="theme-card-option" data-theme="sky-cloud" onclick="selectAppTheme('sky-cloud', this)">
+                    <div class="theme-preview-circle sky-preview"></div>
+                    <div class="theme-name">☁️ Sky Blue Ice Frost</div>
+                    <span class="theme-desc">Fresh Sky Blue & Ice White Light</span>
+                </div>
+
+                <div class="theme-card-option" data-theme="platinum-sapphire" onclick="selectAppTheme('platinum-sapphire', this)">
+                    <div class="theme-preview-circle sapphire-preview"></div>
+                    <div class="theme-name">💎 Platinum Sapphire</div>
+                    <span class="theme-desc">Royal Navy Glass & Silver Accent</span>
+                </div>
+            </div>
+
+            <div class="fx-toggle-group">
+                <label class="flex-between">
+                    <span><i class="fa-solid fa-sparkles"></i> Dynamic Liquid Animations</span>
+                    <input type="checkbox" id="animToggleCheckbox" checked onchange="toggleBackgroundAnimations(this.checked)">
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application Grid -->
+    <div class="app-container">
+        
+        <!-- Sidebar Navigation Drawer -->
+        <aside class="app-sidebar">
+            <nav class="nav-menu">
+                <button class="nav-item active" data-tab="dashboardTab" title="Dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </button>
+                <button class="nav-item" data-tab="ordersTab" title="Orders">
+                    <i class="fa-solid fa-cart-flatbed"></i>
+                </button>
+                <button class="nav-item" data-tab="pickListTab" title="Pick List">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                </button>
+                <button class="nav-item" data-tab="invoicesTab" title="Invoices">
+                    <i class="fa-solid fa-file-invoice"></i>
+                </button>
+
+                <button class="nav-item" data-tab="inventoryTab" title="Warehouse Inventory">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                </button>
+                <button class="nav-item" data-tab="outletsTab" title="Beat Plans & Shops">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                </button>
+                <button class="nav-item" data-tab="skuMasterTab" title="SKU Master & Prices">
+                    <i class="fa-solid fa-box-open"></i>
+                </button>
+                <button class="nav-item" data-tab="focManagementTab" title="FOC Scheme Management">
+                    <i class="fa-solid fa-gift"></i>
+                </button>
+                <button class="nav-item" data-tab="salesReportsTab" title="Sales Reports">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                </button>
+                <button class="nav-item" data-tab="financialReportsTab" title="Financial Reports">
+                    <i class="fa-solid fa-sack-dollar"></i>
+                </button>
+                <button class="nav-item" data-tab="analysisReportsTab" title="Analysis Reports">
+                    <i class="fa-solid fa-chart-column"></i>
+                </button>
+                <button class="nav-item" data-tab="dataSyncTab" title="Data Sync Center">
+                    <i class="fa-solid fa-rotate"></i>
+                </button>
+                <button class="nav-item" data-tab="settingsTab" title="Backup & Settings">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="agency-badge" title="Chund Adda, Jhang">
+                    <i class="fa-solid fa-location-dot"></i>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Viewport -->
+        <main class="app-content">
+
+            <!-- TAB 1: DASHBOARD (HOME) -->
+            <section id="dashboardTab" class="tab-page active">
+                <!-- TOP HEADER BAR (COMPACT) -->
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 14px; gap: 8px;">
+                    <!-- Left: Title -->
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: #2563eb; font-size: 16px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                        <div>
+                            <h2 style="font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.2;">Sales Dashboard</h2>
+                            <span style="font-size: 11px; color: #94a3b8; font-weight: 500;">Track brand &amp; product performance</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: All controls in one tight row -->
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <!-- Date Range -->
+                        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 5px 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #334155;">
+                            <i class="fa-regular fa-calendar" style="color: #94a3b8; font-size: 11px;"></i>
+                            <span id="dashboardDateRangeLabel" style="white-space: nowrap;">09 Aug 2026 – 15 Aug 2026</span>
+                        </div>
+
+                        <!-- Quick Filters -->
+                        <select id="datePresetSelect" onchange="handlePresetChange()" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 5px 8px; font-size: 12px; font-weight: 600; color: #334155; outline: none; cursor: pointer;">
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="7days" selected>Last 7 Days</option>
+                            <option value="30days">Last 30 Days</option>
+                            <option value="thisMonth">This Month</option>
+                            <option value="all">All Time</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+
+                        <!-- Hidden Custom Date Inputs -->
+                        <div id="customDateInputs" class="custom-date-group hidden">
+                            <input type="date" id="startDateInput" onchange="triggerDashboardFilterUpdate()">
+                            <span>to</span>
+                            <input type="date" id="endDateInput" onchange="triggerDashboardFilterUpdate()">
+                        </div>
+
+                        <!-- Brand Filter Pills (compact) -->
+                        <div style="background: #f1f5f9; border-radius: 8px; padding: 2px; display: inline-flex; gap: 1px; border: 1px solid #e2e8f0;">
+                            <button type="button" class="dash-brand-btn active" data-brand="all" onclick="selectDashboardBrand('all')">All</button>
+                            <button type="button" class="dash-brand-btn" data-brand="lays" onclick="selectDashboardBrand('lays')">Lays</button>
+                            <button type="button" class="dash-brand-btn" data-brand="fast" onclick="selectDashboardBrand('fast')">Fast</button>
+                        </div>
+                        <!-- Hidden Select for Company Filter Compatibility -->
+                        <select id="dashboardCompanyFilter" onchange="onDashboardCompanyChange(this.value)" style="display:none;">
+                            <option value="all" selected>all</option>
+                            <option value="lays">lays</option>
+                            <option value="fast">fast</option>
+                        </select>
+
+                        <!-- Export Button -->
+                        <button type="button" onclick="exportDashboardSummary()" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-arrow-up-from-bracket" style="font-size: 10px; color: #94a3b8;"></i> Export
+                        </button>
+                    </div>
+                </div>
+
+
+                <!-- Alert Banners -->
+                <div id="pendingDeliveriesBanner" class="panel-box alert-pending-box hidden" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); margin-bottom: 16px; border-radius: 14px;">
+                    <div class="flex-between">
+                        <div>
+                            <h4 style="color: #d97706; margin: 0; font-size: 14px;"><i class="fa-solid fa-truck-arrow-right"></i> Pending Delivery Orders in Draft!</h4>
+                            <p style="font-size: 12px; color: #475569; margin: 2px 0 0 0;" id="pendingBannerText">Draft bills dispatched for delivery awaiting confirmation.</p>
+                        </div>
+                        <button class="btn btn-warning btn-sm" onclick="navigateToTab('invoicesTab')"><i class="fa-solid fa-circle-check"></i> Confirm Deliveries</button>
+                    </div>
+                </div>
+
+                <div id="dashboardLowStockBanner" class="panel-box alert-pending-box hidden" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); margin-bottom: 16px; border-radius: 14px;">
+                    <div class="flex-between">
+                        <div>
+                            <h4 style="color: #dc2626; margin: 0; font-size: 14px;"><i class="fa-solid fa-triangle-exclamation"></i> Warehouse Stock Alert!</h4>
+                            <p style="font-size: 12px; color: #475569; margin: 2px 0 0 0;" id="dashboardLowStockText">Some SKUs are low or out of stock.</p>
+                        </div>
+                        <div class="flex-gap">
+                            <button class="btn btn-danger btn-sm" onclick="fillAllSkusStock(50)"><i class="fa-solid fa-boxes-packing"></i> Refill All SKUs (+50 Ctns)</button>
+                            <button class="btn btn-outline btn-sm" onclick="navigateToTab('inventoryTab')"><i class="fa-solid fa-boxes-stacked"></i> View Inventory</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5 KPI CARDS HORIZONTAL ROW -->
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 20px;">
+                    <!-- KPI 1: Total Sales Value -->
+                    <div class="ref-kpi-card">
+                        <div style="width: 42px; height: 42px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0;">
+                            <i class="fa-solid fa-dollar-sign"></i>
+                        </div>
+                        <div>
+                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Sales Value</span>
+                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #0f172a; margin: 2px 0;" id="kpiTotalValue">Rs. 0</div>
+                            <div style="font-size: 11px; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiValueGrowth">
+                                <span>↑ 12.4%</span> <span style="color: #94a3b8; font-weight: 400;">vs Previous Period</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 2: Total Cartons -->
+                    <div class="ref-kpi-card">
+                        <div style="width: 42px; height: 42px; border-radius: 50%; background: #f0fdf4; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            <i class="fa-solid fa-box"></i>
+                        </div>
+                        <div>
+                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Cartons</span>
+                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #0f172a; margin: 2px 0;" id="kpiTotalCartonsCount">0 Ctns</div>
+                            <div style="font-size: 11px; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiCartonsGrowth">
+                                <span>↑ 8.7%</span> <span style="color: #94a3b8; font-weight: 400;">vs Previous Period</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 3: Total Weight -->
+                    <div class="ref-kpi-card">
+                        <div style="width: 42px; height: 42px; border-radius: 50%; background: #f5f3ff; color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            <i class="fa-solid fa-scale-balanced"></i>
+                        </div>
+                        <div>
+                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Weight</span>
+                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #0f172a; margin: 2px 0;" id="kpiTotalKG">0.00 KG</div>
+                            <div style="font-size: 11px; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiWeightGrowth">
+                                <span>↑ 9.5%</span> <span style="color: #94a3b8; font-weight: 400;">vs Previous Period</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 4: Billed Shops -->
+                    <div class="ref-kpi-card">
+                        <div style="width: 42px; height: 42px; border-radius: 50%; background: #fff7ed; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            <i class="fa-solid fa-store"></i>
+                        </div>
+                        <div>
+                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Billed Shops</span>
+                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #0f172a; margin: 2px 0;" id="kpiBilledShops">0 Shops</div>
+                            <div style="font-size: 11px; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiShopsGrowth">
+                                <span>↑ 14.3%</span> <span style="color: #94a3b8; font-weight: 400;">vs Previous Period</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 5: Total Invoices -->
+                    <div class="ref-kpi-card">
+                        <div style="width: 42px; height: 42px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            <i class="fa-solid fa-file-invoice"></i>
+                        </div>
+                        <div>
+                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Invoices</span>
+                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #0f172a; margin: 2px 0;" id="kpiTotalInvoices">0 Bills</div>
+                            <div style="font-size: 11px; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiInvoicesGrowth">
+                                <span>↑ 6.1%</span> <span style="color: #94a3b8; font-weight: 400;">vs Previous Period</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SALES TREND & BRAND COMPARISON ROW -->
+                <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; margin-bottom: 20px;">
+                    <!-- Left: Sales Trend (All Brands) -->
+                    <div class="ref-glass-card">
+                        <div class="flex-between" style="margin-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-chart-line" style="color: #2563eb; font-size: 16px;"></i>
+                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Sales Trend (All Brands)</h3>
+                            </div>
+                            <select id="salesTrendMetricSelect" onchange="setSalesTrendMetricToggle(this.value)" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #475569; outline: none; cursor: pointer;">
+                                <option value="value">Value (Rs.)</option>
+                                <option value="kg">Weight (KG)</option>
+                                <option value="cartons">Cartons (Ctns)</option>
+                            </select>
+                        </div>
+
+                        <!-- Legend Subtitle -->
+                        <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 14px;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="width: 10px; height: 10px; border-radius: 50%; background: #2563eb; display: inline-block;"></span>
+                                <span id="laysBrandLegendLabel">Lays Brand</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="width: 10px; height: 10px; border-radius: 50%; background: #f97316; display: inline-block;"></span>
+                                <span id="fastBrandLegendLabel">Fast Brand</span>
+                            </div>
+                        </div>
+
+                        <div style="position: relative; height: 260px; width: 100%;">
+                            <canvas id="overallSalesTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Right: Lays vs Fast — Brand Comparison -->
+                    <div class="ref-glass-card">
+                        <div class="flex-between" style="margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-chart-pie" style="color: #2563eb; font-size: 16px;"></i>
+                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Lays vs Fast — Brand Comparison</h3>
+                            </div>
+                            <select id="brandComparisonMetricSelect" onchange="setBrandComparisonMetricToggle(this.value)" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #475569; outline: none; cursor: pointer;">
+                                <option value="value">Value (Rs.)</option>
+                                <option value="kg">Weight (KG)</option>
+                                <option value="cartons">Cartons (Ctns)</option>
+                            </select>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; align-items: center; height: 250px;">
+                            <!-- Left stats -->
+                            <div id="brandComparisonSummaryCards" style="display: flex; flex-direction: column; gap: 14px;">
+                                <!-- Dynamically populated with Lays Brand Total & Fast Brand Total cards -->
+                            </div>
+
+                            <!-- Right Donut Ring Chart -->
+                            <div style="position: relative; height: 210px; width: 100%; display: flex; align-items: center; justify-content: center;">
+                                <canvas id="brandComparisonChart"></canvas>
+                                <div style="position: absolute; text-align: center; pointer-events: none;" id="donutCenterInfo">
+                                    <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Total</div>
+                                    <div style="font-size: 17px; font-weight: 800; color: #0f172a;" id="donutCenterTotal">Rs. 0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRODUCT PERFORMANCE ANALYTICS SECTION -->
+                <div class="ref-glass-card" style="margin-bottom: 20px;">
+                    <div class="flex-between" style="margin-bottom: 18px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-chart-simple" style="color: #2563eb; font-size: 18px;"></i>
+                                <h3 style="font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: #0f172a; margin: 0;">Product Performance Analytics</h3>
+                            </div>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 2px;" id="productSectionSubtitle">Showing data for: 09 Aug 2026 – 15 Aug 2026</div>
+                        </div>
+                    </div>
+
+                    <!-- LAYS BRAND PRODUCTS CONTAINER -->
+                    <div id="laysProductsContainer" style="margin-bottom: 24px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                            <span style="font-size: 14px; font-weight: 800; color: #2563eb; letter-spacing: 0.5px;">📊 LAYS BRAND</span>
+                        </div>
+                        <div class="dashboard-product-grid" id="laysProductGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+                            <!-- Populated dynamically for Lays (PC), Kurkure (NPC), Cheetos (NPC) -->
+                        </div>
+                    </div>
+
+                    <!-- FAST BRAND PRODUCTS CONTAINER -->
+                    <div id="fastProductsContainer">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                            <span style="font-size: 14px; font-weight: 800; color: #ea580c; letter-spacing: 0.5px;">⚡ FAST BRAND</span>
+                        </div>
+                        <div class="dashboard-product-grid" id="fastProductGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+                            <!-- Populated dynamically for Nimco, Peanut, Hash (NO PC/NPC BADGES!) -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SALESMAN PERFORMANCE & KEY INSIGHTS ROW -->
+                <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px;">
+                    <!-- Left: Salesman Performance -->
+                    <div class="ref-glass-card">
+                        <div class="flex-between" style="margin-bottom: 14px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-users" style="color: #2563eb; font-size: 16px;"></i>
+                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Salesman Performance <span style="font-size: 12px; font-weight: 500; color: #64748b;">(All Brands)</span></h3>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table ref-salesman-table" style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: 700;">
+                                        <th style="padding: 8px 10px;">Salesman</th>
+                                        <th style="padding: 8px 10px; text-align: center;">Invoices</th>
+                                        <th style="padding: 8px 10px; text-align: right;">Sales Value</th>
+                                        <th style="padding: 8px 10px; text-align: center;">Cartons</th>
+                                        <th style="padding: 8px 10px; text-align: right;">Weight</th>
+                                        <th style="padding: 8px 10px; width: 140px;">Growth</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboardSalesmanTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Right: Key Insights -->
+                    <div class="ref-glass-card">
+                        <div class="flex-between" style="margin-bottom: 14px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-lightbulb" style="color: #f59e0b; font-size: 16px;"></i>
+                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Key Insights</h3>
+                            </div>
+                        </div>
+                        <div id="dashboardKeyInsightsContainer" style="display: flex; flex-direction: column; gap: 10px;">
+                            <!-- Populated dynamically with 4 insight bullet cards -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top 5 Selling SKUs Widget -->
+                <div class="panel-box" style="margin-top: 20px;">
+                    <div class="panel-header flex-between">
+                        <h3><i class="fa-solid fa-trophy" style="color: var(--brand-gold);"></i> Top 5 Best-Selling Product SKUs (by Sales Revenue & Weight)</h3>
+                        <button class="btn btn-outline btn-sm" onclick="navigateToTab('analysisReportsTab')"><i class="fa-solid fa-chart-column"></i> Full SKU Analytics</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Product Code</th>
+                                    <th>Product Description</th>
+                                    <th>Brand</th>
+                                    <th>Cartons Sold</th>
+                                    <th>Weight Sold (KG)</th>
+                                    <th>Total Revenue (Rs.)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardTopSkusTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ==========================================================================
+               MODULE 1: ORDER MANAGEMENT MODULE (ORDERS)
+               ========================================================================== -->
+            <section id="ordersTab" class="tab-page">
+                <div class="page-title-bar flex-between">
+                    <div>
+                        <h2><i class="fa-solid fa-cart-flatbed"></i> Order Management Engine</h2>
+                        <span class="date-summary-text">Create, Process & Manage Customer Orders (Draft ➔ Processed)</span>
+                    </div>
+                    <div class="flex-gap" style="margin-top: 8px;">
+                        <button class="btn btn-primary" onclick="openAddOrderModal()"><i class="fa-solid fa-cart-plus"></i> Punch Manual Order</button>
+                        <button class="btn btn-warning" onclick="downloadOrderPunchingTemplate()"><i class="fa-solid fa-file-arrow-down"></i> Excel Template</button>
+                        <button class="btn btn-success" onclick="triggerBulkOrderUpload()"><i class="fa-solid fa-file-arrow-up"></i> Bulk Upload</button>
+                        <input type="file" id="bulkOrderFileInput" accept=".csv, .xls, .xlsx" style="display:none;" onchange="handleBulkOrderImport(event)">
+                        <button class="btn btn-success btn-lg" onclick="openProcessOrdersModal()" style="background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; font-weight: 800; border: none; padding: 10px 20px; border-radius: 10px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); font-size: 14px;"><i class="fa-solid fa-bolt" style="margin-right: 6px;"></i> ⚡ Process Selected Orders</button>
+                        <button class="btn btn-danger" onclick="batchCancelSelectedOrders()"><i class="fa-solid fa-ban"></i> Cancel Selected Orders</button>
+                    </div>
+                </div>
+
+                <!-- Order Filters & Search Toolbar -->
+                <div class="panel-box" style="margin-bottom: 20px;">
+                    <div class="search-filter-grid">
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-magnifying-glass"></i> Search Orders:</label>
+                            <input type="text" id="ordersSearchQuery" placeholder="Search Order No, Customer, Route..." onkeyup="renderOrdersTable()">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-route"></i> Route Filter:</label>
+                            <select id="ordersRouteFilter" onchange="renderOrdersTable()">
+                                <option value="all">All Routes</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-store"></i> Customer Filter:</label>
+                            <select id="ordersCustomerFilter" onchange="renderOrdersTable()">
+                                <option value="all">All Customers</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-building"></i> Company Filter:</label>
+                            <select id="ordersCompanyFilter" onchange="renderOrdersTable()">
+                                <option value="all" selected>All Companies (Combined)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-circle-nodes"></i> Status Filter:</label>
+                            <select id="ordersStatusFilter" onchange="renderOrdersTable()">
+                                <option value="all" selected>All Statuses (Draft, Processed, Cancelled)</option>
+                                <option value="Draft">🟡 Draft (Unprocessed)</option>
+                                <option value="Processed">🟢 Processed (Invoice Generated)</option>
+                                <option value="Cancelled">🔴 Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-calendar-day"></i> Delivery Date:</label>
+                            <input type="date" id="ordersDeliveryDateFilter" onchange="renderOrdersTable()">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-arrow-down-short-wide"></i> Sort By:</label>
+                            <select id="ordersSortSelect" onchange="renderOrdersTable()">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="amountHigh">Amount (High to Low)</option>
+                                <option value="qtyHigh">Quantity (High to Low)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Orders Table -->
+                <div class="panel-box">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px; text-align: center;">
+                                        <input type="checkbox" id="selectAllOrdersCheckbox" onchange="toggleSelectAllOrders(this.checked)">
+                                    </th>
+                                    <th>Order No.</th>
+                                    <th>Created Date</th>
+                                    <th>Planned Delivery</th>
+                                    <th>Customer / Shop</th>
+                                    <th>Route</th>
+                                    <th>Items Count</th>
+                                    <th>Total Quantity</th>
+                                    <th>Total Amount (Rs.)</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ==========================================================================
+               MODULE 2: PICK LIST MODULE
+               ========================================================================== -->
+            <section id="pickListTab" class="tab-page">
+                <div class="page-title-bar flex-between">
+                    <div>
+                        <h2><i class="fa-solid fa-clipboard-list"></i> Warehouse Pick List & Dispatch Sheet Module</h2>
+                        <span class="date-summary-text">Generate 2-Page Pick Lists for Warehouse Picking & Delivery Drivers</span>
+                    </div>
+                    <div class="flex-gap">
+                        <button class="btn btn-primary" onclick="openNewPickListModal()"><i class="fa-solid fa-square-plus"></i> New Pick List</button>
+                    </div>
+                </div>
+
+                <!-- Pick List Filters & Search Toolbar -->
+                <div class="panel-box" style="margin-bottom: 20px;">
+                    <div class="search-filter-grid">
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-magnifying-glass"></i> Search Pick Lists:</label>
+                            <input type="text" id="pickListSearchQuery" placeholder="Search Pick List No, Date, Status..." onkeyup="renderPickListTable()">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-calendar-day"></i> Delivery Date Filter:</label>
+                            <input type="date" id="pickListDateFilter" onchange="renderPickListTable()">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-building"></i> Company Filter:</label>
+                            <select id="pickListCompanyFilter" onchange="renderPickListTable()">
+                                <option value="all" selected>All Companies (Combined)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-arrow-down-short-wide"></i> Sort By:</label>
+                            <select id="pickListSortSelect" onchange="renderPickListTable()">
+                                <option value="newest" selected>Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="cartonsHigh">Total Cartons (High to Low)</option>
+                                <option value="weightHigh">Total Weight (High to Low)</option>
+                                <option value="ordersHigh">Orders Count (High to Low)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-box">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Pick List No.</th>
+                                    <th>Created Date</th>
+                                    <th>Planned Delivery Date</th>
+                                    <th>Final Delivery Date</th>
+                                    <th>Orders Included</th>
+                                    <th>Total Cartons</th>
+                                    <th>Total Weight (KG)</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pickListTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ==========================================================================
+               MODULE 3: INVOICES MODULE (RENAMED FROM DELIVERY CONFIRMATION)
+               ========================================================================== -->
+            <section id="invoicesTab" class="tab-page">
+                <div class="page-title-bar flex-between">
+                    <div>
+                        <h2><i class="fa-solid fa-file-invoice"></i> Invoices & Delivery Management</h2>
+                        <span class="date-summary-text">Track Open, Picked, Confirmed, and Cancelled Invoices</span>
+                    </div>
+                </div>
+
+                <div class="panel-box" style="margin-bottom: 20px;">
+                    <!-- Filters Grid -->
+                    <div class="search-filter-grid" style="margin-bottom: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-magnifying-glass"></i> Search Invoices:</label>
+                            <input type="text" id="invoiceSearchQuery" placeholder="Search Invoice No, Shop..." onkeyup="renderInvoicesTable()">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-calendar-days"></i> Invoice Date:</label>
+                            <input type="date" id="invoiceDateFilter" onchange="renderInvoicesTable()" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-route"></i> Route Filter:</label>
+                            <select id="invoiceRouteFilter" onchange="renderInvoicesTable()">
+                                <option value="all" selected>All Routes</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-building"></i> Company Filter:</label>
+                            <select id="invoiceCompanyFilter" onchange="renderInvoicesTable()">
+                                <option value="all" selected>All Companies</option>
+                                <option value="lays">Lays (PepsiCo)</option>
+                                <option value="hash">FAST Foods</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-circle-nodes"></i> Status Filter:</label>
+                            <select id="invoiceStatusFilter" onchange="renderInvoicesTable()">
+                                <option value="all" selected>All Statuses</option>
+                                <option value="Open">🟡 Open (Pending Delivery)</option>
+                                <option value="Confirmed">🟢 Confirmed (Delivered)</option>
+                                <option value="Returned">🔴 Cancelled / Returned</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-boxes-packing"></i> Pick Status:</label>
+                            <select id="invoicePickStatusFilter" onchange="renderInvoicesTable()">
+                                <option value="all">All Pick Statuses</option>
+                                <option value="Unpicked">📦 Unpicked</option>
+                                <option value="Picked">✅ Picked</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Centralized Action Toolbar -->
+                    <div class="flex-between flex-wrap" style="padding: 10px 16px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 204, 0, 0.25); border-radius: 8px; gap: 10px;">
+                        <div class="flex-gap" style="align-items: center;">
+                            <span class="badge badge-accent" id="invoiceSelectionBadge" style="font-size: 13px; padding: 6px 12px; font-weight: 700;">
+                                0 Invoices Selected
+                            </span>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="selectAllInvoicesToolbar(true)"><i class="fa-solid fa-check-double"></i> Select All</button>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="selectAllInvoicesToolbar(false)"><i class="fa-solid fa-xmark"></i> Clear</button>
+                        </div>
+                        <div class="flex-gap flex-wrap">
+                            <button type="button" class="btn btn-success" id="btnConfirmSelectedInvoices" onclick="batchConfirmSelectedInvoices()" disabled><i class="fa-solid fa-circle-check"></i> Confirm Selected</button>
+                            <button type="button" class="btn btn-warning" id="btnPrintSelectedInvoices" onclick="batchPrintSelectedInvoices()" disabled><i class="fa-solid fa-print"></i> Print Selected</button>
+                            <button type="button" class="btn btn-danger" id="btnCancelSelectedInvoices" onclick="batchCancelSelectedInvoices()" disabled><i class="fa-solid fa-ban"></i> Cancel Selected</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-box">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px; text-align: center;">
+                                        <input type="checkbox" id="selectAllInvoicesCheckbox" onchange="toggleSelectAllInvoices(this.checked)">
+                                    </th>
+                                    <th>Invoice No.</th>
+                                    <th>Company</th>
+                                    <th>Order Date</th>
+                                    <th>Shop Name</th>
+                                    <th>Route</th>
+                                    <th>Pick Status</th>
+                                    <th>Invoice Status</th>
+                                    <th>Basic Amount</th>
+                                    <th>Discount</th>
+                                    <th>Net Amount (Rs.)</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoicesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+
+
+            <!-- TAB 2: DAILY BILLING POS & BULK EXCEL ORDER PUNCHING -->
+            <section id="billingTab" class="tab-page">
+                
+
+
+                <div class="billing-container">
+                    
+                    <!-- Billing Form Left Column -->
+                    <div class="billing-main">
+                        <div class="panel-box shop-selection-card">
+                            
+                            <!-- Company / Brand Selector Bar -->
+                            <div class="company-selector-bar" style="margin-bottom: 14px; background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+                                <div style="font-weight: 700; font-size: 13px; color: var(--brand-gold);"><i class="fa-solid fa-building"></i> Select Order Company / Brand:</div>
+                                <div class="radio-pill-group" id="posCompanySelectorPills"></div>
+                            </div>
+
+                            <!-- Beat Day Live Banner -->
+                            <div class="beat-day-banner" id="posBeatBanner">
+                                <div class="flex-between">
+                                    <span><i class="fa-solid fa-calendar-day"></i> <strong id="posTodayNameText">Today: Sunday</strong> — Showing Scheduled Beat Shops</span>
+                                    <span class="badge badge-info" id="posShopCountBadge">0 Shops</span>
+                                </div>
+                            </div>
+
+                            <div class="form-row-grid" style="margin-top: 12px;">
+                                <div class="form-group">
+                                    <label for="posBeatDaySelect"><i class="fa-solid fa-calendar-check"></i> Filter Beat Day:</label>
+                                    <select id="posBeatDaySelect" onchange="onPosBeatDaySelect()">
+                                        <option value="auto" selected>⚡ Automatic (Today's Beat)</option>
+                                        <option value="Monday">Monday Beat</option>
+                                        <option value="Tuesday">Tuesday Beat</option>
+                                        <option value="Wednesday">Wednesday Beat</option>
+                                        <option value="Thursday">Thursday Beat</option>
+                                        <option value="Friday">Friday Beat</option>
+                                        <option value="Saturday">Saturday Beat</option>
+                                        <option value="Sunday">Sunday Beat</option>
+                                        <option value="all">Show All Shops (All Days)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex: 1.5;">
+                                    <label for="posShopSelect"><i class="fa-solid fa-store"></i> Select Shop / Outlet:</label>
+                                    <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+                                        <input type="text" id="posShopSearchInput" placeholder="🔍 Search shop name, owner..." oninput="renderPosShopDropdown()" class="form-control" style="font-size: 12px; padding: 6px 10px;">
+                                        <select id="posShopSortSelect" onchange="renderPosShopDropdown()" class="form-control" style="font-size: 12px; padding: 6px 10px; width: 170px;">
+                                            <option value="scheduled" selected>Beat Scheduled</option>
+                                            <option value="name_asc">Name (A ➔ Z)</option>
+                                            <option value="disc_desc">Discounted First</option>
+                                            <option value="new_first">New Shops First</option>
+                                        </select>
+                                    </div>
+                                    <select id="posShopSelect" onchange="onPosShopSelect()">
+                                        <option value="">-- Choose Shop --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-calculator"></i> ADWH Tax Mode:</label>
+                                    <div class="radio-pill-group">
+                                        <label class="radio-pill">
+                                            <input type="radio" name="taxMode" value="nonfiler" checked onchange="updatePosCartTotals()">
+                                            <span>Non-Filer (2.5% ADWH Tax)</span>
+                                        </label>
+                                        <label class="radio-pill">
+                                            <input type="radio" name="taxMode" value="filer" onchange="updatePosCartTotals()">
+                                            <span>Filer (0.5% ADWH Tax)</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product SKU Selector & Cart Grid -->
+                        <div class="panel-box pos-items-panel">
+                            <div class="panel-header flex-between">
+                                <h3><i class="fa-solid fa-cart-flatbed"></i> Select Products (Live Warehouse Stock Available)</h3>
+                                <div class="flex-gap" style="align-items: center;">
+                                    <select id="posStockFilterSelect" onchange="filterPosSkuList()" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-dark); padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 700;">
+                                        <option value="instock" selected>📦 Available Stock Only (>0)</option>
+                                        <option value="all">📋 All Products (Inc. 0 Stock)</option>
+                                    </select>
+                                    <div class="search-box-inline">
+                                        <i class="fa-solid fa-search"></i>
+                                        <input type="text" id="posSkuSearch" placeholder="Search SKU name, price point, code..." onkeyup="filterPosSkuList()">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sku-picker-grid" id="posSkuPickerGrid"></div>
+
+                            <!-- POS Active Cart Table -->
+                            <div class="cart-section">
+                                <h4><i class="fa-solid fa-list-check"></i> Bill Itemized Cart</h4>
+                                <div class="table-responsive">
+                                    <table class="data-table pos-cart-table">
+                                        <thead>
+                                            <tr>
+                                                <th>SKU Description</th>
+                                                <th>Trade Price</th>
+                                                <th>Cartons (Ctns)</th>
+                                                <th>Loose Units (Pkts)</th>
+                                                <th>Free Pack</th>
+                                                <th>Basic Amount</th>
+                                                <th>Disc (%)</th>
+                                                <th>Disc Amount</th>
+                                                <th>ADWH Tax</th>
+                                                <th>Net Amount</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="posCartTableBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Billing Summary Right Column -->
+                    <div class="billing-summary-panel">
+                        <div class="panel-box summary-card">
+                            <h3><i class="fa-solid fa-receipt"></i> Invoice Summary</h3>
+                            
+                            <div class="summary-meta">
+                                <div class="meta-row"><span>Invoice ID:</span> <strong id="posBillNoText">CHT000001</strong></div>
+                                <div class="meta-row"><span>Order Date:</span> <input type="date" id="posBillDate" class="input-inline" onchange="onPosDateChange()"></div>
+                                <div class="meta-row"><span>Delivery Date:</span> <input type="date" id="posDeliveryDate" class="input-inline"></div>
+                                <div class="meta-row"><span>Outlet:</span> <strong id="posOutletNameText">Select Shop</strong></div>
+                            </div>
+
+                            <div class="summary-divider"></div>
+
+                            <!-- Shop Auto-Fetched Global Bill Discount (%) -->
+                            <div class="form-group" style="margin-bottom: 12px; background: rgba(255, 204, 0, 0.08); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 204, 0, 0.2);">
+                                <div class="flex-between">
+                                    <label for="globalBillDiscountPct" style="color: var(--brand-gold); font-weight: 700;">
+                                        <i class="fa-solid fa-percent"></i> Bill Discount (%):
+                                    </label>
+                                    <span class="badge badge-info" id="shopDiscountFetchedBadge">Auto-fetched</span>
+                                </div>
+                                <input type="number" id="globalBillDiscountPct" value="4" min="0" max="100" placeholder="e.g. 4%" onchange="updatePosCartTotals()" style="font-weight: 800; font-size: 16px; color: var(--brand-gold); margin-top: 4px;">
+                            </div>
+
+                            <div class="metrics-column">
+                                <div class="metric-row"><span>Total Basic Amount:</span> <strong id="posSummaryBasic">Rs. 0.00</strong></div>
+                                <div class="metric-row"><span>Bill Discount (<span id="posSummaryDiscPct">4</span>%):</span> <strong id="posSummaryDiscount" style="color: var(--brand-gold);">-Rs. 0.00</strong></div>
+                                <div class="metric-row"><span>Total ADWH Tax:</span> <strong id="posSummaryWht">+Rs. 0.00</strong></div>
+                                <div class="metric-row highlight-weight">
+                                    <span><i class="fa-solid fa-weight-hanging"></i> Total Weight:</span>
+                                    <strong id="posSummaryTotalKG">0.000 KG</strong>
+                                </div>
+                            </div>
+
+                            <div class="summary-divider"></div>
+
+                            <div class="payment-options">
+                                <label for="posPaymentStatus">Payment Type:</label>
+                                <select id="posPaymentStatus">
+                                    <option value="Cash">Cash Sale</option>
+                                    <option value="Credit">Credit (Udhaar)</option>
+                                </select>
+                            </div>
+
+                            <div id="posFocBannerContainer" style="margin-bottom: 10px;"></div>
+
+                            <div class="total-payable-card">
+                                <span>NET INVOICE VALUE</span>
+                                <h2 id="posNetPayable">Rs. 0</h2>
+                            </div>
+
+                            <div class="billing-action-buttons">
+                                <button class="btn btn-primary btn-block btn-lg" onclick="savePosCartAsDraftOrder()" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); padding: 14px; font-size: 15px;">
+                                    <i class="fa-solid fa-cart-plus"></i> 📥 Save as Draft Order (Orders Module)
+                                </button>
+                                <button class="btn btn-danger btn-block" onclick="clearPosCart()" style="margin-top: 10px;">
+                                    <i class="fa-solid fa-trash-can"></i> Clear Cart
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+
+            <!-- TAB 3: DELIVERY CONFIRMATION & BILL SEARCH -->
+            <section id="billsHistoryTab" class="tab-page">
+                <div class="page-title-bar flex-between">
+                    <h2><i class="fa-solid fa-truck-ramp-box"></i> Delivery Confirmation & Invoices</h2>
+                    <div class="search-filter-row">
+                        <input type="text" id="billHistoryQuery" placeholder="Search Invoice ID, Shop Name..." onkeyup="renderBillsHistoryTable()">
+                        <select id="billHistoryDeliveryFilter" onchange="renderBillsHistoryTable()">
+                            <option value="all">All Delivery Statuses</option>
+                            <option value="Pending" selected>🟡 Pending Delivery (Drafts)</option>
+                            <option value="Delivered">🟢 Delivered & Confirmed</option>
+                            <option value="Returned">🔴 Returned / Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="panel-box">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Invoice ID</th>
+                                    <th>Order Date</th>
+                                    <th>Shop Name</th>
+                                    <th>Salesman</th>
+                                    <th>Delivery Status</th>
+                                    <th>Basic Amount</th>
+                                    <th>Discount</th>
+                                    <th>Net Amount (Rs.)</th>
+                                    <th>Delivery Action</th>
+                                    <th>Options</th>
+                                </tr>
+                            </thead>
+                            <tbody id="billsHistoryTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- TAB 4: WAREHOUSE & STOCK INVENTORY SYSTEM -->
+            <section id="inventoryTab" class="tab-page">
+                <div class="page-title-bar flex-between">
+                    <h2><i class="fa-solid fa-boxes-stacked"></i> Warehouse Stock & Inventory Management</h2>
+                    <div class="flex-gap" style="margin-top: 8px;">
+                        <button class="btn btn-primary" onclick="openReceiveStockModal()"><i class="fa-solid fa-truck-arrow-right"></i> Receive Stock Inward</button>
+                        <button class="btn btn-info" style="background: #0284c7; color: white;" onclick="downloadStockReportPdf()"><i class="fa-solid fa-file-pdf"></i> Stock Report (Print / PDF)</button>
+                        <button class="btn btn-warning" onclick="downloadStockImportTemplate()"><i class="fa-solid fa-file-excel"></i> Excel Template</button>
+                        <button class="btn btn-success" onclick="triggerStockBulkUpload()"><i class="fa-solid fa-file-arrow-up"></i> Bulk Stock Inward</button>
+                        <input type="file" id="bulkStockFileInput" accept=".csv, .xls, .xlsx" style="display:none;" onchange="handleBulkStockImport(event)">
+                        <button class="btn btn-info" onclick="exportStockReportCSV()"><i class="fa-solid fa-download"></i> Export Stock Report</button>
+                    </div>
+                </div>
+
+                <!-- Warehouse Inventory KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card accent-gold">
+                        <div class="kpi-icon"><i class="fa-solid fa-boxes-packing"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-title">Total Stock Value</span>
+                            <h3 class="kpi-value" id="kpiStockTotalValue">Rs. 0</h3>
+                            <span class="kpi-subtext">Total Trade Value in Warehouse</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card accent-green">
+                        <div class="kpi-icon"><i class="fa-solid fa-box-archive"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-title">Available Cartons</span>
+                            <h3 class="kpi-value" id="kpiStockTotalCartons">0 <small>Ctns</small></h3>
+                            <span class="kpi-subtext" id="kpiStockTotalUnits">0 loose units</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card accent-blue">
+                        <div class="kpi-icon"><i class="fa-solid fa-weight-hanging"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-title">Total Stock Weight</span>
+                            <h3 class="kpi-value" id="kpiStockTotalWeight">0.00 <small>KG</small></h3>
+                            <span class="kpi-subtext">Net Weight in Warehouse</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card accent-purple">
+                        <div class="kpi-icon"><i class="fa-solid fa-tags"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-title">SKU Variety Count</span>
+                            <h3 class="kpi-value" id="kpiStockSkuCount">0 <small>SKUs</small></h3>
+                            <span class="kpi-subtext">Active Lay's / Kurkure SKUs</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-box">
+                    <div class="panel-header flex-between">
+                        <h3><i class="fa-solid fa-list-check"></i> Master Stock Inventory Report Table</h3>
+                        <div class="flex-gap">
+                            <select id="stockCompanyFilter" onchange="renderStockInventoryTable()" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); padding: 6px 12px; border-radius: var(--radius-sm); font-size: 13px;">
+                                <option value="all" selected>🏢 All Companies (Combined)</option>
+                            </select>
+                            <select id="stockAvailabilityFilter" onchange="renderStockInventoryTable()" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); padding: 6px 12px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700;">
+                                <option value="instock" selected>📦 Available Stock Only (>0)</option>
+                                <option value="all">📋 All Products (Inc. 0 Stock)</option>
+                            </select>
+                            <div class="search-box-inline">
+                                <i class="fa-solid fa-search"></i>
+                                <input type="text" id="stockReportSearch" value="" placeholder="Search SKU code, description, brand..." onkeyup="renderStockInventoryTable()" onfocus="if(this.value.includes('Search')) this.value=''">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Description / Name</th>
+                                    <th>Brand</th>
+                                    <th>Category (PC/NPC)</th>
+                                    <th>Available Cartons</th>
+                                    <th>Loose Units</th>
+                                    <th>Pack/Ctn</th>
+                                    <th>Stock Weight (KG)</th>
+                                    <th>Stock Value (Rs)</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockInventoryTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- TAB 5: BEAT PLANS & SHOPS MANAGER -->
+            <section id="outletsTab" class="tab-page">
+                <div class="page-title-bar flex-between">
+                    <h2><i class="fa-solid fa-map-location-dot"></i> Beat Plans & Retail Outlets Manager</h2>
+                    <div class="flex-gap">
+                        <button class="btn btn-outline" onclick="openAddRouteModal()"><i class="fa-solid fa-plus"></i> Add New Route</button>
+                        <button class="btn btn-primary" onclick="openAddShopModal()"><i class="fa-solid fa-shop"></i> Add New Shop</button>
+                        <button class="btn btn-success" onclick="exportMasterShopsExcel()"><i class="fa-solid fa-file-excel"></i> Download Master Data</button>
+                    </div>
+                </div>
+
+                <div class="dual-panel-grid">
+                    <div class="panel-box">
+                        <div class="panel-header flex-between">
+                            <h3><i class="fa-solid fa-route"></i> 7-Day Beat Plans (Routes & Salesman)</h3>
+                            <button class="btn btn-sm btn-outline" onclick="openAddRouteModal()"><i class="fa-solid fa-plus"></i> New Beat</button>
+                        </div>
+                        <ul class="route-list-group" id="routeListGroup"></ul>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header flex-between">
+                            <h3><i class="fa-solid fa-shop"></i> Shops Database (With Beat Visit Days)</h3>
+                            <input type="text" id="shopSearchInput" placeholder="Filter shop name..." onkeyup="renderShopsTable()">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Shop Name</th>
+                                        <th>Visit Beat Day</th>
+                                        <th>Customer / Owner Name</th>
+                                        <th>Phone</th>
+                                        <th>Preset Disc (%)</th>
+                                        <th>Tax Mode</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="shopsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- TAB 6: SKU MASTER & PRICES -->
+            <section id="skuMasterTab" class="tab-page">
+                <div class="page-title-bar flex-between">
+                    <h2><i class="fa-solid fa-box-open"></i> SKU Master List & Trade Prices</h2>
+                    <div class="flex-gap">
+                        <button class="btn btn-primary" onclick="openAddSkuModal()"><i class="fa-solid fa-plus"></i> Add New SKU</button>
+                        <button class="btn btn-warning" onclick="downloadSkuImportTemplate()"><i class="fa-solid fa-file-excel"></i> Excel Template</button>
+                        <button class="btn btn-success" onclick="triggerSkuBulkUpload()"><i class="fa-solid fa-file-arrow-up"></i> Bulk Add SKUs</button>
+                        <input type="file" id="bulkSkuFileInput" accept=".csv, .xls, .xlsx" style="display:none;" onchange="handleBulkSkuImport(event)">
+                    </div>
+                </div>
+
+                <div class="panel-box">
+                    <div class="panel-header flex-between">
+                        <div class="search-box-inline">
+                            <i class="fa-solid fa-search"></i>
+                            <input type="text" id="skuMasterSearch" placeholder="Filter SKUs by code, brand, price point..." onkeyup="renderSkuMasterTable()">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table sku-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Type</th>
+                                    <th>Brand</th>
+                                    <th>Product Description</th>
+                                    <th>Trade Price (Rs.)</th>
+                                    <th>Weight (Gm)</th>
+                                    <th>Pack/Ctn</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="skuMasterTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: FOC MANAGEMENT SECTION -->
+            <section id="focManagementTab" class="tab-page">
+                <div class="page-title-bar flex-between">
+                    <div>
+                        <span class="section-eyebrow">SCHEME & PROMOTION ENGINE</span>
+                        <h2><i class="fa-solid fa-gift"></i> FOC Scheme Management</h2>
+                        <p class="page-subtitle">Configure automated Buy & Get FOC rules, multi-slabs, validity dates, repeatable options, and eligibility.</p>
+                    </div>
+                    <div class="flex-gap">
+                        <button class="btn btn-primary" onclick="openCreateFocSchemeModal()"><i class="fa-solid fa-plus"></i> Create FOC Scheme</button>
+                    </div>
+                </div>
+
+                <!-- Top Liquid Stat Cards -->
+                <div class="dashboard-kpi-grid">
+                    <div class="kpi-card glass-panel flex-between">
+                        <div>
+                            <span class="kpi-title">Active Schemes</span>
+                            <h3 class="kpi-value" id="focStatActiveSchemes">0</h3>
+                            <span class="kpi-subtext" style="color: var(--accent-green);">Ready for Order Punching</span>
+                        </div>
+                        <div class="kpi-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card glass-panel flex-between">
+                        <div>
+                            <span class="kpi-title">FOC Given Today</span>
+                            <h3 class="kpi-value" id="focStatUnitsToday">0 Units</h3>
+                            <span class="kpi-subtext">Free Promotional Items Dispatched</span>
+                        </div>
+                        <div class="kpi-icon-box" style="background: rgba(245, 158, 11, 0.15); color: var(--brand-gold);">
+                            <i class="fa-solid fa-box-open"></i>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card glass-panel flex-between">
+                        <div>
+                            <span class="kpi-title">Top FOC Product</span>
+                            <h3 class="kpi-value" id="focStatTopProduct" style="font-size: 15px;">-</h3>
+                            <span class="kpi-subtext">Highest Claimed Promotional SKU</span>
+                        </div>
+                        <div class="kpi-icon-box" style="background: rgba(37, 99, 235, 0.15); color: #2563eb;">
+                            <i class="fa-solid fa-crown"></i>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card glass-panel flex-between">
+                        <div>
+                            <span class="kpi-title">Total FOC Value</span>
+                            <h3 class="kpi-value" id="focStatTotalValue">Rs. 0</h3>
+                            <span class="kpi-subtext">Cumulative Free Dispatched Worth</span>
+                        </div>
+                        <div class="kpi-icon-box" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-Navigation Pills: Schemes vs FOC Report -->
+                <div class="reports-nav-pills report-category-grid" style="margin-top: 20px;">
+                    <button class="report-pill active" id="btnFocSubTabSchemes" onclick="switchFocSubTab('schemes', this)"><i class="fa-solid fa-list-check"></i> FOC Schemes</button>
+                    <button class="report-pill" id="btnFocSubTabReport" onclick="switchFocSubTab('report', this)"><i class="fa-solid fa-chart-pie"></i> FOC Given Report</button>
+                </div>
+
+                <!-- SUB TAB 1: SCHEMES LIST -->
+                <div id="focSubTabSchemesContent">
+                    <div class="card-glass" style="margin-top: 16px;">
+                        <div class="flex-between" style="margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                            <div class="search-box" style="min-width: 250px;">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="focSchemeSearchInput" placeholder="Search FOC schemes by name or SKU..." oninput="renderFocSchemesTable()">
+                            </div>
+                            <div class="flex-gap">
+                                <select id="focSchemeStatusFilter" class="form-control" style="width: 160px;" onchange="renderFocSchemesTable()">
+                                    <option value="all">All Statuses</option>
+                                    <option value="active" selected>Active Only</option>
+                                    <option value="scheduled">Scheduled</option>
+                                    <option value="expired">Expired</option>
+                                    <option value="disabled">Disabled</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Scheme Name</th>
+                                        <th>Buy Product</th>
+                                        <th>FOC Rule / Slabs</th>
+                                        <th>FOC Product</th>
+                                        <th>Repeatable</th>
+                                        <th>Validity Dates</th>
+                                        <th>Priority</th>
+                                        <th>Eligibility</th>
+                                        <th>Status</th>
+                                        <th style="text-align: right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="focSchemesTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB TAB 2: FOC REPORT -->
+                <div id="focSubTabReportContent" style="display: none; margin-top: 16px;">
+                    <div class="card-glass">
+                        <div class="flex-between" style="margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                            <div class="search-box" style="min-width: 240px;">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="focReportSearchInput" placeholder="Search report by shop, salesman, product..." oninput="renderFocReportTable()">
+                            </div>
+                            <div class="flex-gap">
+                                <input type="date" id="focReportStartDate" class="form-control" onchange="renderFocReportTable()">
+                                <input type="date" id="focReportEndDate" class="form-control" onchange="renderFocReportTable()">
+                                <button class="btn btn-outline" onclick="renderFocReportTable()"><i class="fa-solid fa-filter"></i> Apply Filter</button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Bill / Order No</th>
+                                        <th>Customer Shop</th>
+                                        <th>Route & Salesman</th>
+                                        <th>Buy SKU & Qty</th>
+                                        <th>FOC Given SKU & Qty</th>
+                                        <th>Scheme Applied</th>
+                                        <th>FOC Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="focReportTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- TAB 7: SALES REPORTS CENTER -->
+            <section id="salesReportsTab" class="tab-page">
+                <div class="page-title-bar flex-between">
+                    <div>
+                        <span class="section-eyebrow">REPORT CENTER</span>
+                        <h2><i class="fa-solid fa-file-invoice-dollar"></i> Sales Reports</h2>
+                        <p class="page-subtitle">Analyze sales, products, customers, routes and salesman performance from one workspace.</p>
+                    </div>
+                    <div class="flex-gap">
+                        <button class="btn btn-success" onclick="openReportExportModal('sales')"><i class="fa-solid fa-file-excel"></i> Export Report (Excel)</button>
+                    </div>
+                </div>
+
+                <div class="reports-nav-pills report-category-grid">
+                    <button class="report-pill active" onclick="setSalesReportSubTab('pcSale', this)"><i class="fa-solid fa-cookie-bite"></i> PC Sale Report</button>
+                    <button class="report-pill" onclick="setSalesReportSubTab('npcSale', this)"><i class="fa-solid fa-bowl-food"></i> NPC Sale Report</button>
+                    <button class="report-pill" onclick="setSalesReportSubTab('hashSale', this)"><i class="fa-solid fa-boxes-packing"></i> Hash Sale Report</button>
+                    <button class="report-pill" onclick="setSalesReportSubTab('filerSale', this)"><i class="fa-solid fa-building-circle-check"></i> Filer Sale (0.5%)</button>
+                    <button class="report-pill" onclick="setSalesReportSubTab('nonFilerSale', this)"><i class="fa-solid fa-store-slash"></i> Non-Filer Sale (2.5%)</button>
+                    <button class="report-pill" onclick="setSalesReportSubTab('combinedSale', this)"><i class="fa-solid fa-layer-group"></i> Combined Ledger</button>
+                    <button class="report-pill" onclick="setSalesReportSubTab('productWise', this)"><i class="fa-solid fa-box"></i> Product-wise Sale</button>
+                    <button class="report-pill" onclick="setSalesReportSubTab('shopWise', this)"><i class="fa-solid fa-shop"></i> Shop-wise Sale</button>
+                    <button class="report-pill" onclick="setSalesReportSubTab('routeWise', this)"><i class="fa-solid fa-route"></i> Route-wise Sale</button>
+                    <button class="report-pill" onclick="setSalesReportSubTab('salesmanWise', this)"><i class="fa-solid fa-user-tie"></i> Salesman-wise Sale</button>
+                    <button class="report-pill" onclick="setSalesReportSubTab('periodWise', this)"><i class="fa-solid fa-calendar-check"></i> Daily/Monthly Sale</button>
+                </div>
+
+                <div class="panel-box">
+                    <div class="panel-header flex-between">
+                        <h3 id="salesReportTitle">PC Sale Report (Potato Chips)</h3>
+                        <div class="global-date-filter" style="margin: 0; gap: 8px;">
+                            <div class="filter-label"><i class="fa-solid fa-building"></i> Company:</div>
+                            <select id="salesReportCompanyFilter" onchange="handleReportCompanyChange('sales', this.value)">
+                                <option value="all" selected>🏢 All Companies (Combined)</option>
+                            </select>
+                            <div class="filter-label" style="margin-left: 6px;"><i class="fa-solid fa-calendar-days"></i> Report Duration:</div>
+                            <select id="salesReportPeriodPreset" onchange="handleReportPeriodChange('sales')">
+                                <option value="all" selected>All Time (Full Ledger)</option>
+                                <option value="today">Today</option>
+                                <option value="yesterday">Yesterday</option>
+                                <option value="7days">Last 7 Days</option>
+                                <option value="10days">Last 10 Days</option>
+                                <option value="thisMonth">This Month</option>
+                                <option value="custom">Custom Date Range...</option>
+                            </select>
+                            <div id="salesReportCustomDates" class="custom-date-group hidden">
+                                <input type="date" id="salesReportStartDate" onchange="renderSalesReports()">
+                                <span>to</span>
+                                <input type="date" id="salesReportEndDate" onchange="renderSalesReports()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead id="salesReportTableHead"></thead>
+                            <tbody id="salesReportTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- TAB 8: FINANCIAL REPORTS -->
+            <section id="financialReportsTab" class="tab-page">
+                <div class="page-title-bar flex-between">
+                    <h2><i class="fa-solid fa-sack-dollar"></i> Financial & Ledger Reports</h2>
+                    <button class="btn btn-success" onclick="openReportExportModal('financial')"><i class="fa-solid fa-file-excel"></i> Export Financial Report (Excel)</button>
+                </div>
+
+                <div class="reports-nav-pills">
+                    <button class="report-pill active" onclick="setFinancialReportSubTab('totalSale', this)"><i class="fa-solid fa-chart-line"></i> Total Sales Summary</button>
+                    <button class="report-pill" onclick="setFinancialReportSubTab('cashSale', this)"><i class="fa-solid fa-money-bill-wave"></i> Cash Sales Ledger</button>
+                    <button class="report-pill" onclick="setFinancialReportSubTab('creditSale', this)"><i class="fa-solid fa-hand-holding-dollar"></i> Credit Sales (Udhaar)</button>
+                    <button class="report-pill" onclick="setFinancialReportSubTab('discountReport', this)"><i class="fa-solid fa-percent"></i> Shop Discount Ledger</button>
+                    <button class="report-pill" onclick="setFinancialReportSubTab('returns', this)"><i class="fa-solid fa-rotate-left"></i> Sales Returns & Damage</button>
+                    <button class="report-pill" onclick="setFinancialReportSubTab('outstanding', this)"><i class="fa-solid fa-scale-unbalanced"></i> Outstanding Balances</button>
+                </div>
+
+                <div class="panel-box">
+                    <div class="panel-header flex-between">
+                        <h3 id="financialReportTitle">Financial Sales Overview</h3>
+                        <div class="global-date-filter" style="margin: 0; gap: 8px;">
+                            <div class="filter-label"><i class="fa-solid fa-building"></i> Company:</div>
+                            <select id="financialReportCompanyFilter" onchange="handleReportCompanyChange('financial', this.value)">
+                                <option value="all" selected>🏢 All Companies (Combined)</option>
+                            </select>
+                            <div class="filter-label" style="margin-left: 6px;"><i class="fa-solid fa-calendar-days"></i> Report Duration:</div>
+                            <select id="financialReportPeriodPreset" onchange="handleReportPeriodChange('financial')">
+                                <option value="all" selected>All Time (Full Ledger)</option>
+                                <option value="today">Today</option>
+                                <option value="yesterday">Yesterday</option>
+                                <option value="7days">Last 7 Days</option>
+                                <option value="10days">Last 10 Days</option>
+                                <option value="thisMonth">This Month</option>
+                                <option value="custom">Custom Date Range...</option>
+                            </select>
+                            <div id="financialReportCustomDates" class="custom-date-group hidden">
+                                <input type="date" id="financialReportStartDate" onchange="renderFinancialReports()">
+                                <span>to</span>
+                                <input type="date" id="financialReportEndDate" onchange="renderFinancialReports()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead id="financialReportTableHead"></thead>
+                            <tbody id="financialReportTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- TAB 9: ANALYSIS REPORTS -->
+            <section id="analysisReportsTab" class="tab-page">
+                <div class="page-title-bar flex-between">
+                    <h2><i class="fa-solid fa-chart-column"></i> Business Intelligence & Analysis Reports</h2>
+                    <button class="btn btn-success" onclick="openReportExportModal('analysis')"><i class="fa-solid fa-file-excel"></i> Export Analysis (Excel)</button>
+                </div>
+
+                <div class="reports-nav-pills">
+                    <button class="report-pill active" onclick="setAnalysisReportSubTab('topSelling', this)"><i class="fa-solid fa-trophy"></i> Top Selling Products</button>
+                    <button class="report-pill" onclick="setAnalysisReportSubTab('slowMoving', this)"><i class="fa-solid fa-turtle"></i> Slow Moving Products</button>
+                    <button class="report-pill" onclick="setAnalysisReportSubTab('noSaleShops', this)"><i class="fa-solid fa-shop-slash"></i> No Sale Shops</button>
+                    <button class="report-pill" onclick="setAnalysisReportSubTab('zeroStock', this)"><i class="fa-solid fa-box-tissue"></i> Zero Stock Products</button>
+                    <button class="report-pill" onclick="setAnalysisReportSubTab('productPerf', this)"><i class="fa-solid fa-chart-pie"></i> Product Performance</button>
+                    <button class="report-pill" onclick="setAnalysisReportSubTab('routePerf', this)"><i class="fa-solid fa-map-location-dot"></i> Route Performance</button>
+                </div>
+
+                <div class="panel-box">
+                    <div class="panel-header flex-between">
+                        <h3 id="analysisReportTitle">Top Selling Products</h3>
+                        <div class="global-date-filter" style="margin: 0; gap: 8px;">
+                            <div class="filter-label"><i class="fa-solid fa-building"></i> Company:</div>
+                            <select id="analysisReportCompanyFilter" onchange="handleReportCompanyChange('analysis', this.value)">
+                                <option value="all" selected>🏢 All Companies (Combined)</option>
+                            </select>
+                            <div class="filter-label" style="margin-left: 6px;"><i class="fa-solid fa-calendar-days"></i> Report Duration:</div>
+                            <select id="analysisReportPeriodPreset" onchange="handleReportPeriodChange('analysis')">
+                                <option value="all" selected>All Time (Full Ledger)</option>
+                                <option value="today">Today</option>
+                                <option value="yesterday">Yesterday</option>
+                                <option value="7days">Last 7 Days</option>
+                                <option value="10days">Last 10 Days</option>
+                                <option value="thisMonth">This Month</option>
+                                <option value="custom">Custom Date Range...</option>
+                            </select>
+                            <div id="analysisReportCustomDates" class="custom-date-group hidden">
+                                <input type="date" id="analysisReportStartDate" onchange="renderAnalysisReports()">
+                                <span>to</span>
+                                <input type="date" id="analysisReportEndDate" onchange="renderAnalysisReports()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead id="analysisReportTableHead"></thead>
+                            <tbody id="analysisReportTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- TAB 11: DATA SYNC CENTER (100% OFFLINE ENCRYPTED SYNC FILE BRIDGE) -->
+            <section id="dataSyncTab" class="tab-page">
+                <div class="page-title-bar flex-between">
+                    <div>
+                        <span class="section-eyebrow">100% OFFLINE ENCRYPTED SYNC FILE SYSTEM</span>
+                        <h2><i class="fa-solid fa-file-shield"></i> Data Sync Center & Salesman Bridge</h2>
+                        <p class="page-subtitle">Import and export encrypted .sync files for Salesmen via WhatsApp, USB, or Bluetooth sharing.</p>
+                    </div>
+                    <div class="flex-gap">
+                        <button class="btn btn-warning" onclick="triggerImportEmergencyFileSync()"><i class="fa-solid fa-file-import"></i> Import Mobile Sync File (.sync)</button>
+                        <button class="btn btn-primary" onclick="exportMasterSyncFile('sales_01')"><i class="fa-solid fa-file-export"></i> Export Master Sync File (.sync)</button>
+                        <input type="file" id="emergencyPcFileInput" accept=".sync" style="display:none;" onchange="handleImportEmergencyFileFromPc(event)">
+                    </div>
+                </div>
+
+                <!-- Encrypted File Sync Status Card (Light Liquid Glass) -->
+                <div class="glass-card-light" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(31, 38, 135, 0.08);">
+                    <div class="flex-between">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="width: 50px; height: 50px; border-radius: 14px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24px;">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 2px;">Offline Encrypted Sync File Bridge</h3>
+                                <p style="font-size: 13px; color: #64748b;">No Wi-Fi or Internet needed! Share encrypted .sync files directly via WhatsApp or USB.</p>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="badge badge-success" id="pcServerStatusBadge" style="font-size: 13px; padding: 6px 14px; border-radius: 20px;">
+                                <i class="fa-solid fa-circle"></i> 🟢 100% Offline Mode Active
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Active Salesmen Cards Grid -->
+                <div class="flex-between" style="margin-bottom: 12px;">
+                    <div class="section-title-sm" style="font-size: 14px; font-weight: 800; color: var(--text-primary);"><i class="fa-solid fa-users"></i> Salesmen Devices & Assigned Routes (<span id="activeSalesmenCountBadge">2 Active</span>)</div>
+                    <div class="flex-gap">
+                        <button class="btn btn-primary btn-sm" onclick="openAddSalesmanModal()"><i class="fa-solid fa-user-plus"></i> ➕ Add Salesman</button>
+                        <button class="btn btn-outline btn-sm" onclick="openManageSalesmenModal()"><i class="fa-solid fa-user-gear"></i> ⚙️ Manage Salesmen & Routes</button>
+                    </div>
+                </div>
+                <div class="kpi-grid" id="salesmenSyncCardsGrid">
+                    <!-- Dynamic Salesmen Cards populated by app.js -->
+                </div>
+
+                <!-- Sync History Table Panel -->
+                <div class="panel-box" style="margin-top: 20px;">
+                    <div class="panel-header flex-between">
+                        <h3><i class="fa-solid fa-clock-rotate-left"></i> Two-Way Sync History Log</h3>
+                        <div class="flex-gap">
+                            <button class="btn btn-outline btn-sm" onclick="exportEmergencyReturnFileModal()"><i class="fa-solid fa-file-export"></i> Export Return Sync File (.sync)</button>
+                            <button class="btn btn-primary btn-sm" onclick="renderSyncHistoryLogTable()"><i class="fa-solid fa-arrows-rotate"></i> Refresh Log</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>Salesman</th>
+                                    <th>Device Name</th>
+                                    <th>Sync Direction</th>
+                                    <th>Records Processed</th>
+                                    <th>Backup Reference</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="syncHistoryTbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- TAB 10: BACKUP & PRODUCTION RESET -->
+            <section id="settingsTab" class="tab-page">
+                <div class="page-title-bar">
+                    <h2><i class="fa-solid fa-sliders"></i> Production Setup & Data Management</h2>
+                </div>
+
+                <div class="dual-panel-grid">
+                    <div class="panel-box">
+                        <h3><i class="fa-solid fa-trash-arrow-up"></i> Start Fresh Live Production (Clear Dummy Sales)</h3>
+                        <p class="text-muted">Dummy bills aur sample shops ko zero karne ke liye aur live kaam shuru karne ke liye niche button press karein.</p>
+                        
+                        <div class="settings-action-block">
+                            <button class="btn btn-warning btn-block btn-lg" onclick="startCleanProductionMode()"><i class="fa-solid fa-broom"></i> Clear Dummy Sales & Start Live (Set to Zero)</button>
+                        </div>
+                    </div>
+
+                    <div class="panel-box">
+                        <h3><i class="fa-solid fa-database"></i> Backup & Restore File</h3>
+                        <p class="text-muted">System ke beat plans, shops, stock, aur bills ka offline backup download ya restore karein.</p>
+                        
+                        <div class="settings-action-block">
+                            <button class="btn btn-primary btn-block" onclick="exportBackupJSON()"><i class="fa-solid fa-download"></i> Download Full Backup (.json)</button>
+                        </div>
+                        <div class="settings-action-block">
+                            <input type="file" id="importJsonFileInput" accept=".json" style="display:none" onchange="handleImportJSON(event)">
+                            <button class="btn btn-outline btn-block" onclick="document.getElementById('importJsonFileInput').click()"><i class="fa-solid fa-upload"></i> Restore Backup File (.json)</button>
+                        </div>
+                    </div>
+                <div class="panel-box" style="margin-top: 20px;">
+                    <div class="panel-header flex-between">
+                        <h3><i class="fa-solid fa-building"></i> Multi-Company (Brand) Management Studio</h3>
+                        <button class="btn btn-primary" onclick="openCompanyModal()"><i class="fa-solid fa-plus"></i> Add New Company / Brand</button>
+                    </div>
+                    <p class="text-muted" style="margin-bottom: 12px; font-size: 13px;">Manage ERP companies/brands (Lays, Hash, etc.), taxation rules, and product catalogs. You can rename "Hash" or add new brands anytime.</p>
+                                                 <tr>
+                                    <th>Company ID</th>
+                                    <th>Company / Brand Name</th>
+                                    <th>Sales Reporting Metric</th>
+                                    <th>Taxation Rules</th>
+                                    <th>Description</th>
+                                    <th>Total SKUs</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="companyMasterTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+    </div>
+
+    <!-- COMPANY MODAL -->
+    <div id="companyModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="companyModalTitle">Add / Edit Company</h3>
+                <button class="modal-close" onclick="closeModal('companyModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="companyEditId">
+                <div class="form-group">
+                    <label><i class="fa-solid fa-building"></i> Company / Brand Name:</label>
+                    <input type="text" id="companyNameInput" placeholder="e.g. Hash, Lays, Nestle...">
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-scale-balanced"></i> Volume / Sales Reporting Metric:</label>
+                    <select id="companyMetricInput">
+                        <option value="kg">Kilograms (KG) — For products with gram weight (e.g. Lay's)</option>
+                        <option value="ctn" selected>Cartons (Ctns) — For products without gramming (e.g. Hash / Fast)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-calculator"></i> Taxation Mode:</label>
+                    <select id="companyTaxModeInput">
+                        <option value="lays_tax">Lays Rules (0.5% Filer / 2.5% Non-Filer ADWH Tax)</option>
+                        <option value="no_tax" selected>Standard Pricing (No ADWH Tax Deduction)</option>
+                    </select>
+                </div>="no_tax" selected>Standard Pricing (No ADWH Tax Deduction)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description / Notes:</label>
+                    <input type="text" id="companyDescInput" placeholder="e.g. Hash Foods & Beverages Catalog">
+                </div>
+            </div>
+            <div class="modal-footer flex-between">
+                <button class="btn btn-secondary" onclick="closeModal('companyModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCompanyModal()"><i class="fa-solid fa-save"></i> Save Company</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHOP MODAL WITH CUSTOMER / OWNER NAME & BEAT VISIT DAY -->
+    <div id="shopModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="shopModalTitle">Add New Shop / Outlet</h3>
+                <button class="modal-close" onclick="closeModal('shopModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="shopEditId">
+                <div class="form-group">
+                    <label>Shop Name:</label>
+                    <input type="text" id="shopNameInput" placeholder="e.g. NAEEM KIRYANA STORE">
+                </div>
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label style="color: var(--brand-gold); font-weight: 700;">Beat Visit Day:</label>
+                        <select id="shopVisitDayInput" style="font-weight: 700; color: var(--brand-gold);">
+                            <option value="Monday">Monday Beat</option>
+                            <option value="Tuesday">Tuesday Beat</option>
+                            <option value="Wednesday">Wednesday Beat</option>
+                            <option value="Thursday">Thursday Beat</option>
+                            <option value="Friday">Friday Beat</option>
+                            <option value="Saturday">Saturday Beat</option>
+                            <option value="Sunday">Sunday Beat</option>
+                            <option value="All">All Days (Everyday)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Main Route Name:</label>
+                        <select id="shopRouteSelect"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label style="color: var(--brand-gold); font-weight: 700;">Sub-Route / Sub-Beat Name:</label>
+                    <input type="text" id="shopSubRouteInput" placeholder="e.g. Sub-Route 1 (Monday)" style="font-weight: 700;">
+                </div>
+                <div class="form-group">
+                    <label>Customer / Owner Name:</label>
+                    <input type="text" id="shopCustomerNameInput" placeholder="e.g. Muhammad Naeem">
+                </div>
+                <div class="form-group">
+                    <label>Phone / Owner Contact:</label>
+                    <input type="text" id="shopPhoneInput" placeholder="e.g. 0300-1234567">
+                </div>
+                <div class="form-group">
+                    <label>Shop Address / Location:</label>
+                    <input type="text" id="shopAddressInput" placeholder="e.g. Main Bazaar, Near College Road, Jhang">
+                </div>
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label style="color: var(--brand-gold); font-weight: 700;">Preset Discount (%):</label>
+                        <input type="number" id="shopDefaultDiscountInput" value="0" min="0" max="100" placeholder="e.g. 0%" style="font-weight: 700; color: var(--brand-gold);">
+                    </div>
+                    <div class="form-group">
+                        <label>Tax Mode:</label>
+                        <select id="shopTaxSelect">
+                            <option value="filer">Filer (0.5% ADWH Tax)</option>
+                            <option value="nonfiler">Non-Filer (2.5% ADWH Tax)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('shopModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveShopFromModal()">Save Shop Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STOCK INWARD RECEIVING MODAL -->
+    <div id="receiveStockModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Receive Stock Inward (Factory Shipment)</h3>
+                <button class="modal-close" onclick="closeModal('receiveStockModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Select Product / SKU:</label>
+                    <select id="receiveSkuSelect"></select>
+                </div>
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label>Cartons Received (Ctns):</label>
+                        <input type="number" id="receiveCartonsInput" min="0" value="10" placeholder="e.g. 50">
+                    </div>
+                    <div class="form-group">
+                        <label>Loose Packets Received:</label>
+                        <input type="number" id="receivePacketsInput" min="0" value="0" placeholder="e.g. 0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Ref / Invoice / Shipment No:</label>
+                    <input type="text" id="receiveRefInput" placeholder="e.g. PEPSI-INV-9921">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('receiveStockModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveStockInwardFromModal()">Add Stock to Warehouse</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MANUAL STOCK ADJUSTMENT MODAL -->
+    <div id="adjustStockModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Manual Stock Adjustment</h3>
+                <button class="modal-close" onclick="closeModal('adjustStockModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Select Product / SKU:</label>
+                    <select id="adjustSkuSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label>Adjustment Type:</label>
+                    <select id="adjustTypeSelect">
+                        <option value="add">Add Stock (+) (Physical Surplus)</option>
+                        <option value="sub">Deduct Stock (-) (Damage / Expiry / Shortage)</option>
+                    </select>
+                </div>
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label>Cartons (Ctns):</label>
+                        <input type="number" id="adjustCartonsInput" min="0" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Loose Packets:</label>
+                        <input type="number" id="adjustPacketsInput" min="0" value="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Reason / Audit Note:</label>
+                    <input type="text" id="adjustReasonInput" placeholder="e.g. Damage in warehouse transit">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('adjustStockModal')">Cancel</button>
+                <button class="btn btn-warning" onclick="saveStockAdjustmentFromModal()">Apply Adjustment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DYNAMIC REPORT EXPORT DATE PROMPT MODAL -->
+    <div id="reportExportDateModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="exportModalHeaderTitle"><i class="fa-solid fa-calendar-check"></i> Report Duration Selection</h3>
+                <button class="modal-close" onclick="closeModal('reportExportDateModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--brand-gold); margin-bottom: 14px; font-weight: 600;">
+                    System Query: Kitne dino ki report export karni hai? Choose report period:
+                </p>
+                <div class="form-group">
+                    <label>Select Report Period:</label>
+                    <select id="modalExportPresetSelect" onchange="handleModalExportPresetChange()">
+                        <option value="all">All Time (Poori Record / Full Ledger)</option>
+                        <option value="today">Aaj (Today)</option>
+                        <option value="yesterday">Kal (Yesterday)</option>
+                        <option value="7days">Pichlay 7 Din (Last 7 Days)</option>
+                        <option value="10days" selected>Pichlay 10 Din (Last 10 Days)</option>
+                        <option value="thisMonth">Is Mahiney (This Month)</option>
+                        <option value="custom">Custom Date Range...</option>
+                    </select>
+                </div>
+                <div id="modalExportCustomDateGroup" class="form-row-grid hidden">
+                    <div class="form-group">
+                        <label>Start Date:</label>
+                        <input type="date" id="modalExportStartDate">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date:</label>
+                        <input type="date" id="modalExportEndDate">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('reportExportDateModal')">Cancel</button>
+                <button class="btn btn-success" onclick="confirmReportExportFromModal()"><i class="fa-solid fa-file-excel"></i> Download Excel Report</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD / EDIT ROUTE & 7 SUB-ROUTES MODAL -->
+    <div id="routeModal" class="modal-backdrop">
+        <div class="modal-box" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="routeModalTitle">Add / Edit Route</h3>
+                <button class="modal-close" onclick="closeModal('routeModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="routeEditId">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label><i class="fa-solid fa-map-location-dot"></i> Route Name:</label>
+                    <input type="text" id="routeNameInput" placeholder="e.g. SARGODHA ROAD">
+                </div>
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-calendar-day"></i> Beat Day:</label>
+                        <select id="routeDayInput">
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                            <option value="Saturday">Saturday</option>
+                            <option value="Sunday">Sunday</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-user"></i> Assigned Salesman:</label>
+                        <input type="text" id="routeSalesmanInput" placeholder="e.g. Arif Sanwal">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('routeModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveRouteFromModal()"><i class="fa-solid fa-floppy-disk"></i> Save Route</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD / EDIT SALESMAN MODAL -->
+    <div id="salesmanModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="salesmanModalTitle"><i class="fa-solid fa-user-gear"></i> Add / Edit Salesman</h3>
+                <button class="modal-close" onclick="closeModal('salesmanModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="salesmanEditId">
+                <div class="form-group">
+                    <label><i class="fa-solid fa-user"></i> Salesman Full Name:</label>
+                    <input type="text" id="salesmanNameInput" placeholder="e.g. Arif Sanwal or chaudhary">
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-id-card"></i> Login Username (for Mobile App):</label>
+                    <input type="text" id="salesmanUsernameInput" placeholder="e.g. arif_sales or chaudhary_sales">
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-phone"></i> Mobile / Phone Number:</label>
+                    <input type="text" id="salesmanPhoneInput" placeholder="e.g. 03446035632">
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-key"></i> Mobile App Security PIN Code:</label>
+                    <input type="text" id="salesmanPinInput" placeholder="e.g. 1234" value="1234">
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-route"></i> Assigned Route / Territory:</label>
+                    <select id="salesmanRouteSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-toggle-on"></i> Account Status:</label>
+                    <select id="salesmanStatusSelect">
+                        <option value="true" selected>🟢 Active (Enabled for Mobile App Sync)</option>
+                        <option value="false">🔴 Inactive (Disabled)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('salesmanModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveSalesmanFromModal()"><i class="fa-solid fa-floppy-disk"></i> Save Salesman</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MANAGE SALESMEN LIST MODAL -->
+    <div id="manageSalesmenModal" class="modal-backdrop">
+        <div class="modal-box modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-users-gear"></i> Manage Salesmen & Assigned Routes</h3>
+                <button class="modal-close" onclick="closeModal('manageSalesmenModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="flex-between" style="margin-bottom: 12px;">
+                    <p style="font-size: 13px; color: var(--text-secondary);">
+                        Control active salesmen, update phone numbers, security PINs, and assigned territory routes:
+                    </p>
+                    <button class="btn btn-primary btn-sm" onclick="openAddSalesmanModal()"><i class="fa-solid fa-user-plus"></i> Add New Salesman</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Salesman Name</th>
+                                <th>Phone Number</th>
+                                <th>App PIN</th>
+                                <th>Assigned Route</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manageSalesmenTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('manageSalesmenModal')">Close Window</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BILL VIEW & CONFIRMATION MODAL -->
+    <div id="billViewModal" class="modal-backdrop">
+        <div class="modal-box modal-lg">
+            <div class="modal-header">
+                <h3 id="billModalTitle">Invoice Details</h3>
+                <button class="modal-close" onclick="closeModal('billViewModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="billModalContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-success" id="btnConfirmDeliveryModal" onclick="confirmCurrentModalDelivery()"><i class="fa-solid fa-circle-check"></i> Confirm Order Delivered</button>
+                <button class="btn btn-outline" onclick="printModalBill()"><i class="fa-solid fa-print"></i> Print A4 Bill</button>
+                <button class="btn btn-danger" id="btnVoidBill" onclick="voidCurrentModalBill()"><i class="fa-solid fa-ban"></i> Return / Cancel Order</button>
+                <button class="btn btn-secondary" onclick="closeModal('billViewModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="skuModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="skuModalTitle">Add / Edit SKU Item</h3>
+                <button class="modal-close" onclick="closeModal('skuModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="skuEditCode">
+                <div class="form-group">
+                    <label style="color: var(--brand-gold); font-weight: 700;"><i class="fa-solid fa-building"></i> Company / Brand Ownership:</label>
+                    <select id="skuCompanyIdInput" style="font-weight: 700;" onchange="onSkuCompanyChange(this.value)"></select>
+                </div>
+                <div class="form-group">
+                    <label>Product Code:</label>
+                    <input type="text" id="skuCodeInput" placeholder="e.g. 320035996 or FAST-001">
+                </div>
+                <div class="form-group">
+                    <label>Category Type:</label>
+                    <select id="skuCategoryTypeInput">
+                        <option value="PC">PC (Potato Chips)</option>
+                        <option value="NPC">NPC (Non-Potato Chips)</option>
+                        <option value="Nimko">Nimko (Fast / Hash)</option>
+                        <option value="Peanut">Peanut (Fast / Hash)</option>
+                        <option value="Salty">Salty (Fast / Hash)</option>
+                        <option value="Hash">Hash Snacks</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Brand:</label>
+                    <input type="text" id="skuBrandInput" placeholder="e.g. Lays, Kurkure, Cheetos">
+                </div>
+                <div class="form-group">
+                    <label>Product Description:</label>
+                    <input type="text" id="skuDescInput" placeholder="e.g. LAYS F CHEESE 72G 72X12">
+                </div>
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label>Price Point (Rs.):</label>
+                        <input type="number" id="skuPricePointInput" placeholder="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Weight (Grams):</label>
+                        <input type="number" id="skuWeightInput" placeholder="72">
+                    </div>
+                </div>
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label>Pack per Carton:</label>
+                        <input type="number" id="skuPackInput" placeholder="12">
+                    </div>
+                    <div class="form-group">
+                        <label>Trade Price (Carton Rate Rs.):</label>
+                        <input type="number" id="skuTpRateInput" placeholder="903.80">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('skuModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveSkuFromModal()">Save SKU</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECEIVE STOCK INWARD MODAL -->
+    <div id="receiveStockModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-truck-arrow-right"></i> Receive Stock Inward (Supplier Shipment)</h3>
+                <button class="modal-close" onclick="closeModal('receiveStockModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Select Product SKU:</label>
+                    <select id="receiveSkuSelect"></select>
+                </div>
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label>Cartons Received (+Ctns):</label>
+                        <input type="number" id="receiveCartonsInput" min="0" value="10" placeholder="e.g. 50">
+                    </div>
+                    <div class="form-group">
+                        <label>Loose Packets Received (+Pkts):</label>
+                        <input type="number" id="receivePacketsInput" min="0" value="0" placeholder="e.g. 0">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('receiveStockModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveStockInwardFromModal()"><i class="fa-solid fa-plus-circle"></i> Save Inward Stock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIRECT QUICK EDIT / PHYSICAL AUDIT SKU STOCK MODAL -->
+    <div id="quickEditStockModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-pen-to-square"></i> Set Exact Stock Count (Physical Audit)</h3>
+                <button class="modal-close" onclick="closeModal('quickEditStockModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Select Product / SKU:</label>
+                    <select id="quickEditSkuSelect" onchange="handleQuickEditSkuChange(this.value)"></select>
+                </div>
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label>Total Available Cartons:</label>
+                        <input type="number" id="quickEditCartonsInput" min="0" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Total Loose Packets:</label>
+                        <input type="number" id="quickEditPacketsInput" min="0" value="0">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('quickEditStockModal')">Cancel</button>
+                <button class="btn btn-success" onclick="saveQuickEditStockFromModal()"><i class="fa-solid fa-floppy-disk"></i> Save Exact Stock Count</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFESSIONAL A4 INVOICE PRINT TEMPLATE WITH GT CHAUDHARY TRADER LOGO (PURE BLACK) -->
+    <div id="printArea" class="print-only a4-invoice-container">
+        <div class="a4-invoice-header">
+            <div class="a4-header-row">
+                <div class="a4-brand-logo-group">
+                    <img src="lays_official_logo.png" id="printInvoiceLogoImg" alt="Chaudhary Trader Logo" class="a4-print-logo" style="max-height: 60px; width: auto; object-fit: contain;">
+                    <div class="a4-company-brand">
+                        <h2>CHAUDHARY TRADER</h2>
+                        <p class="company-sub" id="printCompanySub">PEPSICO / LAYS AUTHORIZED MAIN DISTRIBUTOR</p>
+                        <p><i class="fa-solid fa-location-dot"></i> Sargodha Road Adda Chund Bharwana Nizd Pso Pump bilmukabill Allah nawaz Hospital jhang</p>
+                        <p><i class="fa-solid fa-phone"></i> <strong>Phone / WhatsApp: 03446035632</strong></p>
+                    </div>
+                </div>
+                <div class="a4-invoice-meta-box">
+                    <h3 id="printInvoiceId">INVOICE: CHT000001</h3>
+                    <p id="printOrderDate"><strong>Order Date:</strong> 21/06/2026</p>
+                    <p id="printDeliveryDate"><strong>Delivery Date:</strong> 22/06/2026</p>
+                </div>
+            </div>
+            
+            <div class="a4-customer-box">
+                <div class="cust-col">
+                    <p style="margin: 2px 0;"><strong>Customer Shop Name:</strong> <strong id="printShopName" style="font-size: 13px; font-weight: 800; color: #000; text-transform: uppercase;">NAEEM KIRYANA STORE</strong></p>
+                    <p style="margin: 2px 0;"><strong>Customer Name:</strong> <span id="printCustomerName">-</span></p>
+                    <p style="margin: 2px 0;"><strong>Phone / Contact:</strong> <span id="printCustomerPhone">-</span></p>
+                    <p style="margin: 2px 0;"><strong>Shop Address:</strong> <span id="printCustomerAddress">-</span></p>
+                </div>
+                <div class="cust-col text-right">
+                    <p style="margin: 2px 0;"><strong>DSR Name:</strong> <strong id="printSalesmanName" style="color: #000;">-</strong></p>
+                    <p style="margin: 2px 0;"><strong>DSR Mobile:</strong> <strong id="printSalesmanPhone" style="color: #000;">-</strong></p>
+                    <p style="margin: 2px 0;"><strong>Payment Type:</strong> <span id="printPaymentType">Cash Sale</span></p>
+                </div>
+            </div>
+        </div>
+
+        <table class="a4-invoice-table">
+            <thead>
+                <tr>
+                    <th style="width: 4%; text-align: center;">Sr.</th>
+                    <th style="width: 34%;">SKU Description / Product Name</th>
+                    <th style="width: 10%; text-align: center;">Unit Price</th>
+                    <th style="width: 10%; text-align: center;">Qty (Ctn)</th>
+                    <th style="width: 8%; text-align: center;">Free Pack</th>
+                    <th style="width: 11%; text-align: right;">Basic Amount</th>
+                    <th style="width: 11%; text-align: right;">Disc Amount</th>
+                    <th style="width: 12%; text-align: right;">Net Amount</th>
+                </tr>
+            </thead>
+            <tbody id="printReceiptItems"></tbody>
+        </table>
+
+        <div class="a4-summary-section">
+            <div class="a4-totals-grid">
+                <div class="totals-col-left">
+                    <p>Total Cartons: <strong id="printTotalCartons">0</strong></p>
+                    <p>Total Weight (KG): <strong id="printTotalWeight">0.00 KG</strong></p>
+                </div>
+                <div class="totals-col-right">
+                    <div class="t-row"><span>Total Gross Value:</span> <strong id="printTotalBasic">Rs. 0.00</strong></div>
+                    <div class="t-row highlight-disc">
+                        <span>Bill Discount (<span id="printDiscPct">4</span>%):</span> 
+                        <strong id="printTotalDisc">-Rs. 0.00</strong>
+                    </div>
+                    <div class="t-row" id="printTotalAdwhRow" style="display: none;"><span>Total ADWH Tax:</span> <strong id="printTotalAdwh">+Rs. 0.00</strong></div>
+                    <div class="t-row grand-total">
+                        <span>NET INVOICE VALUE:</span> 
+                        <strong id="printNetPayable">Rs. 0</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signatures & Stamp Block -->
+        <div class="a4-signatures-block">
+            <div class="sig-box">
+                <div class="sig-line">Prepared By</div>
+            </div>
+            <div class="sig-box">
+                <div class="sig-line">Checked By (Store Incharge)</div>
+            </div>
+            <div class="sig-box">
+                <div class="sig-line">Customer Receiver Stamp & Sign</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MANUAL ADD ORDER MODAL -->
+    <div id="addOrderModal" class="modal-backdrop">
+        <div class="modal-box modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-cart-plus"></i> Create Manual Customer Order</h3>
+                <button class="modal-close" onclick="closeModal('addOrderModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Company / Brand Selector Bar -->
+                <div class="company-selector-bar" style="margin-bottom: 14px; background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+                    <div style="font-weight: 700; font-size: 13px; color: var(--brand-gold);"><i class="fa-solid fa-building"></i> Select Order Company / Brand:</div>
+                    <div class="radio-pill-group" id="manualOrderCompanyPills"></div>
+                </div>
+
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label>Customer / Shop Name:</label>
+                        <select id="orderShopSelect" onchange="onOrderShopSelectChange()"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Route Territory:</label>
+                        <input type="text" id="orderRouteText" readonly placeholder="Auto-selected route">
+                    </div>
+                </div>
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label>Order Date:</label>
+                        <input type="date" id="manualOrderDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Planned Delivery Date:</label>
+                        <input type="date" id="manualDeliveryDate">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Order Notes / Special Instructions:</label>
+                    <input type="text" id="manualOrderNotes" placeholder="e.g. Urgent morning delivery">
+                </div>
+
+                <h4 style="color: var(--brand-gold); font-size: 14px; margin: 16px 0 8px 0;"><i class="fa-solid fa-boxes-packing"></i> Add Order SKU Quantities:</h4>
+                <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>SKU Code</th>
+                                <th>Description</th>
+                                <th>Avail Stock</th>
+                                <th>Trade Price</th>
+                                <th>Order Ctns</th>
+                                <th>Order Pkts</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manualOrderSkusTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addOrderModal')"><i class="fa-solid fa-ban"></i> Cancel Cart</button>
+                <button class="btn btn-primary" onclick="saveManualOrder()"><i class="fa-solid fa-floppy-disk"></i> Save Order as Draft</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ORDER DETAILS VIEW MODAL -->
+    <div id="orderDetailsModal" class="modal-backdrop">
+        <div class="modal-box modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-receipt"></i> Order Details Breakdown</h3>
+                <button class="modal-close" onclick="closeModal('orderDetailsModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="flex-between" style="background: rgba(255, 204, 0, 0.08); padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(255, 204, 0, 0.2); margin-bottom: 14px;">
+                    <div>
+                        <strong id="orderDetailNo" style="font-size: 16px; color: var(--brand-gold);">ORD000001</strong>
+                        <span id="orderDetailStatusBadge" style="margin-left: 10px;"></span>
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-secondary);">
+                        <span><i class="fa-solid fa-calendar"></i> Date: <strong id="orderDetailDate">-</strong></span>
+                    </div>
+                </div>
+
+                <div class="form-row-grid" style="margin-bottom: 14px;">
+                    <div><strong>Customer / Shop:</strong> <span id="orderDetailShopName">-</span></div>
+                    <div><strong>Route:</strong> <span id="orderDetailRouteName">-</span></div>
+                    <div><strong>Salesman:</strong> <span id="orderDetailSalesman">-</span></div>
+                    <div><strong>Planned Delivery:</strong> <span id="orderDetailDeliveryDate">-</span></div>
+                </div>
+
+                <div class="table-responsive" style="max-height: 250px; margin-bottom: 14px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>SKU Description</th>
+                                <th>Trade Price</th>
+                                <th>Cartons</th>
+                                <th>Loose Units</th>
+                                <th>Basic Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orderDetailItemsTbody"></tbody>
+                    </table>
+                </div>
+
+                <div class="flex-between" style="background: rgba(255, 255, 255, 0.03); padding: 12px; border-radius: 8px; font-size: 14px;">
+                    <div>
+                        <span>Total Cartons: <strong id="orderDetailTotalCtns">0</strong></span> | 
+                        <span>Total Loose Units: <strong id="orderDetailTotalPkts">0</strong></span>
+                    </div>
+                    <div>
+                        <span style="font-size: 16px; font-weight: 800; color: var(--accent-green);">Net Order Value: <span id="orderDetailNetAmount">Rs. 0</span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer flex-between">
+                <div id="orderDetailInvoiceLink"></div>
+                <button class="btn btn-secondary" onclick="closeModal('orderDetailsModal')">Close Window</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONFIRM DELIVERY & PARTIAL RETURN ADJUSTMENT MODAL -->
+    <div id="confirmDeliveryAdjustmentModal" class="modal-backdrop">
+        <div class="modal-box modal-lg" style="border: 2px solid var(--accent-green);">
+            <div class="modal-header" style="background: rgba(16, 185, 129, 0.15);">
+                <h3 style="color: var(--accent-green);"><i class="fa-solid fa-truck-ramp-box"></i> Confirm Invoice Delivery & Adjust Undelivered Stock</h3>
+                <button class="modal-close" onclick="closeModal('confirmDeliveryAdjustmentModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+                    Verify delivered items for Invoice <strong id="adjBillNoText" style="color: var(--brand-gold);">CHT000001</strong> (<span id="adjShopNameText">-</span>). Any undelivered or returned cartons will be <strong>AUTOMATICALLY RESTORED BACK TO WAREHOUSE INVENTORY</strong>:
+                </p>
+                <div class="table-responsive" style="margin-bottom: 14px; max-height: 250px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr style="background: rgba(16, 185, 129, 0.1);">
+                                <th>SKU Description</th>
+                                <th>Trade Price</th>
+                                <th>Picked Qty (Ctns)</th>
+                                <th>Delivered Qty (Ctns)</th>
+                                <th>Returned to Stock (Ctns)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="confirmDeliveryItemsTbody"></tbody>
+                    </table>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label><i class="fa-solid fa-note-sticky"></i> Delivery Confirmation Notes / Reason (Optional):</label>
+                    <input type="text" id="confirmDeliveryNotes" placeholder="e.g. 1 Carton damaged/returned by shopkeeper, 18 Cartons accepted.">
+                </div>
+            </div>
+            <div class="modal-footer flex-between">
+                <button class="btn btn-secondary" onclick="closeModal('confirmDeliveryAdjustmentModal')">Cancel</button>
+                <button class="btn btn-success btn-lg" onclick="saveDeliveryConfirmationWithAdjustments()" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; border: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">
+                    <i class="fa-solid fa-circle-check"></i> 🟢 Confirm Delivery & Record Sales
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROCESS ORDERS DELIVERY DATE MODAL -->
+    <div id="processOrdersDateModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header" style="background: rgba(245, 158, 11, 0.15);">
+                <h3 style="color: var(--brand-gold);"><i class="fa-solid fa-calendar-check"></i> Select Delivery Date for Processing</h3>
+                <button class="modal-close" onclick="closeModal('processOrdersDateModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="processOrdersSummaryBadge" class="badge badge-accent" style="margin-bottom: 12px; font-size: 13px; padding: 8px 12px; display: block; text-align: center;">
+                    <i class="fa-solid fa-cart-flatbed"></i> Select Target Delivery Date below
+                </div>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5;">
+                    Selected order(s) will be converted into <strong>Invoices</strong> and scheduled for warehouse <strong>Pick List dispatch</strong>. Stock will be validated and deducted from Warehouse Inventory.
+                </p>
+                <div class="form-group" style="margin-bottom: 8px;">
+                    <label style="font-weight: 700; font-size: 13px;"><i class="fa-solid fa-calendar-day"></i> Target Delivery Date:</label>
+                    <input type="date" id="processTargetDeliveryDate" style="font-size: 14px; padding: 10px; font-weight: 700;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('processOrdersDateModal')">Cancel</button>
+                <button class="btn btn-accent" onclick="confirmProcessOrdersWithDate()"><i class="fa-solid fa-bolt"></i> Validate Stock & Process Orders</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- STOCK VALIDATION RESOLUTION MODAL -->
+    <div id="stockValidationModal" class="modal-backdrop">
+        <div class="modal-box modal-lg" style="border: 2px solid #ef4444;">
+            <div class="modal-header" style="background: rgba(239, 68, 68, 0.15);">
+                <h3 style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Insufficient Warehouse Stock Alert</h3>
+                <button class="modal-close" onclick="closeModal('stockValidationModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+                    The following requested SKU items exceed currently available warehouse stock. You can adjust quantities directly in the table below and click <strong>"Apply Adjustments & Process Orders"</strong> immediately:
+                </p>
+                <div class="table-responsive" style="margin-bottom: 16px; max-height: 240px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr style="background: rgba(239, 68, 68, 0.1);">
+                                <th>SKU Code</th>
+                                <th>Product Description</th>
+                                <th>Requested Qty</th>
+                                <th>Available Stock</th>
+                                <th>Shortage</th>
+                                <th>Adjust Process Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockShortageTbody"></tbody>
+                    </table>
+                </div>
+
+                <button class="btn btn-success btn-lg btn-block" onclick="applyInModalShortageAdjustmentAndProcess()" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; font-size: 15px; padding: 14px; margin-bottom: 16px; border: none; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); width: 100%;">
+                    <i class="fa-solid fa-bolt" style="margin-right: 6px;"></i> ⚡ Apply Adjustments & Process Orders Immediately
+                </button>
+
+                <h4 style="color: var(--brand-gold); margin-bottom: 10px;">Other Resolution Options:</h4>
+                <div class="option-cards-grid">
+                    <div class="option-card" onclick="resolveStockValidation(1)">
+                        <div class="opt-icon" style="color: var(--accent-green);"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                        <div class="opt-title">Option 1: Auto-Remove Out-of-Stock SKUs</div>
+                        <div class="opt-desc">Automatically trim or remove unavailable SKUs to match existing warehouse stock and proceed with processing immediately.</div>
+                    </div>
+                    <div class="option-card" onclick="applyInModalShortageAdjustmentAndProcess()">
+                        <div class="opt-icon" style="color: var(--brand-gold);"><i class="fa-solid fa-pen-to-square"></i></div>
+                        <div class="opt-title">Option 2: Process Adjusted Quantities</div>
+                        <div class="opt-desc">Apply edited carton/packet quantities from the table above and finalize order processing.</div>
+                    </div>
+                    <div class="option-card" onclick="resolveStockValidation(3)">
+                        <div class="opt-icon" style="color: #ef4444;"><i class="fa-solid fa-circle-xmark"></i></div>
+                        <div class="opt-title">Option 3: Cancel Processing</div>
+                        <div class="opt-desc">Cancel order processing. Orders will remain in Draft status until warehouse inward stock is received.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('stockValidationModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW PICK LIST CREATION MODAL -->
+    <div id="newPickListModal" class="modal-backdrop">
+        <div class="modal-box modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-square-plus"></i> Generate New Pick List</h3>
+                <button class="modal-close" onclick="closeModal('newPickListModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label>Select Planned Delivery Date:</label>
+                        <input type="date" id="pickListPlannedDate" onchange="onPickListDateChange()">
+                    </div>
+                    <div class="form-group">
+                        <label>Final Delivery Date:</label>
+                        <input type="date" id="pickListFinalDate">
+                    </div>
+                </div>
+
+                <div class="flex-between" style="margin: 12px 0 8px 0;">
+                    <h4 style="color: var(--brand-gold); font-size: 14px;"><i class="fa-solid fa-truck-fast"></i> Processed Orders Scheduled for Delivery:</h4>
+                    <span class="badge badge-info" id="pickListOrdersCountBadge">0 Orders Found</span>
+                </div>
+
+                <div class="table-responsive" style="max-height: 260px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px; text-align: center;">
+                                    <input type="checkbox" id="selectAllPickListOrders" onchange="toggleSelectAllPickListOrders(this.checked)">
+                                </th>
+                                <th>Order No.</th>
+                                <th>Shop Name</th>
+                                <th>Route</th>
+                                <th>Items</th>
+                                <th>Total Cartons</th>
+                                <th>Total Amount (Rs.)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pickListOrdersTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('newPickListModal')">Cancel</button>
+                <button class="btn btn-success" onclick="confirmSavePickList()"><i class="fa-solid fa-check-double"></i> Confirm & Save Pick List</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRINTABLE 2-PAGE PICK LIST TEMPLATE -->
+    <div id="printPickListArea" class="print-only a4-invoice-container">
+        <!-- PAGE 1: WAREHOUSE PICKING SHEET -->
+        <div class="pick-sheet-page">
+            <div class="a4-header-row">
+                <div class="a4-brand-logo-group">
+                    <img src="lays_official_logo.png" alt="Chaudhary Trader Logo" class="a4-print-logo" style="max-height: 55px; width: auto; object-fit: contain;">
+                    <div class="a4-company-brand">
+                        <h2>CHAUDHARY TRADER</h2>
+                        <p class="company-sub">WAREHOUSE PICKING SHEET (PAGE 1)</p>
+                        <p><i class="fa-solid fa-location-dot"></i> Sargodha Road Adda Chund Bharwana Nizd Pso Pump bilmukabill Allah nawaz Hospital jhang</p>
+                    </div>
+                </div>
+                <div class="a4-invoice-meta-box">
+                    <h3 id="printPickListId">PICK LIST: PL-2026-001</h3>
+                    <p id="printPickDate"><strong>Delivery Date:</strong> 22/06/2026</p>
+                    <p id="printPickOrdersCount"><strong>Orders Included:</strong> 5</p>
+                </div>
+            </div>
+
+            <h4 style="margin: 12px 0 6px 0; border-bottom: 1px solid #000; padding-bottom: 4px;">PRODUCT ITEM CONSOLIDATED PICKING LIST</h4>
+            <table class="a4-invoice-table">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">Sr.</th>
+                        <th style="width: 15%;">SKU Code</th>
+                        <th style="width: 40%;">Product Description</th>
+                        <th style="width: 15%;">Required Cartons</th>
+                        <th style="width: 15%;">Loose Units</th>
+                        <th style="width: 10%;">Total Weight</th>
+                    </tr>
+                </thead>
+                <tbody id="printPickItemsTbody"></tbody>
+            </table>
+
+            <div class="a4-summary-section" style="margin-top: 20px;">
+                <p><strong>Total Cartons to Pick:</strong> <span id="printPickTotalCtns">0</span> | <strong>Total Gross Weight:</strong> <span id="printPickTotalKG">0.00 KG</span></p>
+            </div>
+
+            <div class="a4-signatures-block" style="margin-top: 50px;">
+                <div class="sig-box"><div class="sig-line">Warehouse Picker Signature</div></div>
+                <div class="sig-box"><div class="sig-line">Store Manager Verification</div></div>
+            </div>
+        </div>
+
+        <div style="page-break-before: always;"></div>
+
+        <!-- PAGE 2: DELIVERY SHEET -->
+        <div class="pick-sheet-page">
+            <div class="a4-header-row">
+                <div class="a4-brand-logo-group">
+                    <img src="lays_official_logo.png" alt="Chaudhary Trader Logo" class="a4-print-logo" style="max-height: 55px; width: auto; object-fit: contain;">
+                    <div class="a4-company-brand">
+                        <h2>CHAUDHARY TRADER</h2>
+                        <p class="company-sub">DELIVERY DRIVER DISPATCH & COLLECTION SHEET (PAGE 2)</p>
+                        <p><i class="fa-solid fa-location-dot"></i> Sargodha Road Adda Chund Bharwana Nizd Pso Pump bilmukabill Allah nawaz Hospital jhang</p>
+                    </div>
+                </div>
+                <div class="a4-invoice-meta-box">
+                    <h3 id="printPickListIdPage2">PICK LIST: PL-2026-001</h3>
+                    <p id="printPickDatePage2"><strong>Delivery Date:</strong> 22/06/2026</p>
+                </div>
+            </div>
+
+            <h4 style="margin: 12px 0 6px 0; border-bottom: 1px solid #000; padding-bottom: 4px;">CUSTOMER DISPATCH & CASH COLLECTION SUMMARY</h4>
+            <table class="a4-invoice-table">
+                <thead>
+                    <tr>
+                        <th style="width: 4%;">Sr.</th>
+                        <th style="width: 14%;">Invoice No.</th>
+                        <th style="width: 16%;">Company / Brand</th>
+                        <th style="width: 26%;">Shop Name / Outlet</th>
+                        <th style="width: 14%;">Route Territory</th>
+                        <th style="width: 10%;">Payment Type</th>
+                        <th style="width: 8%;">Bill Value</th>
+                        <th style="width: 8%;">Cash Collected</th>
+                    </tr>
+                </thead>
+                <tbody id="printDeliverySheetTbody"></tbody>
+            </table>
+
+            <div class="a4-summary-section" style="margin-top: 20px;">
+                <div class="a4-totals-grid">
+                    <div class="totals-col-left">
+                        <p>Total Deliveries Count: <strong id="printDeliveryOrdersCount">0</strong></p>
+                    </div>
+                    <div class="totals-col-right">
+                        <div class="t-row grand-total"><span>GRAND TOTAL AMOUNT:</span> <strong id="printDeliveryGrandTotal">Rs. 0</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="a4-signatures-block" style="margin-top: 50px;">
+                <div class="sig-box"><div class="sig-line">Delivery Driver Sign</div></div>
+                <div class="sig-box"><div class="sig-line">Cashier Received Sign</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE / EDIT FOC SCHEME MODAL -->
+    <div id="focSchemeModal" class="modal-backdrop">
+        <div class="modal-box modal-lg card-glass">
+            <div class="modal-header flex-between">
+                <h3 id="focSchemeModalTitle"><i class="fa-solid fa-gift"></i> Create New FOC Scheme</h3>
+                <button class="modal-close-btn" onclick="closeModal('focSchemeModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 75vh; overflow-y: auto; padding-right: 8px;">
+                <form id="focSchemeForm" onsubmit="event.preventDefault(); saveFocSchemeFromModal();">
+                    <input type="hidden" id="focSchemeId">
+
+                    <!-- STEP 1: BASIC INFO -->
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 14px;">
+                        <h4 style="font-size: 13px; color: var(--brand-gold); margin-bottom: 10px;"><i class="fa-solid fa-info-circle"></i> STEP 1 — BASIC INFORMATION</h4>
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label>Scheme Name *</label>
+                                <input type="text" id="focSchemeName" class="form-control" placeholder="e.g. August Cheetos FOC Scheme" required oninput="updateFocPreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select id="focSchemeStatus" class="form-control">
+                                    <option value="Active" selected>Active</option>
+                                    <option value="Scheduled">Scheduled</option>
+                                    <option value="Disabled">Disabled</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Start Date *</label>
+                                <input type="date" id="focSchemeStartDate" class="form-control" required onchange="updateFocPreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>End Date *</label>
+                                <input type="date" id="focSchemeEndDate" class="form-control" required onchange="updateFocPreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Scheme Priority (1 = Highest)</label>
+                                <input type="number" id="focSchemePriority" class="form-control" value="1" min="1" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Repeatable Scheme Option</label>
+                                <select id="focSchemeRepeatable" class="form-control" onchange="updateFocPreview()">
+                                    <option value="true" selected>ON — Multiple Slabs Proportional (e.g. 30 Cartons = 3 FOC)</option>
+                                    <option value="false">OFF — Highest Qualified Slab Only (e.g. 25 Cartons = Slab 20 FOC)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2 & 3: QUALIFYING & REWARD PRODUCTS -->
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 14px;">
+                        <h4 style="font-size: 13px; color: var(--brand-gold); margin-bottom: 10px;"><i class="fa-solid fa-boxes-packing"></i> STEP 2 & 3 — BUY & FOC PRODUCTS</h4>
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <div class="flex-between" style="margin-bottom: 4px;">
+                                    <label style="margin: 0;">Qualifying Buy Products (Select 1 or Multiple) *</label>
+                                    <small><a href="javascript:void(0)" onclick="selectAllFocBuySkus(true)" style="color: var(--brand-gold);">Select All</a> | <a href="javascript:void(0)" onclick="selectAllFocBuySkus(false)" style="color: var(--text-muted);">Clear</a></small>
+                                </div>
+                                <select id="focBuySkuCodes" class="form-control" multiple style="height: 100px;" required onchange="updateFocPreview()"></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Free FOC Reward Product *</label>
+                                <select id="focRewardSkuCode" class="form-control" required onchange="updateFocPreview()"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: SLABS BUILDER -->
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 14px;">
+                        <div class="flex-between" style="margin-bottom: 10px;">
+                            <h4 style="font-size: 13px; color: var(--brand-gold); margin: 0;"><i class="fa-solid fa-layer-group"></i> STEP 4 — FOC SLABS & QUANTITIES</h4>
+                            <button type="button" class="btn btn-sm btn-outline" onclick="addFocSlabRow()"><i class="fa-solid fa-plus"></i> Add Slab</button>
+                        </div>
+                        
+                        <div id="focSlabsContainer">
+                            <!-- Slab rows dynamically inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- STEP 5: ELIGIBILITY & PREVIEW -->
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 14px;">
+                        <h4 style="font-size: 13px; color: var(--brand-gold); margin-bottom: 10px;"><i class="fa-solid fa-users-gear"></i> STEP 5 — TARGET ELIGIBILITY</h4>
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label>Eligibility Type</label>
+                                <select id="focEligibilityType" class="form-control" onchange="toggleFocEligibilityOptions()">
+                                    <option value="all" selected>All Customers & Routes (Universal)</option>
+                                    <option value="route">Selected Routes Only</option>
+                                    <option value="salesman">Selected Salesmen Only</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Shop Discount Qualification</label>
+                                <select id="focShopDiscountFilter" class="form-control" onchange="updateFocPreview()">
+                                    <option value="all" selected>All Shops (Discounted & Undiscounted)</option>
+                                    <option value="discounted">Discounted Shops Only (> 0% Trade Discount)</option>
+                                    <option value="undiscounted">Undiscounted Shops Only (0% Trade Discount)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="focEligibilitySelectGroup" style="display: none; grid-column: span 2;">
+                                <label id="focEligibilitySelectLabel">Select Route / Salesman</label>
+                                <select id="focEligibilitySelect" class="form-control" multiple style="height: 70px;"></select>
+                            </div>
+                        </div>
+
+                        <!-- LIVE PREVIEW BOX -->
+                        <div class="foc-preview-box" id="focLivePreviewBox">
+                            🎁 Live Preview: Buy 10 Cartons -> Get 1 Carton FOC
+                        </div>
+                    </div>
+
+                    <div class="modal-footer flex-between" style="padding-top: 10px;">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('focSchemeModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save FOC Scheme</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="xlsx.full.min.js"></script>
+    <script src="sync_engine.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
