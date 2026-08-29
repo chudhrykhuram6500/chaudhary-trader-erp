@@ -6447,10 +6447,11 @@ function handleHttpRequest(req, res) {
                     // Never allow a stale browser snapshot to roll a processed/confirmed order back to Draft.
                     const orderRank = (status) => {
                         const s = String(status || "Draft").toLowerCase();
-                        if (s === "cancelled" || s === "canceled") return 0;
-                        if (["draft", "unprocessed", "pending", "submitted"].includes(s)) return 1;
-                        if (["processed", "billed"].includes(s)) return 2;
+                        // Cancelled/Voided is terminal and must never be resurrected by a stale Draft.
+                        if (["cancelled", "canceled", "voided", "void"].includes(s)) return 4;
                         if (s === "confirmed") return 3;
+                        if (["processed", "billed"].includes(s)) return 2;
+                        if (["draft", "unprocessed", "pending", "submitted"].includes(s)) return 1;
                         return 1;
                     };
                     const incomingOrders = Array.isArray(payload.orders) ? payload.orders : [];

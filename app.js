@@ -15465,10 +15465,11 @@ function renderDataSyncTab() {
 
 function getOrderStatusRank(status) {
     const s = String(status || "Draft").toLowerCase();
-    if (s === "cancelled" || s === "canceled") return 0;
-    if (s === "draft" || s === "unprocessed" || s === "pending" || s === "submitted") return 1;
-    if (s === "processed" || s === "billed") return 2;
+    // Terminal states must beat any stale Draft/Pending copy from another device.
+    if (s === "cancelled" || s === "canceled" || s === "voided") return 4;
     if (s === "confirmed") return 3;
+    if (s === "processed" || s === "billed") return 2;
+    if (s === "draft" || s === "unprocessed" || s === "pending" || s === "submitted") return 1;
     return 1;
 }
 
@@ -15480,7 +15481,12 @@ function getBillStatusRank(status) {
     return 1;
 }
 
+let __syncInFlight = false;
+let __syncTimer = null;
+
 function syncWithLocalServerStore() {
+    if (__syncInFlight || (document.hidden && !window.__forceSyncNow)) return;
+    __syncInFlight = true;
     const apiUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
                    ? (window.location.origin + "/api/sync/latest-state") 
                    : "http://localhost:8888/api/sync/latest-state";
@@ -15504,10 +15510,10 @@ function syncWithLocalServerStore() {
             if (Array.isArray(data.orders)) {
                 data.orders.forEach(ord => {
                     const existingOrdIdx = (AppState.orders || []).findIndex(o => {
-                        if (ord.uuid && o.uuid && o.uuid === ord.uuid) return true;
-                        if (o.orderNo && ord.orderNo && o.orderNo === ord.orderNo) {
-                            if (o.shopId === ord.shopId && Math.abs((o.netAmount || 0) - (ord.netAmount || 0)) < 2) return true;
-                        }
+                        // orderNo is the business key for Orders. Never create a second local copy
+                        // merely because totals/shop fields differ after processing or adjustment.
+                        if (ord.uuid && o.uuid && ord.uuid === o.uuid) return true;
+                        if (ord.orderNo && o.orderNo && String(ord.orderNo) === String(o.orderNo)) return true;
                         return false;
                     });
                     const exists = existingOrdIdx !== -1;
@@ -15518,8 +15524,9 @@ function syncWithLocalServerStore() {
                         while ((AppState.orders || []).some(o => o.orderNo === finalNo)) {
                             finalNo = `${ord.orderNo}-${counter++}`;
                         }
-                        ord.orderNo = finalNo;
-
+                        // Do not silently rename a server order on a browser. If the server has
+                        // this orderNo, it must be reconciled as the same business record.
+                        // A renamed local copy would reappear as a duplicate Draft every sync cycle.
                         ord.status = ord.status || "Draft";
                         if (ord.status !== "Processed" && ord.status !== "Confirmed" && ord.status !== "Cancelled") {
                             ord.status = "Draft";
@@ -15534,12 +15541,11 @@ function syncWithLocalServerStore() {
                             // roll a Processed/Confirmed order backwards.
                             const localRank = getOrderStatusRank(existingOrder.status);
                             const serverRank = getOrderStatusRank(ord.status);
-                            if (serverRank > localRank) {
+                            // Terminal server states are authoritative; never resurrect them as Draft.
+                            if (serverRank > localRank || (serverRank >= 3 && localRank < serverRank)) {
                                 Object.assign(existingOrder, ord);
                                 updated = true;
                             } else if (localRank > serverRank) {
-                                // Keep the local advanced state and let saveStateToStorage() push it back.
-                                existingOrder.status = existingOrder.status;
                                 existingOrder.stockDeducted = existingOrder.stockDeducted || ord.stockDeducted || false;
                                 existingOrder.updatedAt = existingOrder.updatedAt || new Date().toISOString();
                                 updated = true;
@@ -15666,7 +15672,8 @@ function syncWithLocalServerStore() {
                 if (typeof renderDataSyncTab === "function") renderDataSyncTab();
             }
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => { __syncInFlight = false; });
 }
 
 function forcePushLocalStateToCloud() {
@@ -15731,9 +15738,12 @@ function checkPcServerSyncStatus() {
         });
 }
 
-// Ultra-fast non-blocking 4-second live order sync engine!
+// Lightweight live sync: avoid overlapping requests and pause polling in hidden tabs.
 syncWithLocalServerStore();
-setInterval(syncWithLocalServerStore, 4000);
+__syncTimer = setInterval(syncWithLocalServerStore, 10000);
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) syncWithLocalServerStore();
+});
 
 
 function renderSalesmenSyncCards() {
@@ -16414,6 +16424,8 @@ function batchCancelSelectedOrders() {
             }
             ord.status = "Cancelled";
             ord.deliveryStatus = "Cancelled";
+            ord.isVoid = true;
+            ord.updatedAt = new Date().toISOString();
 
             const bill = (AppState.bills || []).find(b => b.orderNo === orderNo);
             if (bill) {
@@ -16465,6 +16477,7 @@ function cancelSingleOrder(orderNo) {
         order.status = "Cancelled";
         order.deliveryStatus = "Cancelled";
         order.isVoid = true;
+        order.updatedAt = new Date().toISOString();
 
         const bill = (AppState.bills || []).find(b => b.orderNo === orderNo);
         if (bill) {
@@ -16535,6 +16548,20 @@ function clearAllSalesBillsAndPicklists() {
    DOWNLOAD PDF BILL & EXCLUSIVE AVAILABLE STOCK REPORT PDF (LAY'S & FAST)
    ========================================================================== */
 
+let __html2pdfPromise = null;
+function loadHtml2Pdf() {
+    if (window.html2pdf) return Promise.resolve(window.html2pdf);
+    if (__html2pdfPromise) return __html2pdfPromise;
+    __html2pdfPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "html2pdf.bundle.min.js";
+        script.onload = () => resolve(window.html2pdf);
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+    return __html2pdfPromise;
+}
+
 function downloadPdfBill(billNo) {
     const targetNo = billNo || activeModalBillNo;
     if (!targetNo) return alert("Select an invoice to download PDF!");
@@ -16565,7 +16592,7 @@ function downloadPdfBill(billNo) {
     document.body.appendChild(tempContainer);
 
     setTimeout(() => {
-        if (window.html2pdf) {
+        loadHtml2Pdf().then(() => {
             const opt = {
                 margin: 6,
                 filename: `Invoice_${bill.billNo}.pdf`,
@@ -16579,16 +16606,12 @@ function downloadPdfBill(billNo) {
                 console.error("PDF Export Error:", err);
                 if (document.body.contains(tempContainer)) document.body.removeChild(tempContainer);
             });
-        } else {
-            const htmlContent = `<!DOCTYPE html><html><head><title>Invoice_${bill.billNo}</title></head><body style="background:#fff;">${tempContainer.innerHTML}</body></html>`;
-            const blob = new Blob([htmlContent], { type: "text/html" });
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = `Invoice_${bill.billNo}.html`;
-            a.click();
+        }).catch(err => {
+            console.error("PDF library load error:", err);
             if (document.body.contains(tempContainer)) document.body.removeChild(tempContainer);
-        }
-    }, 150);
+            alert("PDF library could not be loaded. Please try again.");
+        });
+    }, 50);
 }
 
 function batchDownloadPdfSelectedInvoices() {

@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Chaudhary Trader App - PepsiCo FMCG Distribution System</title>
+        <title>Chaudhary Trader App - PepsiCo FMCG Distribution System</title>
     <!-- Google Fonts & FontAwesome -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,11 +11,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <!-- SheetJS XLSX Library for Native .xlsx Excel Support -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Chart.js Library for Business Intelligence & Interactive ERP Analytics -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- HTML2PDF Library for Direct Client-Side PDF Generation & Downloading -->
-    <script src="html2pdf.bundle.min.js"></script>
+    <!-- html2pdf is loaded on-demand only when a PDF is requested. -->
     <link rel="icon" type="image/x-icon" href="chaudhary_logo.ico">
     <link rel="shortcut icon" type="image/x-icon" href="chaudhary_logo.ico">
     <link rel="apple-touch-icon" href="chaudhary_logo.png">
@@ -36,7 +33,7 @@
     <div id="adobeSplashOverlay" class="adobe-splash-overlay" style="display: none !important;">
         <div class="adobe-splash-card">
             <div class="splash-logo-wrapper">
-                <img src="chaudhary_logo.png" alt="Chaudhary Traders Shield Logo" class="splash-logo-img">
+                <img src="chaudhary_logo.webp" alt="Chaudhary Traders Shield Logo" class="splash-logo-img">
                 <div class="splash-logo-glow-ring"></div>
                 <div class="splash-logo-core-particle"></div>
             </div>
@@ -2739,8 +2736,7 @@
         </div>
     </div>
 
-    <script src="xlsx.full.min.js"></script>
-    <script src="sync_engine.js"></script>
-    <script src="app.js"></script>
+    <script defer src="sync_engine.js"></script>
+    <script defer src="app.js"></script>
 </body>
 </html>
