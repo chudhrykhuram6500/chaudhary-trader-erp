@@ -15495,26 +15495,44 @@ function syncWithLocalServerStore() {
                         ord.stockDeducted = false;
                         AppState.orders.unshift(ord);
                         updated = true;
+                    } else {
+                        const existingOrder = AppState.orders[existingOrdIdx];
+                        if (existingOrder && ord && existingOrder.status !== ord.status) {
+                            existingOrder.status = ord.status;
+                            updated = true;
+                        }
                     }
                 });
             }
 
             if (Array.isArray(data.bills)) {
                 data.bills.forEach(bill => {
-                    const exists = (AppState.bills || []).some(b => b.billNo === bill.billNo || (bill.id && b.id === bill.id));
-                    if (!exists) {
+                    const existingBillIdx = (AppState.bills || []).findIndex(b => b.billNo === bill.billNo || (bill.id && b.id === bill.id));
+                    if (existingBillIdx === -1) {
                         AppState.bills.unshift(bill);
                         updated = true;
+                    } else {
+                        const existingBill = AppState.bills[existingBillIdx];
+                        if (existingBill && bill && (existingBill.deliveryStatus !== bill.deliveryStatus || existingBill.pickStatus !== bill.pickStatus || existingBill.isManuallyConfirmed !== bill.isManuallyConfirmed || existingBill.salesRecorded !== bill.salesRecorded)) {
+                            AppState.bills[existingBillIdx] = { ...existingBill, ...bill };
+                            updated = true;
+                        }
                     }
                 });
             }
 
             if (Array.isArray(data.pickLists)) {
                 data.pickLists.forEach(pl => {
-                    const exists = (AppState.pickLists || []).some(p => p.id === pl.id || (pl.pickListNo && p.pickListNo === pl.pickListNo));
-                    if (!exists) {
+                    const existingPlIdx = (AppState.pickLists || []).findIndex(p => p.id === pl.id || (pl.pickListNo && p.pickListNo === pl.pickListNo));
+                    if (existingPlIdx === -1) {
                         AppState.pickLists.unshift(pl);
                         updated = true;
+                    } else {
+                        const existingPl = AppState.pickLists[existingPlIdx];
+                        if (existingPl && pl && existingPl.status !== pl.status) {
+                            AppState.pickLists[existingPlIdx] = { ...existingPl, ...pl };
+                            updated = true;
+                        }
                     }
                 });
             }
