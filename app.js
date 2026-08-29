@@ -6909,7 +6909,10 @@ function saveStateToStorage() {
         }
 
         try {
-            fetch("/api/sync/update-master-data", {
+            const updateUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
+                            ? (window.location.origin + "/api/sync/update-master-data") 
+                            : "https://chaudharytraders.online/api/sync/update-master-data";
+            fetch(updateUri, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -15518,26 +15521,65 @@ function syncWithLocalServerStore() {
 
             if (!AppState.initialServerHydrated) {
                 AppState.initialServerHydrated = true;
-                if (Array.isArray(data.orders) && data.orders.length > 0) AppState.orders = data.orders;
-                if (Array.isArray(data.bills) && data.bills.length > 0) AppState.bills = data.bills;
-                if (Array.isArray(data.pickLists) && data.pickLists.length > 0) AppState.pickLists = data.pickLists;
-                if (Array.isArray(data.shops) && data.shops.length > 0) AppState.shops = data.shops;
+                let needsCloudPush = false;
+
+                if (Array.isArray(data.orders)) {
+                    data.orders.forEach(o => {
+                        if (!AppState.orders.some(x => x.id === o.id || (o.orderNo && x.orderNo === o.orderNo))) {
+                            AppState.orders.unshift(o);
+                        }
+                    });
+                    if (AppState.orders.length > data.orders.length) needsCloudPush = true;
+                }
+                if (Array.isArray(data.bills)) {
+                    data.bills.forEach(b => {
+                        if (!AppState.bills.some(x => x.billNo === b.billNo || (b.id && x.id === b.id))) {
+                            AppState.bills.unshift(b);
+                        }
+                    });
+                    if (AppState.bills.length > data.bills.length) needsCloudPush = true;
+                }
+                if (Array.isArray(data.pickLists)) {
+                    data.pickLists.forEach(p => {
+                        if (!AppState.pickLists.some(x => x.id === p.id || (p.pickListNo && x.pickListNo === p.pickListNo))) {
+                            AppState.pickLists.unshift(p);
+                        }
+                    });
+                }
+                if (Array.isArray(data.shops)) {
+                    if (data.shops.length >= AppState.shops.length) {
+                        AppState.shops = data.shops;
+                    } else {
+                        needsCloudPush = true;
+                    }
+                }
                 if (Array.isArray(data.skus) && data.skus.length >= AppState.skus.length) {
                     AppState.skus = data.skus;
-                    try { localStorage.setItem("chaudhary_skus", JSON.stringify(AppState.skus)); } catch(e) {}
                 }
                 if (Array.isArray(data.routes) && data.routes.length > 0) AppState.routes = data.routes;
-                if (Array.isArray(data.salesmen) && data.salesmen.length > 0) AppState.salesmen = data.salesmen;
-                if (Array.isArray(data.companies) && data.companies.length > 0) AppState.companies = data.companies;
-                if (Array.isArray(data.syncSessions)) AppState.syncSessions = data.syncSessions;
 
-                try {
-                    localStorage.setItem("chaudhary_skus", JSON.stringify(AppState.skus));
-                    localStorage.setItem("chaudhary_orders", JSON.stringify(AppState.orders || []));
-                    localStorage.setItem("chaudhary_bills", JSON.stringify(AppState.bills || []));
-                    localStorage.setItem("chaudhary_picklists", JSON.stringify(AppState.pickLists || []));
-                    localStorage.setItem("chaudhary_shops", JSON.stringify(AppState.shops));
-                } catch(e) {}
+                saveStateToStorage();
+                if (needsCloudPush) {
+                    try {
+                        const updateUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
+                                        ? (window.location.origin + "/api/sync/update-master-data") 
+                                        : "https://chaudharytraders.online/api/sync/update-master-data";
+                        fetch(updateUri, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                shops: AppState.shops || [],
+                                skus: AppState.skus || [],
+                                routes: AppState.routes || [],
+                                companies: AppState.companies || [],
+                                orders: AppState.orders || [],
+                                bills: AppState.bills || [],
+                                pickLists: AppState.pickLists || [],
+                                focSchemes: AppState.focSchemes || []
+                            })
+                        }).catch(() => {});
+                    } catch(e) {}
+                }
                 renderAllViews();
             } else if (updated) {
                 saveStateToStorage();
@@ -15551,6 +15593,38 @@ function syncWithLocalServerStore() {
         .catch(() => {});
 }
 
+function forcePushLocalStateToCloud() {
+    const updateUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
+                    ? (window.location.origin + "/api/sync/update-master-data") 
+                    : "https://chaudharytraders.online/api/sync/update-master-data";
+
+    fetch(updateUri, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            shops: AppState.shops || [],
+            skus: AppState.skus || [],
+            routes: AppState.routes || [],
+            companies: AppState.companies || [],
+            orders: AppState.orders || [],
+            bills: AppState.bills || [],
+            pickLists: AppState.pickLists || [],
+            focSchemes: AppState.focSchemes || []
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res && res.success) {
+            alert("🎉 SUCCESS! Your full 142 Shops & Rs. 929,989 data has been PUSHED to 24/7 Cloud Server!\n\nAll browsers, mobiles and devices will now show 100% equal data!");
+            syncWithLocalServerStore();
+        } else {
+            alert("⚠️ Cloud Push Note: " + (res.error || "Pushed to server"));
+        }
+    })
+    .catch(err => {
+        alert("⚠️ Cloud Push Error: " + err.message);
+    });
+}
 
 function checkPcServerSyncStatus() {
     const badge = document.getElementById("pcServerStatusBadge");

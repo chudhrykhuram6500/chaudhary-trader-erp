@@ -6294,7 +6294,7 @@ function handleHttpRequest(req, res) {
     }
 
     const parsedUrl = url.parse(req.url, true);
-    const pathname = parsedUrl.pathname;
+    const pathname = (parsedUrl.pathname || '/').replace(/\/+$/, '') || '/';
 
     if (req.method === 'GET' && (!pathname.startsWith('/api/') && pathname !== '/')) {
         let filePath = path.join(BASE_DIR, pathname === '/salesman' ? 'salesman_app.html' : pathname);

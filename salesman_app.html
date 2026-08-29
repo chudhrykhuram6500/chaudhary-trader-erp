@@ -2678,6 +2678,7 @@
             if (txt) txt.innerText = `Submitting ${pendingOrders.length} Order(s) to https://chaudharytraders.online (4G)...`;
 
             const tryEndpoints = [
+                "https://chaudhary-trader-erp.onrender.com",
                 "https://chaudharytraders.online",
                 (localStorage.getItem("chaudhary_pc_ip") || "http://192.168.100.129:8888")
             ];
