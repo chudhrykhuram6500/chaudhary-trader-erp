@@ -6654,23 +6654,25 @@ async function loadStateFromStorage() {
             AppState.skus = parsedSkus;
         }
 
-        const savedRoutes = localStorage.getItem("chaudhary_routes");
-        const savedShops = localStorage.getItem("chaudhary_shops");
-        const savedBills = localStorage.getItem("chaudhary_bills");
-        const savedOrders = localStorage.getItem("chaudhary_orders");
-        const savedPickLists = localStorage.getItem("chaudhary_picklists");
-        const savedLogs = localStorage.getItem("chaudhary_logs");
-        const savedSalesmen = localStorage.getItem("chaudhary_salesmen");
-        const savedFoc = localStorage.getItem("chaudhary_foc_schemes");
+        // Purge legacy local sales cache to enforce 100% Single Source of Truth (SSOT) Cloud Architecture
+        try {
+            localStorage.removeItem("chaudhary_bills");
+            localStorage.removeItem("chaudhary_orders");
+            localStorage.removeItem("chaudhary_shops");
+            localStorage.removeItem("chaudhary_picklists");
+            localStorage.removeItem("chaudhary_routes");
+            localStorage.removeItem("chaudhary_salesmen");
+            localStorage.removeItem("chaudhary_foc_schemes");
+        } catch(e) {}
 
-        AppState.routes = (savedRoutes && JSON.parse(savedRoutes).length > 0) ? JSON.parse(savedRoutes) : [];
-        AppState.shops = savedShops ? JSON.parse(savedShops) : [];
-        AppState.bills = savedBills ? JSON.parse(savedBills) : [];
-        AppState.orders = savedOrders ? JSON.parse(savedOrders) : [];
-        AppState.pickLists = savedPickLists ? JSON.parse(savedPickLists) : [];
-        AppState.orderLogs = savedLogs ? JSON.parse(savedLogs) : [];
-        AppState.salesmen = savedSalesmen ? JSON.parse(savedSalesmen) : [];
-        AppState.focSchemes = savedFoc ? JSON.parse(savedFoc) : [];
+        AppState.routes = [];
+        AppState.shops = [];
+        AppState.bills = [];
+        AppState.orders = [];
+        AppState.pickLists = [];
+        AppState.orderLogs = [];
+        AppState.salesmen = [];
+        AppState.focSchemes = [];
 
         if (!Array.isArray(AppState.salesmen) || AppState.salesmen.length === 0) {
             AppState.salesmen = [
@@ -6891,18 +6893,13 @@ function saveStateToStorage() {
     if (_saveStorageTimer) clearTimeout(_saveStorageTimer);
     
     _saveStorageTimer = setTimeout(() => {
+        // Enforce 100% Pure Cloud SSOT Architecture: Do NOT write sales database into localStorage!
         try {
-            localStorage.setItem("chaudhary_companies", JSON.stringify(AppState.companies));
-            localStorage.setItem("chaudhary_skus", JSON.stringify(AppState.skus));
-            localStorage.setItem("chaudhary_routes", JSON.stringify(AppState.routes));
-            localStorage.setItem("chaudhary_shops", JSON.stringify(AppState.shops));
-            localStorage.setItem("chaudhary_bills", JSON.stringify(AppState.bills || []));
-            localStorage.setItem("chaudhary_orders", JSON.stringify(AppState.orders || []));
-            localStorage.setItem("chaudhary_picklists", JSON.stringify(AppState.pickLists || []));
-            localStorage.setItem("chaudhary_logs", JSON.stringify(AppState.orderLogs));
-            localStorage.setItem("chaudhary_salesmen", JSON.stringify(AppState.salesmen));
-            localStorage.setItem("chaudhary_foc_schemes", JSON.stringify(AppState.focSchemes || []));
-        } catch(e) { console.warn("localStorage fallback:", e); }
+            localStorage.removeItem("chaudhary_bills");
+            localStorage.removeItem("chaudhary_orders");
+            localStorage.removeItem("chaudhary_shops");
+            localStorage.removeItem("chaudhary_picklists");
+        } catch(e) {}
 
         if (typeof ipcRenderer !== 'undefined' && ipcRenderer) {
             ipcRenderer.invoke("save-state", AppState).catch(() => {});
@@ -15452,155 +15449,26 @@ function renderDataSyncTab() {
 function syncWithLocalServerStore() {
     const apiUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
                    ? (window.location.origin + "/api/sync/latest-state") 
-                   : "http://localhost:8888/api/sync/latest-state";
+                   : "https://chaudharytraders.online/api/sync/latest-state";
                    
     fetch(apiUri)
         .then(r => r.json())
         .then(data => {
             if (!data.success) return;
-            let updated = false;
 
-            if (Array.isArray(data.shops) && data.shops.length > 0) {
-                data.shops.forEach(shop => {
-                    const exists = (AppState.shops || []).some(s => s.id === shop.id || (shop.name && s.name.toLowerCase() === shop.name.toLowerCase()));
-                    if (!exists) {
-                        AppState.shops.unshift(shop);
-                        updated = true;
-                    }
-                });
-            }
-
-            if (Array.isArray(data.orders)) {
-                data.orders.forEach(ord => {
-                    const exists = (AppState.orders || []).some(o => {
-                        if (ord.uuid && o.uuid && o.uuid === ord.uuid) return true;
-                        if (o.orderNo && ord.orderNo && o.orderNo === ord.orderNo) {
-                            if (o.shopId === ord.shopId && Math.abs((o.netAmount || 0) - (ord.netAmount || 0)) < 2) return true;
-                        }
-                        return false;
-                    });
-
-                    if (!exists) {
-                        let finalNo = ord.orderNo || `ORD-${Date.now()}`;
-                        let counter = 1;
-                        while ((AppState.orders || []).some(o => o.orderNo === finalNo)) {
-                            finalNo = `${ord.orderNo}-${counter++}`;
-                        }
-                        ord.orderNo = finalNo;
-
-                        ord.status = ord.status || "Draft";
-                        if (ord.status !== "Processed" && ord.status !== "Confirmed" && ord.status !== "Cancelled") {
-                            ord.status = "Draft";
-                        }
-                        ord.stockDeducted = false;
-                        AppState.orders.unshift(ord);
-                        updated = true;
-                    } else {
-                        const existingOrder = AppState.orders[existingOrdIdx];
-                        if (existingOrder && ord && existingOrder.status !== ord.status) {
-                            existingOrder.status = ord.status;
-                            updated = true;
-                        }
-                    }
-                });
-            }
-
-            if (Array.isArray(data.bills)) {
-                data.bills.forEach(bill => {
-                    const existingBillIdx = (AppState.bills || []).findIndex(b => b.billNo === bill.billNo || (bill.id && b.id === bill.id));
-                    if (existingBillIdx === -1) {
-                        AppState.bills.unshift(bill);
-                        updated = true;
-                    } else {
-                        const existingBill = AppState.bills[existingBillIdx];
-                        if (existingBill && bill && (existingBill.deliveryStatus !== bill.deliveryStatus || existingBill.pickStatus !== bill.pickStatus || existingBill.isManuallyConfirmed !== bill.isManuallyConfirmed || existingBill.salesRecorded !== bill.salesRecorded)) {
-                            AppState.bills[existingBillIdx] = { ...existingBill, ...bill };
-                            updated = true;
-                        }
-                    }
-                });
-            }
-
-            if (Array.isArray(data.pickLists)) {
-                data.pickLists.forEach(pl => {
-                    const existingPlIdx = (AppState.pickLists || []).findIndex(p => p.id === pl.id || (pl.pickListNo && p.pickListNo === pl.pickListNo));
-                    if (existingPlIdx === -1) {
-                        AppState.pickLists.unshift(pl);
-                        updated = true;
-                    } else {
-                        const existingPl = AppState.pickLists[existingPlIdx];
-                        if (existingPl && pl && existingPl.status !== pl.status) {
-                            AppState.pickLists[existingPlIdx] = { ...existingPl, ...pl };
-                            updated = true;
-                        }
-                    }
-                });
-            }
+            // Enforce 100% Pure Cloud SSOT Architecture: Server Database is Authoritative across all Browsers!
+            if (Array.isArray(data.bills)) AppState.bills = data.bills;
+            if (Array.isArray(data.orders)) AppState.orders = data.orders;
+            if (Array.isArray(data.shops)) AppState.shops = data.shops;
+            if (Array.isArray(data.skus) && data.skus.length > 0) AppState.skus = data.skus;
+            if (Array.isArray(data.pickLists)) AppState.pickLists = data.pickLists;
+            if (Array.isArray(data.routes) && data.routes.length > 0) AppState.routes = data.routes;
+            if (Array.isArray(data.companies) && data.companies.length > 0) AppState.companies = data.companies;
 
             if (!AppState.initialServerHydrated) {
                 AppState.initialServerHydrated = true;
-                let needsCloudPush = false;
-
-                if (Array.isArray(data.orders)) {
-                    data.orders.forEach(o => {
-                        if (!AppState.orders.some(x => x.id === o.id || (o.orderNo && x.orderNo === o.orderNo))) {
-                            AppState.orders.unshift(o);
-                        }
-                    });
-                    if (AppState.orders.length > data.orders.length) needsCloudPush = true;
-                }
-                if (Array.isArray(data.bills)) {
-                    data.bills.forEach(b => {
-                        if (!AppState.bills.some(x => x.billNo === b.billNo || (b.id && x.id === b.id))) {
-                            AppState.bills.unshift(b);
-                        }
-                    });
-                    if (AppState.bills.length > data.bills.length) needsCloudPush = true;
-                }
-                if (Array.isArray(data.pickLists)) {
-                    data.pickLists.forEach(p => {
-                        if (!AppState.pickLists.some(x => x.id === p.id || (p.pickListNo && x.pickListNo === p.pickListNo))) {
-                            AppState.pickLists.unshift(p);
-                        }
-                    });
-                }
-                if (Array.isArray(data.shops)) {
-                    if (data.shops.length >= AppState.shops.length) {
-                        AppState.shops = data.shops;
-                    } else {
-                        needsCloudPush = true;
-                    }
-                }
-                if (Array.isArray(data.skus) && data.skus.length >= AppState.skus.length) {
-                    AppState.skus = data.skus;
-                }
-                if (Array.isArray(data.routes) && data.routes.length > 0) AppState.routes = data.routes;
-
-                saveStateToStorage();
-                if (needsCloudPush) {
-                    try {
-                        const updateUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
-                                        ? (window.location.origin + "/api/sync/update-master-data") 
-                                        : "https://chaudharytraders.online/api/sync/update-master-data";
-                        fetch(updateUri, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                shops: AppState.shops || [],
-                                skus: AppState.skus || [],
-                                routes: AppState.routes || [],
-                                companies: AppState.companies || [],
-                                orders: AppState.orders || [],
-                                bills: AppState.bills || [],
-                                pickLists: AppState.pickLists || [],
-                                focSchemes: AppState.focSchemes || []
-                            })
-                        }).catch(() => {});
-                    } catch(e) {}
-                }
                 renderAllViews();
-            } else if (updated) {
-                saveStateToStorage();
+            } else {
                 if (typeof renderOrdersTable === "function") renderOrdersTable();
                 if (typeof renderDashboard === "function") renderDashboard();
                 if (typeof renderPickListTable === "function") renderPickListTable();
