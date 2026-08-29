@@ -6378,74 +6378,86 @@ function handleHttpRequest(req, res) {
         return;
     }
 
-    if (pathname === '/api/sync/update-master-data' && req.method === 'POST') {
+    // SAFE CLOUD MERGE ENDPOINT
+    // Browsers may have different local copies. NEVER replace the server's full sales/order arrays
+    // with one browser's snapshot, otherwise two devices can overwrite each other every sync cycle.
+    if ((pathname === '/api/sync/merge-state' || pathname === '/api/sync/update-master-data') && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', () => {
             try {
-                const payload = JSON.parse(body);
+                const payload = JSON.parse(body || '{}');
                 const state = getAppStateFromStore();
-                if (Array.isArray(payload.shops)) state.shops = payload.shops;
-                if (Array.isArray(payload.skus) && payload.skus.length >= (state.skus ? state.skus.length : 0)) state.skus = payload.skus;
-                if (Array.isArray(payload.routes)) state.routes = payload.routes;
-                if (Array.isArray(payload.companies)) state.companies = payload.companies;
-                // IMPORTANT: Never replace cloud sales/orders with a browser's local snapshot.
-                // Every browser can have an older localStorage copy. Merge incoming records
-                // into the server's master state instead, using stable IDs/numbers.
-                const mergeRecords = (existing, incoming, keys) => {
-                    const result = Array.isArray(existing) ? [...existing] : [];
+
+                const mergeByKeys = (existing, incoming, keys) => {
+                    const out = Array.isArray(existing) ? [...existing] : [];
                     const index = new Map();
-                    result.forEach((item, i) => {
-                        keys.forEach(k => {
-                            if (item && item[k] !== undefined && item[k] !== null && item[k] !== '') {
-                                index.set(`${k}:${String(item[k])}`, i);
+                    out.forEach((item, i) => {
+                        for (const key of keys) {
+                            const value = item && item[key];
+                            if (value !== undefined && value !== null && value !== '') {
+                                index.set(`${key}:${String(value)}`, i);
+                                break;
                             }
-                        });
+                        }
                     });
-                    (Array.isArray(incoming) ? incoming : []).forEach(item => {
-                        if (!item || typeof item !== 'object') return;
+
+                    for (const raw of (Array.isArray(incoming) ? incoming : [])) {
+                        const item = raw && typeof raw === 'object' ? raw : null;
+                        if (!item) continue;
                         let idx = -1;
-                        for (const k of keys) {
-                            const v = item[k];
-                            if (v !== undefined && v !== null && v !== '') {
-                                const found = index.get(`${k}:${String(v)}`);
-                                if (found !== undefined) { idx = found; break; }
+                        for (const key of keys) {
+                            const value = item[key];
+                            if (value !== undefined && value !== null && value !== '' && index.has(`${key}:${String(value)}`)) {
+                                idx = index.get(`${key}:${String(value)}`);
+                                break;
                             }
                         }
+
                         if (idx === -1) {
-                            idx = result.length;
-                            result.push(item);
+                            idx = out.length;
+                            out.push(item);
                         } else {
-                            // Incoming changes are allowed to update an existing record,
-                            // but an old browser can never delete a server record.
-                            result[idx] = { ...result[idx], ...item };
-                        }
-                        keys.forEach(k => {
-                            if (item[k] !== undefined && item[k] !== null && item[k] !== '') {
-                                index.set(`${k}:${String(item[k])}`, idx);
+                            // Existing record wins unless incoming has an explicit newer modification time.
+                            const oldItem = out[idx] || {};
+                            const oldTime = Date.parse(oldItem.updatedAt || oldItem.modifiedAt || oldItem.createdDate || oldItem.createdAt || '') || 0;
+                            const newTime = Date.parse(item.updatedAt || item.modifiedAt || item.createdDate || item.createdAt || '') || 0;
+                            if (newTime >= oldTime && newTime > 0) {
+                                out[idx] = { ...oldItem, ...item };
+                            } else {
+                                // Keep old values, but fill any missing fields from the incoming copy.
+                                out[idx] = { ...item, ...oldItem };
                             }
-                        });
-                    });
-                    return result;
+                        }
+
+                        for (const key of keys) {
+                            const value = out[idx] && out[idx][key];
+                            if (value !== undefined && value !== null && value !== '') index.set(`${key}:${String(value)}`, idx);
+                        }
+                    }
+                    return out;
                 };
 
-                if (Array.isArray(payload.shops)) state.shops = mergeRecords(state.shops, payload.shops, ['id']);
-                if (Array.isArray(payload.skus)) state.skus = mergeRecords(state.skus, payload.skus, ['code','id']);
-                if (Array.isArray(payload.routes)) state.routes = mergeRecords(state.routes, payload.routes, ['id']);
-                if (Array.isArray(payload.companies)) state.companies = mergeRecords(state.companies, payload.companies, ['id','code']);
-                if (Array.isArray(payload.orders)) state.orders = mergeRecords(state.orders, payload.orders, ['uuid','id','orderNo']);
-                if (Array.isArray(payload.bills)) state.bills = mergeRecords(state.bills, payload.bills, ['id','billNo']);
-                if (Array.isArray(payload.pickLists)) state.pickLists = mergeRecords(state.pickLists, payload.pickLists, ['id','pickListNo']);
-                if (Array.isArray(payload.focSchemes)) state.focSchemes = mergeRecords(state.focSchemes, payload.focSchemes, ['id','code']);
+                if (Array.isArray(payload.shops)) state.shops = mergeByKeys(state.shops, payload.shops, ['id']);
+                if (Array.isArray(payload.skus) && payload.skus.length >= (state.skus ? state.skus.length : 0)) state.skus = payload.skus;
+                if (Array.isArray(payload.routes)) state.routes = mergeByKeys(state.routes, payload.routes, ['id']);
+                if (Array.isArray(payload.companies)) state.companies = mergeByKeys(state.companies, payload.companies, ['id']);
+                if (Array.isArray(payload.orders)) state.orders = mergeByKeys(state.orders, payload.orders, ['uuid', 'id', 'orderNo']);
+                if (Array.isArray(payload.bills)) state.bills = mergeByKeys(state.bills, payload.bills, ['uuid', 'id', 'billNo']);
+                if (Array.isArray(payload.pickLists)) state.pickLists = mergeByKeys(state.pickLists, payload.pickLists, ['id', 'pickListNo']);
+                if (Array.isArray(payload.focSchemes)) state.focSchemes = mergeByKeys(state.focSchemes, payload.focSchemes, ['id']);
 
+                state.lastCloudMergeAt = new Date().toISOString();
                 saveAppStateToStore(state);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
                     success: true,
+                    merged: true,
                     counts: {
+                        shops: (state.shops || []).length,
                         orders: (state.orders || []).length,
                         bills: (state.bills || []).length,
-                        shops: (state.shops || []).length
+                        pickLists: (state.pickLists || []).length
                     }
                 }));
             } catch(e) {
