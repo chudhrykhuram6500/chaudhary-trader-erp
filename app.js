@@ -6654,25 +6654,23 @@ async function loadStateFromStorage() {
             AppState.skus = parsedSkus;
         }
 
-        // Purge legacy local sales cache to enforce 100% Single Source of Truth (SSOT) Cloud Architecture
-        try {
-            localStorage.removeItem("chaudhary_bills");
-            localStorage.removeItem("chaudhary_orders");
-            localStorage.removeItem("chaudhary_shops");
-            localStorage.removeItem("chaudhary_picklists");
-            localStorage.removeItem("chaudhary_routes");
-            localStorage.removeItem("chaudhary_salesmen");
-            localStorage.removeItem("chaudhary_foc_schemes");
-        } catch(e) {}
+        const savedRoutes = localStorage.getItem("chaudhary_routes");
+        const savedShops = localStorage.getItem("chaudhary_shops");
+        const savedBills = localStorage.getItem("chaudhary_bills");
+        const savedOrders = localStorage.getItem("chaudhary_orders");
+        const savedPickLists = localStorage.getItem("chaudhary_picklists");
+        const savedLogs = localStorage.getItem("chaudhary_logs");
+        const savedSalesmen = localStorage.getItem("chaudhary_salesmen");
+        const savedFoc = localStorage.getItem("chaudhary_foc_schemes");
 
-        AppState.routes = [];
-        AppState.shops = [];
-        AppState.bills = [];
-        AppState.orders = [];
-        AppState.pickLists = [];
-        AppState.orderLogs = [];
-        AppState.salesmen = [];
-        AppState.focSchemes = [];
+        AppState.routes = (savedRoutes && JSON.parse(savedRoutes).length > 0) ? JSON.parse(savedRoutes) : [];
+        AppState.shops = savedShops ? JSON.parse(savedShops) : [];
+        AppState.bills = savedBills ? JSON.parse(savedBills) : [];
+        AppState.orders = savedOrders ? JSON.parse(savedOrders) : [];
+        AppState.pickLists = savedPickLists ? JSON.parse(savedPickLists) : [];
+        AppState.orderLogs = savedLogs ? JSON.parse(savedLogs) : [];
+        AppState.salesmen = savedSalesmen ? JSON.parse(savedSalesmen) : [];
+        AppState.focSchemes = savedFoc ? JSON.parse(savedFoc) : [];
 
         if (!Array.isArray(AppState.salesmen) || AppState.salesmen.length === 0) {
             AppState.salesmen = [
@@ -6893,13 +6891,18 @@ function saveStateToStorage() {
     if (_saveStorageTimer) clearTimeout(_saveStorageTimer);
     
     _saveStorageTimer = setTimeout(() => {
-        // Enforce 100% Pure Cloud SSOT Architecture: Do NOT write sales database into localStorage!
         try {
-            localStorage.removeItem("chaudhary_bills");
-            localStorage.removeItem("chaudhary_orders");
-            localStorage.removeItem("chaudhary_shops");
-            localStorage.removeItem("chaudhary_picklists");
-        } catch(e) {}
+            localStorage.setItem("chaudhary_companies", JSON.stringify(AppState.companies));
+            localStorage.setItem("chaudhary_skus", JSON.stringify(AppState.skus));
+            localStorage.setItem("chaudhary_routes", JSON.stringify(AppState.routes));
+            localStorage.setItem("chaudhary_shops", JSON.stringify(AppState.shops));
+            localStorage.setItem("chaudhary_bills", JSON.stringify(AppState.bills || []));
+            localStorage.setItem("chaudhary_orders", JSON.stringify(AppState.orders || []));
+            localStorage.setItem("chaudhary_picklists", JSON.stringify(AppState.pickLists || []));
+            localStorage.setItem("chaudhary_logs", JSON.stringify(AppState.orderLogs));
+            localStorage.setItem("chaudhary_salesmen", JSON.stringify(AppState.salesmen));
+            localStorage.setItem("chaudhary_foc_schemes", JSON.stringify(AppState.focSchemes || []));
+        } catch(e) { console.warn("localStorage fallback:", e); }
 
         if (typeof ipcRenderer !== 'undefined' && ipcRenderer) {
             ipcRenderer.invoke("save-state", AppState).catch(() => {});
@@ -15447,28 +15450,38 @@ function renderDataSyncTab() {
 }
 
 function syncWithLocalServerStore() {
-    const apiUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
-                   ? (window.location.origin + "/api/sync/latest-state") 
-                   : "https://chaudharytraders.online/api/sync/latest-state";
-                   
-    fetch(apiUri)
+    const apiUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http'))
+                   ? (window.location.origin + "/api/sync/latest-state")
+                   : "http://localhost:8888/api/sync/latest-state";
+
+    fetch(apiUri, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } })
         .then(r => r.json())
         .then(data => {
-            if (!data.success) return;
+            if (!data || !data.success) return;
 
-            // Enforce 100% Pure Cloud SSOT Architecture: Server Database is Authoritative across all Browsers!
-            if (Array.isArray(data.bills)) AppState.bills = data.bills;
-            if (Array.isArray(data.orders)) AppState.orders = data.orders;
-            if (Array.isArray(data.shops)) AppState.shops = data.shops;
-            if (Array.isArray(data.skus) && data.skus.length > 0) AppState.skus = data.skus;
-            if (Array.isArray(data.pickLists)) AppState.pickLists = data.pickLists;
-            if (Array.isArray(data.routes) && data.routes.length > 0) AppState.routes = data.routes;
-            if (Array.isArray(data.companies) && data.companies.length > 0) AppState.companies = data.companies;
+            // The cloud/server is the single source of truth for shared ERP data.
+            // Browser localStorage is only a temporary offline cache. Never merge an
+            // old browser snapshot into the UI because that causes different browsers
+            // to show different sales counts.
+            const serverArrays = ['orders', 'bills', 'shops', 'skus', 'routes', 'salesmen', 'companies', 'focSchemes', 'pickLists'];
+            let changed = false;
 
-            if (!AppState.initialServerHydrated) {
-                AppState.initialServerHydrated = true;
-                renderAllViews();
-            } else {
+            serverArrays.forEach(key => {
+                if (Array.isArray(data[key])) {
+                    const current = Array.isArray(AppState[key]) ? AppState[key] : [];
+                    const incoming = data[key];
+                    const currentSig = JSON.stringify(current);
+                    const serverSig = JSON.stringify(incoming);
+                    if (currentSig !== serverSig) {
+                        AppState[key] = incoming;
+                        changed = true;
+                    }
+                }
+            });
+
+            AppState.initialServerHydrated = true;
+            if (changed) {
+                saveStateToStorage();
                 if (typeof renderOrdersTable === "function") renderOrdersTable();
                 if (typeof renderDashboard === "function") renderDashboard();
                 if (typeof renderPickListTable === "function") renderPickListTable();
@@ -15478,7 +15491,6 @@ function syncWithLocalServerStore() {
         })
         .catch(() => {});
 }
-
 function forcePushLocalStateToCloud() {
     const updateUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
                     ? (window.location.origin + "/api/sync/update-master-data") 
@@ -15501,7 +15513,7 @@ function forcePushLocalStateToCloud() {
     .then(r => r.json())
     .then(res => {
         if (res && res.success) {
-            alert("🎉 SUCCESS! Your full 142 Shops & Rs. 929,989 data has been PUSHED to 24/7 Cloud Server!\n\nAll browsers, mobiles and devices will now show 100% equal data!");
+            alert("🎉 SUCCESS! Your data has been merged safely into the Cloud Server.\n\nAll browsers, mobiles and devices will now use the same server data!");
             syncWithLocalServerStore();
         } else {
             alert("⚠️ Cloud Push Note: " + (res.error || "Pushed to server"));

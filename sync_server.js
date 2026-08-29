@@ -6389,12 +6389,65 @@ function handleHttpRequest(req, res) {
                 if (Array.isArray(payload.skus) && payload.skus.length >= (state.skus ? state.skus.length : 0)) state.skus = payload.skus;
                 if (Array.isArray(payload.routes)) state.routes = payload.routes;
                 if (Array.isArray(payload.companies)) state.companies = payload.companies;
-                if (Array.isArray(payload.orders)) state.orders = payload.orders;
-                if (Array.isArray(payload.bills)) state.bills = payload.bills;
-                if (Array.isArray(payload.pickLists)) state.pickLists = payload.pickLists;
+                // IMPORTANT: Never replace cloud sales/orders with a browser's local snapshot.
+                // Every browser can have an older localStorage copy. Merge incoming records
+                // into the server's master state instead, using stable IDs/numbers.
+                const mergeRecords = (existing, incoming, keys) => {
+                    const result = Array.isArray(existing) ? [...existing] : [];
+                    const index = new Map();
+                    result.forEach((item, i) => {
+                        keys.forEach(k => {
+                            if (item && item[k] !== undefined && item[k] !== null && item[k] !== '') {
+                                index.set(`${k}:${String(item[k])}`, i);
+                            }
+                        });
+                    });
+                    (Array.isArray(incoming) ? incoming : []).forEach(item => {
+                        if (!item || typeof item !== 'object') return;
+                        let idx = -1;
+                        for (const k of keys) {
+                            const v = item[k];
+                            if (v !== undefined && v !== null && v !== '') {
+                                const found = index.get(`${k}:${String(v)}`);
+                                if (found !== undefined) { idx = found; break; }
+                            }
+                        }
+                        if (idx === -1) {
+                            idx = result.length;
+                            result.push(item);
+                        } else {
+                            // Incoming changes are allowed to update an existing record,
+                            // but an old browser can never delete a server record.
+                            result[idx] = { ...result[idx], ...item };
+                        }
+                        keys.forEach(k => {
+                            if (item[k] !== undefined && item[k] !== null && item[k] !== '') {
+                                index.set(`${k}:${String(item[k])}`, idx);
+                            }
+                        });
+                    });
+                    return result;
+                };
+
+                if (Array.isArray(payload.shops)) state.shops = mergeRecords(state.shops, payload.shops, ['id']);
+                if (Array.isArray(payload.skus)) state.skus = mergeRecords(state.skus, payload.skus, ['code','id']);
+                if (Array.isArray(payload.routes)) state.routes = mergeRecords(state.routes, payload.routes, ['id']);
+                if (Array.isArray(payload.companies)) state.companies = mergeRecords(state.companies, payload.companies, ['id','code']);
+                if (Array.isArray(payload.orders)) state.orders = mergeRecords(state.orders, payload.orders, ['uuid','id','orderNo']);
+                if (Array.isArray(payload.bills)) state.bills = mergeRecords(state.bills, payload.bills, ['id','billNo']);
+                if (Array.isArray(payload.pickLists)) state.pickLists = mergeRecords(state.pickLists, payload.pickLists, ['id','pickListNo']);
+                if (Array.isArray(payload.focSchemes)) state.focSchemes = mergeRecords(state.focSchemes, payload.focSchemes, ['id','code']);
+
                 saveAppStateToStore(state);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true }));
+                res.end(JSON.stringify({
+                    success: true,
+                    counts: {
+                        orders: (state.orders || []).length,
+                        bills: (state.bills || []).length,
+                        shops: (state.shops || []).length
+                    }
+                }));
             } catch(e) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: e.message }));
