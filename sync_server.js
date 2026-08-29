@@ -6442,8 +6442,46 @@ function handleHttpRequest(req, res) {
                 if (Array.isArray(payload.skus) && payload.skus.length >= (state.skus ? state.skus.length : 0)) state.skus = payload.skus;
                 if (Array.isArray(payload.routes)) state.routes = mergeByKeys(state.routes, payload.routes, ['id']);
                 if (Array.isArray(payload.companies)) state.companies = mergeByKeys(state.companies, payload.companies, ['id']);
-                if (Array.isArray(payload.orders)) state.orders = mergeByKeys(state.orders, payload.orders, ['uuid', 'id', 'orderNo']);
-                if (Array.isArray(payload.bills)) state.bills = mergeByKeys(state.bills, payload.bills, ['uuid', 'id', 'billNo']);
+                if (Array.isArray(payload.orders)) {
+                    state.orders = mergeByKeys(state.orders, payload.orders, ['uuid', 'id', 'orderNo']);
+                    // Never allow a stale browser snapshot to roll a processed/confirmed order back to Draft.
+                    const orderRank = (status) => {
+                        const s = String(status || "Draft").toLowerCase();
+                        if (s === "cancelled" || s === "canceled") return 0;
+                        if (["draft", "unprocessed", "pending", "submitted"].includes(s)) return 1;
+                        if (["processed", "billed"].includes(s)) return 2;
+                        if (s === "confirmed") return 3;
+                        return 1;
+                    };
+                    const incomingOrders = Array.isArray(payload.orders) ? payload.orders : [];
+                    state.orders.forEach(existing => {
+                        const incoming = incomingOrders.find(x => (x.uuid && existing.uuid && x.uuid === existing.uuid) || (x.orderNo && existing.orderNo && x.orderNo === existing.orderNo));
+                        if (!incoming) return;
+                        if (orderRank(existing.status) > orderRank(incoming.status)) {
+                            // Existing cloud lifecycle is newer; preserve it.
+                            existing.stockDeducted = existing.stockDeducted || incoming.stockDeducted || false;
+                        }
+                    });
+                }
+                if (Array.isArray(payload.bills)) {
+                    state.bills = mergeByKeys(state.bills, payload.bills, ['uuid', 'id', 'billNo']);
+                    const billRank = (status) => {
+                        const s = String(status || "Open").toLowerCase();
+                        if (["cancelled", "canceled", "void", "returned"].includes(s)) return 0;
+                        if (["open", "pending"].includes(s)) return 1;
+                        if (["confirmed", "delivered"].includes(s)) return 2;
+                        return 1;
+                    };
+                    const incomingBills = Array.isArray(payload.bills) ? payload.bills : [];
+                    state.bills.forEach(existing => {
+                        const incoming = incomingBills.find(x => (x.uuid && existing.uuid && x.uuid === existing.uuid) || (x.billNo && existing.billNo && x.billNo === existing.billNo));
+                        if (!incoming) return;
+                        if (billRank(existing.deliveryStatus) > billRank(incoming.deliveryStatus)) {
+                            existing.stockDeducted = existing.stockDeducted || incoming.stockDeducted || false;
+                            existing.salesRecorded = existing.salesRecorded || incoming.salesRecorded || false;
+                        }
+                    });
+                }
                 if (Array.isArray(payload.pickLists)) state.pickLists = mergeByKeys(state.pickLists, payload.pickLists, ['id', 'pickListNo']);
                 if (Array.isArray(payload.focSchemes)) state.focSchemes = mergeByKeys(state.focSchemes, payload.focSchemes, ['id']);
 

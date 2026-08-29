@@ -7201,11 +7201,13 @@ function getConfirmedDeliveredBillsForDashboard() {
         const bDate = normalizeDateToISO(b.date || b.createdDate || "");
         const matchesDate = (!start || bDate >= start) && (!end || bDate <= end);
         
-        // STRICT CONFIRMED SALE RULE: Open/Pending bills DO NOT count towards sales!
-        const isConfirmedSale = !b.isVoid && b.deliveryStatus !== "Cancelled" && b.deliveryStatus !== "Returned" &&
-            (b.deliveryStatus === "Confirmed" || b.deliveryStatus === "Delivered" || (b.isManuallyConfirmed && b.salesRecorded));
+        // DASHBOARD SALES RULE: ONLY explicitly CONFIRMED bills count.
+        // Open/Pending/Delivered bills must NOT be included in Dashboard sales.
+        // Keep this strict so Dashboard matches the confirmed-sales reports.
+        const isDashboardSale = !b.isVoid &&
+            b.deliveryStatus === "Confirmed";
 
-        if (!matchesDate || !isConfirmedSale) return false;
+        if (!matchesDate || !isDashboardSale) return false;
 
         if (comp === "all") return true;
 
@@ -13736,7 +13738,7 @@ function confirmProcessOrdersWithDate() {
 
 function runStockValidationAndProcess(orderNos, deliveryDate) {
     if (!orderNos || orderNos.length === 0) return alert("No orders selected for processing!");
-    const targetOrders = AppState.orders.filter(o => orderNos.includes(o.orderNo) && o.status !== "Processed" && o.status !== "Cancelled");
+    const targetOrders = AppState.orders.filter(o => orderNos.includes(o.orderNo) && o.status !== "Processed" && o.status !== "Confirmed" && o.status !== "Cancelled");
     if (targetOrders.length === 0) return alert("Selected orders are either already processed or cancelled.");
 
     const requiredMap = {};
@@ -13890,6 +13892,15 @@ function resolveStockValidation(optionNumber) {
 
 function executeOrderProcessing(targetOrders, deliveryDate) {
     targetOrders.forEach(o => {
+        // Never process the same draft twice. This protects against double-clicks and stale sync copies.
+        const existingBillsForOrder = (AppState.bills || []).filter(b => b.orderNo === o.orderNo && !b.isVoid && b.deliveryStatus !== "Cancelled");
+        if (existingBillsForOrder.length > 0 || o.status === "Processed" || o.status === "Confirmed") {
+            o.status = o.status === "Confirmed" ? "Confirmed" : "Processed";
+            o.stockDeducted = true;
+            o.updatedAt = new Date().toISOString();
+            return;
+        }
+
         const shop = AppState.shops.find(s => s.id === o.shopId);
 
         // Auto-attach FOC items if active schemes apply and not attached yet
@@ -13911,7 +13922,9 @@ function executeOrderProcessing(targetOrders, deliveryDate) {
         }
 
         o.status = "Processed";
+        o.stockDeducted = true;
         o.deliveryDate = deliveryDate;
+        o.updatedAt = new Date().toISOString();
 
         const taxMode = (shop && shop.taxMode === "filer") ? "filer" : "nonfiler";
 
@@ -14000,6 +14013,7 @@ function executeOrderProcessing(targetOrders, deliveryDate) {
                 pickStatus: "Unpicked",
                 stockDeducted: true,
                 salesRecorded: false,
+                updatedAt: new Date().toISOString(),
                 globalDiscPct: globalDiscPct,
                 items: billItems,
                 totalBasic: billTotalBasic,
@@ -15449,6 +15463,23 @@ function renderDataSyncTab() {
     checkPcServerSyncStatus();
 }
 
+function getOrderStatusRank(status) {
+    const s = String(status || "Draft").toLowerCase();
+    if (s === "cancelled" || s === "canceled") return 0;
+    if (s === "draft" || s === "unprocessed" || s === "pending" || s === "submitted") return 1;
+    if (s === "processed" || s === "billed") return 2;
+    if (s === "confirmed") return 3;
+    return 1;
+}
+
+function getBillStatusRank(status) {
+    const s = String(status || "Open").toLowerCase();
+    if (s === "cancelled" || s === "canceled" || s === "void" || s === "returned") return 0;
+    if (s === "open" || s === "pending") return 1;
+    if (s === "confirmed" || s === "delivered") return 2;
+    return 1;
+}
+
 function syncWithLocalServerStore() {
     const apiUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
                    ? (window.location.origin + "/api/sync/latest-state") 
@@ -15498,9 +15529,24 @@ function syncWithLocalServerStore() {
                         updated = true;
                     } else {
                         const existingOrder = AppState.orders[existingOrdIdx];
-                        if (existingOrder && ord && existingOrder.status !== ord.status) {
-                            existingOrder.status = ord.status;
-                            updated = true;
+                        if (existingOrder && ord) {
+                            // Status is a lifecycle: never let a stale Draft from another browser
+                            // roll a Processed/Confirmed order backwards.
+                            const localRank = getOrderStatusRank(existingOrder.status);
+                            const serverRank = getOrderStatusRank(ord.status);
+                            if (serverRank > localRank) {
+                                Object.assign(existingOrder, ord);
+                                updated = true;
+                            } else if (localRank > serverRank) {
+                                // Keep the local advanced state and let saveStateToStorage() push it back.
+                                existingOrder.status = existingOrder.status;
+                                existingOrder.stockDeducted = existingOrder.stockDeducted || ord.stockDeducted || false;
+                                existingOrder.updatedAt = existingOrder.updatedAt || new Date().toISOString();
+                                updated = true;
+                            } else if (ord.stockDeducted && !existingOrder.stockDeducted) {
+                                existingOrder.stockDeducted = true;
+                                updated = true;
+                            }
                         }
                     }
                 });
@@ -15514,9 +15560,18 @@ function syncWithLocalServerStore() {
                         updated = true;
                     } else {
                         const existingBill = AppState.bills[existingBillIdx];
-                        if (existingBill && bill && (existingBill.deliveryStatus !== bill.deliveryStatus || existingBill.pickStatus !== bill.pickStatus || existingBill.isManuallyConfirmed !== bill.isManuallyConfirmed || existingBill.salesRecorded !== bill.salesRecorded)) {
-                            AppState.bills[existingBillIdx] = { ...existingBill, ...bill };
-                            updated = true;
+                        if (existingBill && bill) {
+                            const localRank = getBillStatusRank(existingBill.deliveryStatus);
+                            const serverRank = getBillStatusRank(bill.deliveryStatus);
+                            if (serverRank >= localRank) {
+                                AppState.bills[existingBillIdx] = { ...existingBill, ...bill };
+                                updated = true;
+                            } else {
+                                // Never roll a Confirmed/Delivered bill back to Open from a stale browser.
+                                existingBill.stockDeducted = existingBill.stockDeducted || bill.stockDeducted || false;
+                                existingBill.salesRecorded = existingBill.salesRecorded || bill.salesRecorded || false;
+                                updated = true;
+                            }
                         }
                     }
                 });
