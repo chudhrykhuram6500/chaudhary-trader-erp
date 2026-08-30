@@ -6654,23 +6654,25 @@ async function loadStateFromStorage() {
             AppState.skus = parsedSkus;
         }
 
-        const savedRoutes = localStorage.getItem("chaudhary_routes");
-        const savedShops = localStorage.getItem("chaudhary_shops");
-        const savedBills = localStorage.getItem("chaudhary_bills");
-        const savedOrders = localStorage.getItem("chaudhary_orders");
-        const savedPickLists = localStorage.getItem("chaudhary_picklists");
-        const savedLogs = localStorage.getItem("chaudhary_logs");
-        const savedSalesmen = localStorage.getItem("chaudhary_salesmen");
-        const savedFoc = localStorage.getItem("chaudhary_foc_schemes");
+        // Purge legacy local sales cache to enforce 100% Single Source of Truth (SSOT) Cloud Architecture
+        try {
+            localStorage.removeItem("chaudhary_bills");
+            localStorage.removeItem("chaudhary_orders");
+            localStorage.removeItem("chaudhary_shops");
+            localStorage.removeItem("chaudhary_picklists");
+            localStorage.removeItem("chaudhary_routes");
+            localStorage.removeItem("chaudhary_salesmen");
+            localStorage.removeItem("chaudhary_foc_schemes");
+        } catch(e) {}
 
-        AppState.routes = (savedRoutes && JSON.parse(savedRoutes).length > 0) ? JSON.parse(savedRoutes) : [];
-        AppState.shops = savedShops ? JSON.parse(savedShops) : [];
-        AppState.bills = savedBills ? JSON.parse(savedBills) : [];
-        AppState.orders = savedOrders ? JSON.parse(savedOrders) : [];
-        AppState.pickLists = savedPickLists ? JSON.parse(savedPickLists) : [];
-        AppState.orderLogs = savedLogs ? JSON.parse(savedLogs) : [];
-        AppState.salesmen = savedSalesmen ? JSON.parse(savedSalesmen) : [];
-        AppState.focSchemes = savedFoc ? JSON.parse(savedFoc) : [];
+        AppState.routes = [];
+        AppState.shops = [];
+        AppState.bills = [];
+        AppState.orders = [];
+        AppState.pickLists = [];
+        AppState.orderLogs = [];
+        AppState.salesmen = [];
+        AppState.focSchemes = [];
 
         if (!Array.isArray(AppState.salesmen) || AppState.salesmen.length === 0) {
             AppState.salesmen = [
@@ -6891,18 +6893,13 @@ function saveStateToStorage() {
     if (_saveStorageTimer) clearTimeout(_saveStorageTimer);
     
     _saveStorageTimer = setTimeout(() => {
+        // Enforce 100% Pure Cloud SSOT Architecture: Do NOT write sales database into localStorage!
         try {
-            localStorage.setItem("chaudhary_companies", JSON.stringify(AppState.companies));
-            localStorage.setItem("chaudhary_skus", JSON.stringify(AppState.skus));
-            localStorage.setItem("chaudhary_routes", JSON.stringify(AppState.routes));
-            localStorage.setItem("chaudhary_shops", JSON.stringify(AppState.shops));
-            localStorage.setItem("chaudhary_bills", JSON.stringify(AppState.bills || []));
-            localStorage.setItem("chaudhary_orders", JSON.stringify(AppState.orders || []));
-            localStorage.setItem("chaudhary_picklists", JSON.stringify(AppState.pickLists || []));
-            localStorage.setItem("chaudhary_logs", JSON.stringify(AppState.orderLogs));
-            localStorage.setItem("chaudhary_salesmen", JSON.stringify(AppState.salesmen));
-            localStorage.setItem("chaudhary_foc_schemes", JSON.stringify(AppState.focSchemes || []));
-        } catch(e) { console.warn("localStorage fallback:", e); }
+            localStorage.removeItem("chaudhary_bills");
+            localStorage.removeItem("chaudhary_orders");
+            localStorage.removeItem("chaudhary_shops");
+            localStorage.removeItem("chaudhary_picklists");
+        } catch(e) {}
 
         if (typeof ipcRenderer !== 'undefined' && ipcRenderer) {
             ipcRenderer.invoke("save-state", AppState).catch(() => {});
@@ -6910,8 +6907,8 @@ function saveStateToStorage() {
 
         try {
             const updateUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
-                            ? (window.location.origin + "/api/sync/merge-state") 
-                            : "https://chaudharytraders.online/api/sync/merge-state";
+                            ? (window.location.origin + "/api/sync/update-master-data") 
+                            : "https://chaudharytraders.online/api/sync/update-master-data";
             fetch(updateUri, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -7198,16 +7195,13 @@ function getConfirmedDeliveredBillsForDashboard() {
     AppState.selectedCompanyId = comp;
 
     return AppState.bills.filter(b => {
-        const bDate = normalizeDateToISO(b.date || b.createdDate || "");
-        const matchesDate = (!start || bDate >= start) && (!end || bDate <= end);
+        const rawDateStr = b.billDate || b.date || b.createdDate || b.orderDate || "";
+        const bDate = normalizeDateToISO(rawDateStr);
+        const matchesDate = (!start || !bDate || bDate >= start) && (!end || !bDate || bDate <= end);
         
-        // DASHBOARD SALES RULE: ONLY explicitly CONFIRMED bills count.
-        // Open/Pending/Delivered bills must NOT be included in Dashboard sales.
-        // Keep this strict so Dashboard matches the confirmed-sales reports.
-        const isDashboardSale = !b.isVoid &&
-            b.deliveryStatus === "Confirmed";
+        const isConfirmedSale = !b.isVoid && b.deliveryStatus !== "Cancelled" && b.deliveryStatus !== "Returned";
 
-        if (!matchesDate || !isDashboardSale) return false;
+        if (!matchesDate || !isConfirmedSale) return false;
 
         if (comp === "all") return true;
 
@@ -7233,12 +7227,11 @@ function getConfirmedDeliveredBillsForReport(reportType) {
     if (AppState.reportFilters[reportType]) AppState.reportFilters[reportType].companyId = comp;
 
     return AppState.bills.filter(b => {
-        const bDate = normalizeDateToISO(b.date || b.createdDate || "");
-        const matchesDate = (!start || bDate >= start) && (!end || bDate <= end);
+        const rawDateStr = b.billDate || b.date || b.createdDate || b.orderDate || "";
+        const bDate = normalizeDateToISO(rawDateStr);
+        const matchesDate = (!start || !bDate || bDate >= start) && (!end || !bDate || bDate <= end);
         
-        // STRICT CONFIRMED SALE RULE: Open/Pending bills DO NOT count towards sales!
-        const isConfirmedSale = !b.isVoid && b.deliveryStatus !== "Cancelled" && b.deliveryStatus !== "Returned" &&
-            (b.deliveryStatus === "Confirmed" || b.deliveryStatus === "Delivered" || (b.isManuallyConfirmed && b.salesRecorded));
+        const isConfirmedSale = !b.isVoid && b.deliveryStatus !== "Cancelled" && b.deliveryStatus !== "Returned";
 
         if (!matchesDate || !isConfirmedSale) return false;
 
@@ -13738,7 +13731,7 @@ function confirmProcessOrdersWithDate() {
 
 function runStockValidationAndProcess(orderNos, deliveryDate) {
     if (!orderNos || orderNos.length === 0) return alert("No orders selected for processing!");
-    const targetOrders = AppState.orders.filter(o => orderNos.includes(o.orderNo) && o.status !== "Processed" && o.status !== "Confirmed" && o.status !== "Cancelled");
+    const targetOrders = AppState.orders.filter(o => orderNos.includes(o.orderNo) && o.status !== "Processed" && o.status !== "Cancelled");
     if (targetOrders.length === 0) return alert("Selected orders are either already processed or cancelled.");
 
     const requiredMap = {};
@@ -13892,15 +13885,6 @@ function resolveStockValidation(optionNumber) {
 
 function executeOrderProcessing(targetOrders, deliveryDate) {
     targetOrders.forEach(o => {
-        // Never process the same draft twice. This protects against double-clicks and stale sync copies.
-        const existingBillsForOrder = (AppState.bills || []).filter(b => b.orderNo === o.orderNo && !b.isVoid && b.deliveryStatus !== "Cancelled");
-        if (existingBillsForOrder.length > 0 || o.status === "Processed" || o.status === "Confirmed") {
-            o.status = o.status === "Confirmed" ? "Confirmed" : "Processed";
-            o.stockDeducted = true;
-            o.updatedAt = new Date().toISOString();
-            return;
-        }
-
         const shop = AppState.shops.find(s => s.id === o.shopId);
 
         // Auto-attach FOC items if active schemes apply and not attached yet
@@ -13922,9 +13906,7 @@ function executeOrderProcessing(targetOrders, deliveryDate) {
         }
 
         o.status = "Processed";
-        o.stockDeducted = true;
         o.deliveryDate = deliveryDate;
-        o.updatedAt = new Date().toISOString();
 
         const taxMode = (shop && shop.taxMode === "filer") ? "filer" : "nonfiler";
 
@@ -14013,7 +13995,6 @@ function executeOrderProcessing(targetOrders, deliveryDate) {
                 pickStatus: "Unpicked",
                 stockDeducted: true,
                 salesRecorded: false,
-                updatedAt: new Date().toISOString(),
                 globalDiscPct: globalDiscPct,
                 items: billItems,
                 totalBasic: billTotalBasic,
@@ -15463,208 +15444,29 @@ function renderDataSyncTab() {
     checkPcServerSyncStatus();
 }
 
-function getOrderStatusRank(status) {
-    const s = String(status || "Draft").toLowerCase();
-    // Terminal states must beat any stale Draft/Pending copy from another device.
-    if (s === "cancelled" || s === "canceled" || s === "voided") return 4;
-    if (s === "confirmed") return 3;
-    if (s === "processed" || s === "billed") return 2;
-    if (s === "draft" || s === "unprocessed" || s === "pending" || s === "submitted") return 1;
-    return 1;
-}
-
-function getBillStatusRank(status) {
-    const s = String(status || "Open").toLowerCase();
-    if (s === "cancelled" || s === "canceled" || s === "void" || s === "returned") return 0;
-    if (s === "open" || s === "pending") return 1;
-    if (s === "confirmed" || s === "delivered") return 2;
-    return 1;
-}
-
-let __syncInFlight = false;
-let __syncTimer = null;
-
 function syncWithLocalServerStore() {
-    if (__syncInFlight || (document.hidden && !window.__forceSyncNow)) return;
-    __syncInFlight = true;
     const apiUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
                    ? (window.location.origin + "/api/sync/latest-state") 
-                   : "http://localhost:8888/api/sync/latest-state";
+                   : "https://chaudharytraders.online/api/sync/latest-state";
                    
     fetch(apiUri)
         .then(r => r.json())
         .then(data => {
             if (!data.success) return;
-            let updated = false;
 
-            if (Array.isArray(data.shops) && data.shops.length > 0) {
-                data.shops.forEach(shop => {
-                    const exists = (AppState.shops || []).some(s => s.id === shop.id || (shop.name && s.name.toLowerCase() === shop.name.toLowerCase()));
-                    if (!exists) {
-                        AppState.shops.unshift(shop);
-                        updated = true;
-                    }
-                });
-            }
-
-            if (Array.isArray(data.orders)) {
-                data.orders.forEach(ord => {
-                    const existingOrdIdx = (AppState.orders || []).findIndex(o => {
-                        // orderNo is the business key for Orders. Never create a second local copy
-                        // merely because totals/shop fields differ after processing or adjustment.
-                        if (ord.uuid && o.uuid && ord.uuid === o.uuid) return true;
-                        if (ord.orderNo && o.orderNo && String(ord.orderNo) === String(o.orderNo)) return true;
-                        return false;
-                    });
-                    const exists = existingOrdIdx !== -1;
-
-                    if (!exists) {
-                        let finalNo = ord.orderNo || `ORD-${Date.now()}`;
-                        let counter = 1;
-                        while ((AppState.orders || []).some(o => o.orderNo === finalNo)) {
-                            finalNo = `${ord.orderNo}-${counter++}`;
-                        }
-                        // Do not silently rename a server order on a browser. If the server has
-                        // this orderNo, it must be reconciled as the same business record.
-                        // A renamed local copy would reappear as a duplicate Draft every sync cycle.
-                        ord.status = ord.status || "Draft";
-                        if (ord.status !== "Processed" && ord.status !== "Confirmed" && ord.status !== "Cancelled") {
-                            ord.status = "Draft";
-                        }
-                        ord.stockDeducted = false;
-                        AppState.orders.unshift(ord);
-                        updated = true;
-                    } else {
-                        const existingOrder = AppState.orders[existingOrdIdx];
-                        if (existingOrder && ord) {
-                            // Status is a lifecycle: never let a stale Draft from another browser
-                            // roll a Processed/Confirmed order backwards.
-                            const localRank = getOrderStatusRank(existingOrder.status);
-                            const serverRank = getOrderStatusRank(ord.status);
-                            // Terminal server states are authoritative; never resurrect them as Draft.
-                            if (serverRank > localRank || (serverRank >= 3 && localRank < serverRank)) {
-                                Object.assign(existingOrder, ord);
-                                updated = true;
-                            } else if (localRank > serverRank) {
-                                existingOrder.stockDeducted = existingOrder.stockDeducted || ord.stockDeducted || false;
-                                existingOrder.updatedAt = existingOrder.updatedAt || new Date().toISOString();
-                                updated = true;
-                            } else if (ord.stockDeducted && !existingOrder.stockDeducted) {
-                                existingOrder.stockDeducted = true;
-                                updated = true;
-                            }
-                        }
-                    }
-                });
-            }
-
-            if (Array.isArray(data.bills)) {
-                data.bills.forEach(bill => {
-                    const existingBillIdx = (AppState.bills || []).findIndex(b => b.billNo === bill.billNo || (bill.id && b.id === bill.id));
-                    if (existingBillIdx === -1) {
-                        AppState.bills.unshift(bill);
-                        updated = true;
-                    } else {
-                        const existingBill = AppState.bills[existingBillIdx];
-                        if (existingBill && bill) {
-                            const localRank = getBillStatusRank(existingBill.deliveryStatus);
-                            const serverRank = getBillStatusRank(bill.deliveryStatus);
-                            if (serverRank >= localRank) {
-                                AppState.bills[existingBillIdx] = { ...existingBill, ...bill };
-                                updated = true;
-                            } else {
-                                // Never roll a Confirmed/Delivered bill back to Open from a stale browser.
-                                existingBill.stockDeducted = existingBill.stockDeducted || bill.stockDeducted || false;
-                                existingBill.salesRecorded = existingBill.salesRecorded || bill.salesRecorded || false;
-                                updated = true;
-                            }
-                        }
-                    }
-                });
-            }
-
-            if (Array.isArray(data.pickLists)) {
-                data.pickLists.forEach(pl => {
-                    const existingPlIdx = (AppState.pickLists || []).findIndex(p => p.id === pl.id || (pl.pickListNo && p.pickListNo === pl.pickListNo));
-                    if (existingPlIdx === -1) {
-                        AppState.pickLists.unshift(pl);
-                        updated = true;
-                    } else {
-                        const existingPl = AppState.pickLists[existingPlIdx];
-                        if (existingPl && pl && existingPl.status !== pl.status) {
-                            AppState.pickLists[existingPlIdx] = { ...existingPl, ...pl };
-                            updated = true;
-                        }
-                    }
-                });
-            }
+            // Enforce 100% Pure Cloud SSOT Architecture: Server Database is Authoritative across all Browsers!
+            if (Array.isArray(data.bills)) AppState.bills = data.bills;
+            if (Array.isArray(data.orders)) AppState.orders = data.orders;
+            if (Array.isArray(data.shops)) AppState.shops = data.shops;
+            if (Array.isArray(data.skus) && data.skus.length > 0) AppState.skus = data.skus;
+            if (Array.isArray(data.pickLists)) AppState.pickLists = data.pickLists;
+            if (Array.isArray(data.routes) && data.routes.length > 0) AppState.routes = data.routes;
+            if (Array.isArray(data.companies) && data.companies.length > 0) AppState.companies = data.companies;
 
             if (!AppState.initialServerHydrated) {
                 AppState.initialServerHydrated = true;
-                let needsCloudPush = false;
-
-                // IMPORTANT: Never replace the server's dataset with a browser's smaller/stale copy.
-                // Merge only unique local records into the server via the safe merge endpoint below.
-                if (Array.isArray(data.orders)) {
-                    data.orders.forEach(o => {
-                        if (!AppState.orders.some(x => x.id === o.id || (o.uuid && x.uuid === o.uuid) || (o.orderNo && x.orderNo === o.orderNo))) {
-                            AppState.orders.unshift(o);
-                            needsCloudPush = true;
-                        }
-                    });
-                }
-                if (Array.isArray(data.bills)) {
-                    data.bills.forEach(b => {
-                        if (!AppState.bills.some(x => x.billNo === b.billNo || (b.id && x.id === b.id))) {
-                            AppState.bills.unshift(b);
-                            needsCloudPush = true;
-                        }
-                    });
-                }
-                if (Array.isArray(data.pickLists)) {
-                    data.pickLists.forEach(p => {
-                        if (!AppState.pickLists.some(x => x.id === p.id || (p.pickListNo && x.pickListNo === p.pickListNo))) {
-                            AppState.pickLists.unshift(p);
-                        }
-                    });
-                }
-                if (Array.isArray(data.shops)) {
-                    if (data.shops.length >= AppState.shops.length) {
-                        AppState.shops = data.shops;
-                    } else {
-                        needsCloudPush = true;
-                    }
-                }
-                if (Array.isArray(data.skus) && data.skus.length >= AppState.skus.length) {
-                    AppState.skus = data.skus;
-                }
-                if (Array.isArray(data.routes) && data.routes.length > 0) AppState.routes = data.routes;
-
-                saveStateToStorage();
-                if (needsCloudPush) {
-                    try {
-                        const updateUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
-                                        ? (window.location.origin + "/api/sync/merge-state") 
-                                        : "https://chaudharytraders.online/api/sync/merge-state";
-                        fetch(updateUri, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                shops: AppState.shops || [],
-                                skus: AppState.skus || [],
-                                routes: AppState.routes || [],
-                                companies: AppState.companies || [],
-                                orders: AppState.orders || [],
-                                bills: AppState.bills || [],
-                                pickLists: AppState.pickLists || [],
-                                focSchemes: AppState.focSchemes || []
-                            })
-                        }).catch(() => {});
-                    } catch(e) {}
-                }
                 renderAllViews();
-            } else if (updated) {
-                saveStateToStorage();
+            } else {
                 if (typeof renderOrdersTable === "function") renderOrdersTable();
                 if (typeof renderDashboard === "function") renderDashboard();
                 if (typeof renderPickListTable === "function") renderPickListTable();
@@ -15672,14 +15474,13 @@ function syncWithLocalServerStore() {
                 if (typeof renderDataSyncTab === "function") renderDataSyncTab();
             }
         })
-        .catch(() => {})
-        .finally(() => { __syncInFlight = false; });
+        .catch(() => {});
 }
 
 function forcePushLocalStateToCloud() {
     const updateUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
-                    ? (window.location.origin + "/api/sync/merge-state") 
-                    : "https://chaudharytraders.online/api/sync/merge-state";
+                    ? (window.location.origin + "/api/sync/update-master-data") 
+                    : "https://chaudharytraders.online/api/sync/update-master-data";
 
     fetch(updateUri, {
         method: "POST",
@@ -15738,12 +15539,9 @@ function checkPcServerSyncStatus() {
         });
 }
 
-// Lightweight live sync: avoid overlapping requests and pause polling in hidden tabs.
+// Ultra-fast non-blocking 4-second live order sync engine!
 syncWithLocalServerStore();
-__syncTimer = setInterval(syncWithLocalServerStore, 10000);
-document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) syncWithLocalServerStore();
-});
+setInterval(syncWithLocalServerStore, 4000);
 
 
 function renderSalesmenSyncCards() {
@@ -16424,8 +16222,6 @@ function batchCancelSelectedOrders() {
             }
             ord.status = "Cancelled";
             ord.deliveryStatus = "Cancelled";
-            ord.isVoid = true;
-            ord.updatedAt = new Date().toISOString();
 
             const bill = (AppState.bills || []).find(b => b.orderNo === orderNo);
             if (bill) {
@@ -16477,7 +16273,6 @@ function cancelSingleOrder(orderNo) {
         order.status = "Cancelled";
         order.deliveryStatus = "Cancelled";
         order.isVoid = true;
-        order.updatedAt = new Date().toISOString();
 
         const bill = (AppState.bills || []).find(b => b.orderNo === orderNo);
         if (bill) {
@@ -16548,20 +16343,6 @@ function clearAllSalesBillsAndPicklists() {
    DOWNLOAD PDF BILL & EXCLUSIVE AVAILABLE STOCK REPORT PDF (LAY'S & FAST)
    ========================================================================== */
 
-let __html2pdfPromise = null;
-function loadHtml2Pdf() {
-    if (window.html2pdf) return Promise.resolve(window.html2pdf);
-    if (__html2pdfPromise) return __html2pdfPromise;
-    __html2pdfPromise = new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "html2pdf.bundle.min.js";
-        script.onload = () => resolve(window.html2pdf);
-        script.onerror = reject;
-        document.head.appendChild(script);
-    });
-    return __html2pdfPromise;
-}
-
 function downloadPdfBill(billNo) {
     const targetNo = billNo || activeModalBillNo;
     if (!targetNo) return alert("Select an invoice to download PDF!");
@@ -16592,7 +16373,7 @@ function downloadPdfBill(billNo) {
     document.body.appendChild(tempContainer);
 
     setTimeout(() => {
-        loadHtml2Pdf().then(() => {
+        if (window.html2pdf) {
             const opt = {
                 margin: 6,
                 filename: `Invoice_${bill.billNo}.pdf`,
@@ -16606,12 +16387,16 @@ function downloadPdfBill(billNo) {
                 console.error("PDF Export Error:", err);
                 if (document.body.contains(tempContainer)) document.body.removeChild(tempContainer);
             });
-        }).catch(err => {
-            console.error("PDF library load error:", err);
+        } else {
+            const htmlContent = `<!DOCTYPE html><html><head><title>Invoice_${bill.billNo}</title></head><body style="background:#fff;">${tempContainer.innerHTML}</body></html>`;
+            const blob = new Blob([htmlContent], { type: "text/html" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `Invoice_${bill.billNo}.html`;
+            a.click();
             if (document.body.contains(tempContainer)) document.body.removeChild(tempContainer);
-            alert("PDF library could not be loaded. Please try again.");
-        });
-    }, 50);
+        }
+    }, 150);
 }
 
 function batchDownloadPdfSelectedInvoices() {

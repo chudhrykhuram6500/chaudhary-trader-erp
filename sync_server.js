@@ -6378,127 +6378,23 @@ function handleHttpRequest(req, res) {
         return;
     }
 
-    // SAFE CLOUD MERGE ENDPOINT
-    // Browsers may have different local copies. NEVER replace the server's full sales/order arrays
-    // with one browser's snapshot, otherwise two devices can overwrite each other every sync cycle.
-    if ((pathname === '/api/sync/merge-state' || pathname === '/api/sync/update-master-data') && req.method === 'POST') {
+    if (pathname === '/api/sync/update-master-data' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', () => {
             try {
-                const payload = JSON.parse(body || '{}');
+                const payload = JSON.parse(body);
                 const state = getAppStateFromStore();
-
-                const mergeByKeys = (existing, incoming, keys) => {
-                    const out = Array.isArray(existing) ? [...existing] : [];
-                    const index = new Map();
-                    out.forEach((item, i) => {
-                        for (const key of keys) {
-                            const value = item && item[key];
-                            if (value !== undefined && value !== null && value !== '') {
-                                index.set(`${key}:${String(value)}`, i);
-                                break;
-                            }
-                        }
-                    });
-
-                    for (const raw of (Array.isArray(incoming) ? incoming : [])) {
-                        const item = raw && typeof raw === 'object' ? raw : null;
-                        if (!item) continue;
-                        let idx = -1;
-                        for (const key of keys) {
-                            const value = item[key];
-                            if (value !== undefined && value !== null && value !== '' && index.has(`${key}:${String(value)}`)) {
-                                idx = index.get(`${key}:${String(value)}`);
-                                break;
-                            }
-                        }
-
-                        if (idx === -1) {
-                            idx = out.length;
-                            out.push(item);
-                        } else {
-                            // Existing record wins unless incoming has an explicit newer modification time.
-                            const oldItem = out[idx] || {};
-                            const oldTime = Date.parse(oldItem.updatedAt || oldItem.modifiedAt || oldItem.createdDate || oldItem.createdAt || '') || 0;
-                            const newTime = Date.parse(item.updatedAt || item.modifiedAt || item.createdDate || item.createdAt || '') || 0;
-                            if (newTime >= oldTime && newTime > 0) {
-                                out[idx] = { ...oldItem, ...item };
-                            } else {
-                                // Keep old values, but fill any missing fields from the incoming copy.
-                                out[idx] = { ...item, ...oldItem };
-                            }
-                        }
-
-                        for (const key of keys) {
-                            const value = out[idx] && out[idx][key];
-                            if (value !== undefined && value !== null && value !== '') index.set(`${key}:${String(value)}`, idx);
-                        }
-                    }
-                    return out;
-                };
-
-                if (Array.isArray(payload.shops)) state.shops = mergeByKeys(state.shops, payload.shops, ['id']);
+                if (Array.isArray(payload.shops)) state.shops = payload.shops;
                 if (Array.isArray(payload.skus) && payload.skus.length >= (state.skus ? state.skus.length : 0)) state.skus = payload.skus;
-                if (Array.isArray(payload.routes)) state.routes = mergeByKeys(state.routes, payload.routes, ['id']);
-                if (Array.isArray(payload.companies)) state.companies = mergeByKeys(state.companies, payload.companies, ['id']);
-                if (Array.isArray(payload.orders)) {
-                    state.orders = mergeByKeys(state.orders, payload.orders, ['uuid', 'id', 'orderNo']);
-                    // Never allow a stale browser snapshot to roll a processed/confirmed order back to Draft.
-                    const orderRank = (status) => {
-                        const s = String(status || "Draft").toLowerCase();
-                        // Cancelled/Voided is terminal and must never be resurrected by a stale Draft.
-                        if (["cancelled", "canceled", "voided", "void"].includes(s)) return 4;
-                        if (s === "confirmed") return 3;
-                        if (["processed", "billed"].includes(s)) return 2;
-                        if (["draft", "unprocessed", "pending", "submitted"].includes(s)) return 1;
-                        return 1;
-                    };
-                    const incomingOrders = Array.isArray(payload.orders) ? payload.orders : [];
-                    state.orders.forEach(existing => {
-                        const incoming = incomingOrders.find(x => (x.uuid && existing.uuid && x.uuid === existing.uuid) || (x.orderNo && existing.orderNo && x.orderNo === existing.orderNo));
-                        if (!incoming) return;
-                        if (orderRank(existing.status) > orderRank(incoming.status)) {
-                            // Existing cloud lifecycle is newer; preserve it.
-                            existing.stockDeducted = existing.stockDeducted || incoming.stockDeducted || false;
-                        }
-                    });
-                }
-                if (Array.isArray(payload.bills)) {
-                    state.bills = mergeByKeys(state.bills, payload.bills, ['uuid', 'id', 'billNo']);
-                    const billRank = (status) => {
-                        const s = String(status || "Open").toLowerCase();
-                        if (["cancelled", "canceled", "void", "returned"].includes(s)) return 0;
-                        if (["open", "pending"].includes(s)) return 1;
-                        if (["confirmed", "delivered"].includes(s)) return 2;
-                        return 1;
-                    };
-                    const incomingBills = Array.isArray(payload.bills) ? payload.bills : [];
-                    state.bills.forEach(existing => {
-                        const incoming = incomingBills.find(x => (x.uuid && existing.uuid && x.uuid === existing.uuid) || (x.billNo && existing.billNo && x.billNo === existing.billNo));
-                        if (!incoming) return;
-                        if (billRank(existing.deliveryStatus) > billRank(incoming.deliveryStatus)) {
-                            existing.stockDeducted = existing.stockDeducted || incoming.stockDeducted || false;
-                            existing.salesRecorded = existing.salesRecorded || incoming.salesRecorded || false;
-                        }
-                    });
-                }
-                if (Array.isArray(payload.pickLists)) state.pickLists = mergeByKeys(state.pickLists, payload.pickLists, ['id', 'pickListNo']);
-                if (Array.isArray(payload.focSchemes)) state.focSchemes = mergeByKeys(state.focSchemes, payload.focSchemes, ['id']);
-
-                state.lastCloudMergeAt = new Date().toISOString();
+                if (Array.isArray(payload.routes)) state.routes = payload.routes;
+                if (Array.isArray(payload.companies)) state.companies = payload.companies;
+                if (Array.isArray(payload.orders)) state.orders = payload.orders;
+                if (Array.isArray(payload.bills)) state.bills = payload.bills;
+                if (Array.isArray(payload.pickLists)) state.pickLists = payload.pickLists;
                 saveAppStateToStore(state);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({
-                    success: true,
-                    merged: true,
-                    counts: {
-                        shops: (state.shops || []).length,
-                        orders: (state.orders || []).length,
-                        bills: (state.bills || []).length,
-                        pickLists: (state.pickLists || []).length
-                    }
-                }));
+                res.end(JSON.stringify({ success: true }));
             } catch(e) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: e.message }));
