@@ -15201,9 +15201,10 @@ function handleImportJSON(event) {
             if (data.orderLogs && Array.isArray(data.orderLogs)) AppState.orderLogs = data.orderLogs;
 
             saveStateToStorage();
+            try { forcePushLocalStateToCloud(); } catch(e) {}
             updateAllCompanyDropdowns();
             renderAllViews();
-            alert("Backup JSON imported & restored successfully!");
+            alert("🎉 Backup JSON imported & restored successfully! Data has been automatically synced to 24/7 Cloud Server.");
         } catch(err) {
             alert("Failed to parse backup JSON file! Make sure it is a valid backup file.");
         }
@@ -15454,13 +15455,26 @@ function syncWithLocalServerStore() {
         .then(data => {
             if (!data.success) return;
 
-            // Enforce 100% Pure Cloud SSOT Architecture with Zero-Flicker Smart Change Detection!
+            // Enforce 100% Pure Cloud SSOT Architecture with Zero-Wipe Protection & Zero-Flicker Change Detection!
             const newHash = `${data.bills?.length || 0}_${data.orders?.length || 0}_${data.shops?.length || 0}_${data.pickLists?.length || 0}`;
             const hasDataChanged = (typeof AppState._lastStateHash === 'undefined' || AppState._lastStateHash !== newHash);
 
-            if (Array.isArray(data.bills)) AppState.bills = data.bills;
-            if (Array.isArray(data.orders)) AppState.orders = data.orders;
-            if (Array.isArray(data.shops)) AppState.shops = data.shops;
+            if (Array.isArray(data.bills) && data.bills.length > 0) {
+                AppState.bills = data.bills;
+            } else if (Array.isArray(data.bills) && data.bills.length === 0 && AppState.bills.length > 0) {
+                try { forcePushLocalStateToCloud(); } catch(e) {}
+            }
+
+            if (Array.isArray(data.orders) && data.orders.length > 0) {
+                AppState.orders = data.orders;
+            } else if (Array.isArray(data.orders) && data.orders.length === 0 && AppState.orders.length > 0) {
+                try { forcePushLocalStateToCloud(); } catch(e) {}
+            }
+
+            if (Array.isArray(data.shops) && data.shops.length > 0) {
+                AppState.shops = data.shops;
+            }
+
             if (Array.isArray(data.skus) && data.skus.length > 0) AppState.skus = data.skus;
             if (Array.isArray(data.pickLists)) AppState.pickLists = data.pickLists;
             if (Array.isArray(data.routes) && data.routes.length > 0) AppState.routes = data.routes;

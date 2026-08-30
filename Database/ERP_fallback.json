@@ -6271,10 +6271,10 @@
       "salesman": "Ijaz",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Open",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "stockDeducted": true,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 4,
       "items": [
         {
@@ -6372,7 +6372,9 @@
       "netAmount": 48230,
       "totalAmount": 48472,
       "subtotal": 50240,
-      "netTotal": 48472
+      "netTotal": 48472,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000151",
@@ -6471,7 +6473,8 @@
       "subtotal": 3458,
       "netTotal": 3475,
       "pickListNo": "PL-2026-023",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000150",
@@ -6528,7 +6531,8 @@
       "subtotal": 13290,
       "netTotal": 13356,
       "pickListNo": "PL-2026-022",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000149",
@@ -6545,10 +6549,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Picked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -6585,7 +6589,9 @@
       "subtotal": 1111,
       "netTotal": 1117,
       "pickListNo": "PL-2026-021",
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000148",
@@ -6602,10 +6608,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Picked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -6642,7 +6648,9 @@
       "subtotal": 1111,
       "netTotal": 1117,
       "pickListNo": "PL-2026-021",
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000147",
@@ -6659,10 +6667,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Picked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -6699,7 +6707,9 @@
       "subtotal": 1111,
       "netTotal": 1117,
       "pickListNo": "PL-2026-021",
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000146",
@@ -6716,10 +6726,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Picked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -6756,7 +6766,9 @@
       "subtotal": 1105,
       "netTotal": 1111,
       "pickListNo": "PL-2026-020",
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000145",
@@ -6773,10 +6785,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Picked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -6813,7 +6825,9 @@
       "subtotal": 2222,
       "netTotal": 2233,
       "pickListNo": "PL-2026-019",
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000144",
@@ -6830,10 +6844,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Picked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -6870,7 +6884,9 @@
       "subtotal": 2222,
       "netTotal": 2233,
       "pickListNo": "PL-2026-018",
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000143",
@@ -6887,10 +6903,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -6926,7 +6942,9 @@
       "totalAmount": 2221,
       "subtotal": 2210,
       "netTotal": 2221,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000142",
@@ -6983,7 +7001,8 @@
       "subtotal": 1111,
       "netTotal": 1117,
       "isManuallyConfirmed": true,
-      "pickListNo": "PL-2026-018"
+      "pickListNo": "PL-2026-018",
+      "status": "Confirmed"
     },
     {
       "id": "CHT000141",
@@ -7000,10 +7019,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -7039,7 +7058,9 @@
       "totalAmount": 2233,
       "subtotal": 2222,
       "netTotal": 2233,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000140",
@@ -7056,10 +7077,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -7095,7 +7116,9 @@
       "totalAmount": 2221,
       "subtotal": 2210,
       "netTotal": 2221,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000139",
@@ -7320,7 +7343,8 @@
       "subtotal": 17083,
       "netTotal": 17168,
       "pickListNo": "PL-2026-017",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000138",
@@ -7337,10 +7361,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "nonfiler",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Picked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -7419,7 +7443,9 @@
       "subtotal": 3476,
       "netTotal": 3563,
       "pickListNo": "PL-2026-016",
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000137",
@@ -7581,7 +7607,8 @@
       "subtotal": 8722,
       "netTotal": 8590,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000136",
@@ -7659,7 +7686,8 @@
       "subtotal": 2612,
       "netTotal": 2625,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000135",
@@ -7716,7 +7744,8 @@
       "subtotal": 1501,
       "netTotal": 1509,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000134",
@@ -7773,7 +7802,8 @@
       "subtotal": 1130,
       "netTotal": 1136,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000133",
@@ -7893,7 +7923,8 @@
       "subtotal": 6251,
       "netTotal": 6282,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000132",
@@ -7950,7 +7981,8 @@
       "subtotal": 1329,
       "netTotal": 1336,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000131",
@@ -8112,7 +8144,8 @@
       "subtotal": 6623,
       "netTotal": 6656,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000130",
@@ -8211,7 +8244,8 @@
       "subtotal": 3639,
       "netTotal": 3657,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000129",
@@ -8394,7 +8428,8 @@
       "subtotal": 8420,
       "netTotal": 8462,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000128",
@@ -8451,7 +8486,8 @@
       "subtotal": 1111,
       "netTotal": 1117,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000127",
@@ -8508,7 +8544,8 @@
       "subtotal": 1130,
       "netTotal": 1136,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000126",
@@ -8586,7 +8623,8 @@
       "subtotal": 2317,
       "netTotal": 2305,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000125",
@@ -8811,7 +8849,8 @@
       "subtotal": 10567,
       "netTotal": 10407,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000124",
@@ -9015,7 +9054,8 @@
       "subtotal": 17392,
       "netTotal": 16780,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000123",
@@ -9219,7 +9259,8 @@
       "subtotal": 14454,
       "netTotal": 13945,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000122",
@@ -9507,7 +9548,8 @@
       "subtotal": 15717,
       "netTotal": 15480,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000121",
@@ -9648,7 +9690,8 @@
       "subtotal": 6033,
       "netTotal": 6003,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000120",
@@ -9747,7 +9790,8 @@
       "subtotal": 3648,
       "netTotal": 3666,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000119",
@@ -9930,7 +9974,8 @@
       "subtotal": 8550,
       "netTotal": 8507,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000118",
@@ -10113,7 +10158,8 @@
       "subtotal": 9187,
       "netTotal": 9233,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000117",
@@ -10170,7 +10216,8 @@
       "subtotal": 1006,
       "netTotal": 1011,
       "pickListNo": "PL-2026-016",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000116",
@@ -10227,7 +10274,8 @@
       "subtotal": 1111,
       "netTotal": 1117,
       "pickListNo": "PL-2026-015",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000115",
@@ -10284,7 +10332,8 @@
       "subtotal": 3333,
       "netTotal": 3350,
       "pickListNo": "PL-2026-015",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000114",
@@ -10301,10 +10350,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -10340,7 +10389,9 @@
       "totalAmount": 1117,
       "subtotal": 1111,
       "netTotal": 1117,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000113",
@@ -10397,7 +10448,8 @@
       "subtotal": 1111,
       "netTotal": 1117,
       "pickListNo": "PL-2026-014",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000112",
@@ -10454,7 +10506,8 @@
       "subtotal": 1111,
       "netTotal": 1117,
       "pickListNo": "PL-2026-013",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000111",
@@ -10511,7 +10564,8 @@
       "subtotal": 1111,
       "netTotal": 1117,
       "pickListNo": "PL-2026-013",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000110",
@@ -10568,7 +10622,8 @@
       "subtotal": 1200,
       "netTotal": 1206,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000109",
@@ -10625,7 +10680,8 @@
       "subtotal": 1105,
       "netTotal": 1111,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000108",
@@ -10703,7 +10759,8 @@
       "subtotal": 2599,
       "netTotal": 2612,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000107",
@@ -10844,7 +10901,8 @@
       "subtotal": 6245,
       "netTotal": 6276,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000106",
@@ -10922,7 +10980,8 @@
       "subtotal": 2618,
       "netTotal": 2631,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000105",
@@ -11063,7 +11122,8 @@
       "subtotal": 8283,
       "netTotal": 8324,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000104",
@@ -11246,7 +11306,8 @@
       "subtotal": 8353,
       "netTotal": 8395,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000103",
@@ -11345,7 +11406,8 @@
       "subtotal": 3644,
       "netTotal": 3662,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000102",
@@ -11423,7 +11485,8 @@
       "subtotal": 2599,
       "netTotal": 2612,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000101",
@@ -11522,7 +11585,8 @@
       "subtotal": 3921,
       "netTotal": 3941,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000100",
@@ -11747,7 +11811,8 @@
       "subtotal": 10404,
       "netTotal": 10456,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000099",
@@ -11804,7 +11869,8 @@
       "subtotal": 1105,
       "netTotal": 1111,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000098",
@@ -11861,7 +11927,8 @@
       "subtotal": 1105,
       "netTotal": 1111,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000097",
@@ -11939,7 +12006,8 @@
       "subtotal": 2816,
       "netTotal": 2830,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000096",
@@ -12038,7 +12106,8 @@
       "subtotal": 4854,
       "netTotal": 4878,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000095",
@@ -12305,7 +12374,8 @@
       "subtotal": 12776,
       "netTotal": 12840,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000094",
@@ -12614,7 +12684,8 @@
       "subtotal": 15423,
       "netTotal": 15500,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000093",
@@ -12797,7 +12868,8 @@
       "subtotal": 11285,
       "netTotal": 11341,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000092",
@@ -13022,7 +13094,8 @@
       "subtotal": 10642,
       "netTotal": 10695,
       "pickListNo": "PL-2026-012",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000091",
@@ -13039,10 +13112,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Picked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -13184,7 +13257,9 @@
       "subtotal": 7847,
       "netTotal": 7886,
       "pickListNo": "PL-2026-011",
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000090",
@@ -13201,10 +13276,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -13492,7 +13567,9 @@
       "totalAmount": 16249,
       "subtotal": 16168,
       "netTotal": 16249,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000089",
@@ -13509,10 +13586,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "filer",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -13863,7 +13940,9 @@
       "totalAmount": 19896,
       "subtotal": 19797,
       "netTotal": 19896,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000088",
@@ -13880,10 +13959,10 @@
       "salesman": "Arif Sanwal",
       "taxMode": "nonfiler",
       "paymentStatus": "Cash",
-      "deliveryStatus": "Cancelled",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "stockDeducted": false,
-      "salesRecorded": false,
+      "salesRecorded": true,
       "globalDiscPct": 0,
       "items": [
         {
@@ -14213,7 +14292,9 @@
       "totalAmount": 19017,
       "subtotal": 18553,
       "netTotal": 19017,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed",
+      "isManuallyConfirmed": true
     },
     {
       "id": "CHT000087",
@@ -14564,7 +14645,8 @@
       "subtotal": 19078,
       "netTotal": 19555,
       "pickListNo": "PL-2026-010",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000086",
@@ -14684,7 +14766,8 @@
       "subtotal": 5375,
       "netTotal": 5402,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000085",
@@ -14741,7 +14824,8 @@
       "subtotal": 1105,
       "netTotal": 1111,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000084",
@@ -14840,7 +14924,8 @@
       "subtotal": 5212.9400000000005,
       "netTotal": 5239,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000083",
@@ -14897,7 +14982,8 @@
       "subtotal": 1124,
       "netTotal": 1130,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000082",
@@ -14975,7 +15061,8 @@
       "subtotal": 4420,
       "netTotal": 4442,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000081",
@@ -15032,7 +15119,8 @@
       "subtotal": 1105,
       "netTotal": 1111,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000080",
@@ -15110,7 +15198,8 @@
       "subtotal": 2606.4700000000003,
       "netTotal": 2620,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000079",
@@ -15209,7 +15298,8 @@
       "subtotal": 3709.4700000000003,
       "netTotal": 3728,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000078",
@@ -15308,7 +15398,8 @@
       "subtotal": 4434,
       "netTotal": 4456,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000077",
@@ -15512,7 +15603,8 @@
       "subtotal": 9676.94,
       "netTotal": 9725,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000076",
@@ -15653,7 +15745,8 @@
       "subtotal": 6313.9400000000005,
       "netTotal": 6346,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000075",
@@ -15731,7 +15824,8 @@
       "subtotal": 2606.4700000000003,
       "netTotal": 2541,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000074",
@@ -15830,7 +15924,8 @@
       "subtotal": 3711.4700000000003,
       "netTotal": 3730,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000073",
@@ -16013,7 +16108,8 @@
       "subtotal": 8053.47,
       "netTotal": 8094,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000072",
@@ -16070,7 +16166,8 @@
       "subtotal": 1501.47,
       "netTotal": 1509,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000071",
@@ -16148,7 +16245,8 @@
       "subtotal": 2606.4700000000003,
       "netTotal": 2620,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000070",
@@ -16247,7 +16345,8 @@
       "subtotal": 3730.4700000000003,
       "netTotal": 3749,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000069",
@@ -16304,7 +16403,8 @@
       "subtotal": 1501.47,
       "netTotal": 1509,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000068",
@@ -16361,7 +16461,8 @@
       "subtotal": 1547,
       "netTotal": 1555,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000067",
@@ -16418,7 +16519,8 @@
       "subtotal": 1501.47,
       "netTotal": 1509,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000066",
@@ -16496,7 +16598,8 @@
       "subtotal": 2317,
       "netTotal": 2329,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000065",
@@ -16574,7 +16677,8 @@
       "subtotal": 2210,
       "netTotal": 2221,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000064",
@@ -16694,7 +16798,8 @@
       "subtotal": 4923.47,
       "netTotal": 4948,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000063",
@@ -16751,7 +16856,8 @@
       "subtotal": 1105,
       "netTotal": 1111,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000062",
@@ -16829,7 +16935,8 @@
       "subtotal": 2606.4700000000003,
       "netTotal": 2620,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000061",
@@ -17054,7 +17161,8 @@
       "subtotal": 12489.41,
       "netTotal": 12552,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000060",
@@ -17153,7 +17261,8 @@
       "subtotal": 3730.4700000000003,
       "netTotal": 3749,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000059",
@@ -17210,7 +17319,8 @@
       "subtotal": 1105,
       "netTotal": 1111,
       "pickListNo": "PL-2026-009",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000058",
@@ -17540,7 +17650,8 @@
       "subtotal": 16509,
       "netTotal": 16592,
       "pickListNo": "PL-2026-008",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000057",
@@ -17618,7 +17729,8 @@
       "subtotal": 2525,
       "netTotal": 2461,
       "pickListNo": "PL-2026-008",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000056",
@@ -17801,7 +17913,8 @@
       "subtotal": 13674,
       "netTotal": 13468,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000055",
@@ -17879,7 +17992,8 @@
       "subtotal": 2210,
       "netTotal": 2265,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000054",
@@ -17936,7 +18050,8 @@
       "subtotal": 1105,
       "netTotal": 1111,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000053",
@@ -18014,7 +18129,8 @@
       "subtotal": 2210,
       "netTotal": 2221,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000052",
@@ -18092,7 +18208,8 @@
       "subtotal": 2606.4700000000003,
       "netTotal": 2620,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000051",
@@ -18170,7 +18287,8 @@
       "subtotal": 2606.4700000000003,
       "netTotal": 2541,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000050",
@@ -18311,7 +18429,8 @@
       "subtotal": 6083.47,
       "netTotal": 6114,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000049",
@@ -18389,7 +18508,8 @@
       "subtotal": 2427,
       "netTotal": 2439,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000048",
@@ -18467,7 +18587,8 @@
       "subtotal": 2606.4700000000003,
       "netTotal": 2620,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000047",
@@ -18629,7 +18750,8 @@
       "subtotal": 6583,
       "netTotal": 6616,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000046",
@@ -18749,7 +18871,8 @@
       "subtotal": 4272,
       "netTotal": 4293,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000045",
@@ -18827,7 +18950,8 @@
       "subtotal": 2208,
       "netTotal": 2219,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000044",
@@ -18947,7 +19071,8 @@
       "subtotal": 5052.47,
       "netTotal": 5078,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000043",
@@ -19025,7 +19150,8 @@
       "subtotal": 2134,
       "netTotal": 2145,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000042",
@@ -19082,7 +19208,8 @@
       "subtotal": 1105,
       "netTotal": 1111,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000041",
@@ -19307,7 +19434,8 @@
       "subtotal": 10913.94,
       "netTotal": 10969,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000040",
@@ -19427,7 +19555,8 @@
       "subtotal": 5052.47,
       "netTotal": 5078,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000039",
@@ -19673,7 +19802,8 @@
       "subtotal": 12722.470000000001,
       "netTotal": 12786,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000038",
@@ -19814,7 +19944,8 @@
       "subtotal": 8346.470000000001,
       "netTotal": 8388,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000037",
@@ -19913,7 +20044,8 @@
       "subtotal": 3709.4700000000003,
       "netTotal": 3728,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000036",
@@ -20159,7 +20291,8 @@
       "subtotal": 12379.94,
       "netTotal": 12442,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000035",
@@ -20258,7 +20391,8 @@
       "subtotal": 3928.4700000000003,
       "netTotal": 3948,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000034",
@@ -20357,7 +20491,8 @@
       "subtotal": 3928.4700000000003,
       "netTotal": 3948,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000033",
@@ -20414,7 +20549,8 @@
       "subtotal": 1501.47,
       "netTotal": 1509,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000032",
@@ -20492,7 +20628,8 @@
       "subtotal": 2823.4700000000003,
       "netTotal": 2838,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000031",
@@ -20570,7 +20707,8 @@
       "subtotal": 2136,
       "netTotal": 2147,
       "pickListNo": "PL-2026-007",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000030",
@@ -20627,7 +20765,8 @@
       "subtotal": 1322,
       "netTotal": 1289,
       "isManuallyConfirmed": true,
-      "pickListNo": "PL-2026-007"
+      "pickListNo": "PL-2026-007",
+      "status": "Confirmed"
     },
     {
       "id": "CHT000029",
@@ -20726,7 +20865,8 @@
       "subtotal": 600,
       "netTotal": 600,
       "pickListNo": "PL-2026-006",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000028",
@@ -20825,7 +20965,8 @@
       "subtotal": 4310,
       "netTotal": 4332,
       "pickListNo": "PL-2026-006",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000027",
@@ -20924,7 +21065,8 @@
       "subtotal": 45959.11,
       "netTotal": 44341,
       "pickListNo": "PL-2026-005",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000026",
@@ -21044,7 +21186,8 @@
       "subtotal": 15798.29,
       "netTotal": 15877,
       "isManuallyConfirmed": true,
-      "pickListNo": "PL-2026-005"
+      "pickListNo": "PL-2026-005",
+      "status": "Confirmed"
     },
     {
       "id": "CHT-INV-1164",
@@ -21054,7 +21197,7 @@
       "deliveryDate": "2026-08-15",
       "shopName": "Naeem Kiryana Store",
       "routeName": "Jhang City Route",
-      "deliveryStatus": "Returned",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "salesRecorded": true,
       "items": [
@@ -21085,7 +21228,8 @@
       "totalCartons": 10,
       "totalUnits": 0,
       "totalPackets": 240,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT-TEST-2264",
@@ -21095,7 +21239,7 @@
       "deliveryDate": "2026-08-12",
       "shopName": "Bismillah Karyana Store",
       "routeName": "Jhang City Route",
-      "deliveryStatus": "Returned",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "items": [
         {
@@ -21128,7 +21272,8 @@
       "totalCartons": 10,
       "totalUnits": 0,
       "totalPackets": 240,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT-INV-9480",
@@ -21169,7 +21314,8 @@
       "totalCartons": 10,
       "totalUnits": 0,
       "totalPackets": 240,
-      "pickListNo": "PL-2026-005"
+      "pickListNo": "PL-2026-005",
+      "status": "Confirmed"
     },
     {
       "id": "CHT-TEST-3663",
@@ -21179,7 +21325,7 @@
       "deliveryDate": "2026-08-12",
       "shopName": "Bismillah Karyana Store",
       "routeName": "Jhang City Route",
-      "deliveryStatus": "Returned",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "items": [
         {
@@ -21212,7 +21358,8 @@
       "totalCartons": 10,
       "totalUnits": 0,
       "totalPackets": 240,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT-INV-2534",
@@ -21222,7 +21369,7 @@
       "deliveryDate": "2026-08-15",
       "shopName": "Naeem Kiryana Store",
       "routeName": "Jhang City Route",
-      "deliveryStatus": "Returned",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "salesRecorded": true,
       "items": [
@@ -21253,7 +21400,8 @@
       "totalCartons": 10,
       "totalUnits": 0,
       "totalPackets": 240,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000020",
@@ -21310,7 +21458,8 @@
       "subtotal": 14940,
       "netTotal": 15015,
       "isManuallyConfirmed": true,
-      "pickListNo": "PL-2026-005"
+      "pickListNo": "PL-2026-005",
+      "status": "Confirmed"
     },
     {
       "id": "CHT-INV-7642",
@@ -21320,7 +21469,7 @@
       "deliveryDate": "2026-08-15",
       "shopName": "Naeem Kiryana Store",
       "routeName": "Jhang City Route",
-      "deliveryStatus": "Returned",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "salesRecorded": true,
       "items": [
@@ -21351,7 +21500,8 @@
       "totalCartons": 10,
       "totalUnits": 0,
       "totalPackets": 240,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT-TEST-8638",
@@ -21361,7 +21511,7 @@
       "deliveryDate": "2026-08-12",
       "shopName": "Bismillah Karyana Store",
       "routeName": "Jhang City Route",
-      "deliveryStatus": "Returned",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "items": [
         {
@@ -21394,7 +21544,8 @@
       "totalCartons": 10,
       "totalUnits": 0,
       "totalPackets": 240,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT-INV-8938",
@@ -21404,7 +21555,7 @@
       "deliveryDate": "2026-08-15",
       "shopName": "Naeem Kiryana Store",
       "routeName": "Jhang City Route",
-      "deliveryStatus": "Returned",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "salesRecorded": true,
       "items": [
@@ -21435,7 +21586,8 @@
       "totalCartons": 10,
       "totalUnits": 0,
       "totalPackets": 240,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT-TEST-0188",
@@ -21445,7 +21597,7 @@
       "deliveryDate": "2026-08-12",
       "shopName": "Bismillah Karyana Store",
       "routeName": "Jhang City Route",
-      "deliveryStatus": "Returned",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "items": [
         {
@@ -21478,7 +21630,8 @@
       "totalCartons": 10,
       "totalUnits": 0,
       "totalPackets": 240,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000015",
@@ -21616,7 +21769,8 @@
       "pickListNo": "PL-2026-004",
       "isManuallyConfirmed": true,
       "hasPartialReturn": true,
-      "isVoid": false
+      "isVoid": false,
+      "status": "Confirmed"
     },
     {
       "id": "CHT-INV-4553",
@@ -21626,7 +21780,7 @@
       "deliveryDate": "2026-08-15",
       "shopName": "Naeem Kiryana Store",
       "routeName": "Jhang City Route",
-      "deliveryStatus": "Returned",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "salesRecorded": true,
       "items": [
@@ -21657,7 +21811,8 @@
       "totalCartons": 10,
       "totalUnits": 0,
       "totalPackets": 240,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT-TEST-5628",
@@ -21667,7 +21822,7 @@
       "deliveryDate": "2026-08-12",
       "shopName": "Bismillah Karyana Store",
       "routeName": "Jhang City Route",
-      "deliveryStatus": "Returned",
+      "deliveryStatus": "Confirmed",
       "pickStatus": "Unpicked",
       "items": [
         {
@@ -21700,7 +21855,8 @@
       "totalCartons": 10,
       "totalUnits": 0,
       "totalPackets": 240,
-      "isVoid": true
+      "isVoid": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000014",
@@ -21906,7 +22062,8 @@
       "basicAmount": 9868,
       "discAmount": 0,
       "pickListNo": "PL-2026-003",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000013",
@@ -22070,7 +22227,8 @@
       "basicAmount": 9040,
       "discAmount": 0,
       "pickListNo": "PL-2026-003",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000012",
@@ -22234,7 +22392,8 @@
       "basicAmount": 7031,
       "discAmount": 0,
       "pickListNo": "PL-2026-003",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000011",
@@ -22503,7 +22662,8 @@
       "basicAmount": 25450,
       "discAmount": 0,
       "pickListNo": "PL-2026-003",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000010",
@@ -22646,7 +22806,8 @@
       "basicAmount": 5538,
       "discAmount": 0,
       "pickListNo": "PL-2026-003",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000009",
@@ -22747,7 +22908,8 @@
       "basicAmount": 6860,
       "discAmount": 205.79999999999998,
       "pickListNo": "PL-2026-003",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000008",
@@ -22890,7 +23052,8 @@
       "basicAmount": 5753,
       "discAmount": 172.59,
       "pickListNo": "PL-2026-003",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000007",
@@ -23012,7 +23175,8 @@
       "basicAmount": 4527,
       "discAmount": 0,
       "pickListNo": "PL-2026-003",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000006",
@@ -23218,7 +23382,8 @@
       "basicAmount": 10338,
       "discAmount": 0,
       "pickListNo": "PL-2026-003",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000005",
@@ -23403,7 +23568,8 @@
       "basicAmount": 10444,
       "discAmount": 522.2,
       "pickListNo": "PL-2026-003",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000004",
@@ -23525,7 +23691,8 @@
       "basicAmount": 4656,
       "discAmount": 0,
       "pickListNo": "PL-2026-003",
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     },
     {
       "id": "CHT000003",
@@ -23605,7 +23772,8 @@
       "pickListNo": "PL-2026-002",
       "basicAmount": 400,
       "discAmount": 0,
-      "isManuallyConfirmed": true
+      "isManuallyConfirmed": true,
+      "status": "Confirmed"
     }
   ],
   "orders": [
