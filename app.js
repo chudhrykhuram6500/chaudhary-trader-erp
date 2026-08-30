@@ -15454,7 +15454,10 @@ function syncWithLocalServerStore() {
         .then(data => {
             if (!data.success) return;
 
-            // Enforce 100% Pure Cloud SSOT Architecture: Server Database is Authoritative across all Browsers!
+            // Enforce 100% Pure Cloud SSOT Architecture with Zero-Flicker Smart Change Detection!
+            const newHash = `${data.bills?.length || 0}_${data.orders?.length || 0}_${data.shops?.length || 0}_${data.pickLists?.length || 0}`;
+            const hasDataChanged = (typeof AppState._lastStateHash === 'undefined' || AppState._lastStateHash !== newHash);
+
             if (Array.isArray(data.bills)) AppState.bills = data.bills;
             if (Array.isArray(data.orders)) AppState.orders = data.orders;
             if (Array.isArray(data.shops)) AppState.shops = data.shops;
@@ -15465,8 +15468,10 @@ function syncWithLocalServerStore() {
 
             if (!AppState.initialServerHydrated) {
                 AppState.initialServerHydrated = true;
+                AppState._lastStateHash = newHash;
                 renderAllViews();
-            } else {
+            } else if (hasDataChanged) {
+                AppState._lastStateHash = newHash;
                 if (typeof renderOrdersTable === "function") renderOrdersTable();
                 if (typeof renderDashboard === "function") renderDashboard();
                 if (typeof renderPickListTable === "function") renderPickListTable();
