@@ -13934,7 +13934,11 @@ function executeOrderProcessing(targetOrders, deliveryDate) {
             const billItems = groupItems.map(i => {
                 const sku = AppState.skus.find(s => s.code === i.code || (i.desc && s.desc.toLowerCase() === i.desc.toLowerCase()));
                 const isFocItem = !!i.isFoc;
-                const baseTpRate = sku ? (sku.tpRate || sku.wholesaleRate || rate) : rate;
+                const rate = isFocItem ? 0 : ((i.tpRate && i.tpRate > 0) ? i.tpRate : (sku ? (sku.tpRate || sku.wholesaleRate || 900) : 900));
+                const pack = i.pack || (sku ? sku.pack : 12);
+                const grams = i.grams || (sku ? sku.grams : 72);
+
+                const baseTpRate = isFocItem ? 0 : (sku ? (sku.tpRate || sku.wholesaleRate || rate) : rate);
                 const basicAmt = isFocItem ? 0 : (baseTpRate * (i.cartons || 0));
                 const discAmt = isFocItem ? 0 : (basicAmt * (globalDiscPct / 100));
                 const taxableBase = basicAmt - discAmt;
