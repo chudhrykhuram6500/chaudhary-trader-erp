@@ -7,10 +7,16 @@
     "start": "node sync_server.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "pg": "^8.23.0"
   },
-  "keywords": ["erp", "distribution", "pepsico", "fmcg"],
+  "keywords": [
+    "erp",
+    "distribution",
+    "pepsico",
+    "fmcg"
+  ],
   "author": "Chaudhary Trader",
   "license": "ISC"
 }

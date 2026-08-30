@@ -6224,8 +6224,36 @@ const DEFAULT_ROUTES = [
     }
 ];
 
+const { Client } = require('pg');
+const SUPABASE_CONN_STRING = process.env.SUPABASE_DB_URL || 'postgresql://postgres.lyimkjrtbicdonsimvqg:33202-5922754-5195438ck@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres';
+
 let _cachedAppState = null;
 let _saveDiskTimer = null;
+let _supabaseInitTried = false;
+
+async function syncWithSupabaseCloud(state) {
+    if (!state) return;
+    try {
+        const client = new Client({ connectionString: SUPABASE_CONN_STRING, ssl: { rejectUnauthorized: false } });
+        await client.connect();
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS erp_master_store (
+                id VARCHAR(50) PRIMARY KEY,
+                data JSONB NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        await client.query(`
+            INSERT INTO erp_master_store (id, data, updated_at)
+            VALUES ('master_state', $1, NOW())
+            ON CONFLICT (id) DO UPDATE
+            SET data = EXCLUDED.data, updated_at = NOW();
+        `, [JSON.stringify(state)]);
+        await client.end();
+    } catch(e) {
+        console.warn('Supabase Cloud Sync Note:', e.message);
+    }
+}
 
 function getAppStateFromStore() {
     if (_cachedAppState) return _cachedAppState;
@@ -6252,10 +6280,32 @@ function getAppStateFromStore() {
             if (s.name === "Ali Raza") s.name = "Salesman 2";
         });
     }
+
     _cachedAppState = state;
+
+    // Asynchronously hydrate from Supabase Cloud PostgreSQL if available
+    if (!_supabaseInitTried) {
+        _supabaseInitTried = true;
+        (async () => {
+            try {
+                const client = new Client({ connectionString: SUPABASE_CONN_STRING, ssl: { rejectUnauthorized: false } });
+                await client.connect();
+                const res = await client.query("SELECT data FROM erp_master_store WHERE id = 'master_state';");
+                if (res && res.rows && res.rows.length > 0 && res.rows[0].data) {
+                    const cloudData = res.rows[0].data;
+                    if (cloudData.bills && cloudData.bills.length > 0) _cachedAppState.bills = cloudData.bills;
+                    if (cloudData.shops && cloudData.shops.length > 0) _cachedAppState.shops = cloudData.shops;
+                    if (cloudData.orders && cloudData.orders.length > 0) _cachedAppState.orders = cloudData.orders;
+                    if (cloudData.skus && cloudData.skus.length > 0) _cachedAppState.skus = cloudData.skus;
+                    console.log('✓ Hydrated state from Supabase Cloud PostgreSQL!');
+                }
+                await client.end();
+            } catch(e) {}
+        })();
+    }
+
     return _cachedAppState;
 }
-
 
 function saveAppStateToStore(state) {
     _cachedAppState = state;
@@ -6264,6 +6314,7 @@ function saveAppStateToStore(state) {
         try {
             dbManager.writeJsonStore(_cachedAppState);
         } catch(e) {}
+        syncWithSupabaseCloud(_cachedAppState);
     }, 100);
 }
 
