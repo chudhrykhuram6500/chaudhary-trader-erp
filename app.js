@@ -14016,8 +14016,9 @@ function executeOrderProcessing(targetOrders, deliveryDate) {
     AppState.selectedOrderIds = [];
     AppState.pendingShortageData = null;
     saveStateToStorage();
+    try { forcePushLocalStateToCloud(); } catch(e) {}
     renderAllViews();
-    alert(`Successfully processed ${targetOrders.length} order(s)! Warehouse stock deducted & Invoices created in Open / Unpicked status.`);
+    alert(`🎉 Successfully processed ${targetOrders.length} order(s)! Invoices created & Pick List updated.`);
 }
 
 /* ==========================================================================
@@ -15453,29 +15454,41 @@ function syncWithLocalServerStore() {
             if (!data.success) return;
 
             // Enforce 100% Pure Cloud SSOT Architecture with Zero-Wipe Protection & Zero-Flicker Change Detection!
-            const newHash = `${data.bills?.length || 0}_${data.orders?.length || 0}_${data.shops?.length || 0}_${data.pickLists?.length || 0}`;
-            const hasDataChanged = (typeof AppState._lastStateHash === 'undefined' || AppState._lastStateHash !== newHash);
+            let needsPush = false;
 
-            if (Array.isArray(data.bills) && data.bills.length > 0) {
-                AppState.bills = data.bills;
-            } else if (Array.isArray(data.bills) && data.bills.length === 0 && AppState.bills.length > 0) {
-                try { forcePushLocalStateToCloud(); } catch(e) {}
+            if (Array.isArray(data.bills)) {
+                data.bills.forEach(sb => {
+                    const idx = AppState.bills.findIndex(b => b.billNo === sb.billNo || (sb.id && b.id === sb.id));
+                    if (idx !== -1) {
+                        AppState.bills[idx] = { ...AppState.bills[idx], ...sb };
+                    } else {
+                        AppState.bills.unshift(sb);
+                    }
+                });
+                if (AppState.bills.length > data.bills.length) needsPush = true;
             }
 
-            if (Array.isArray(data.orders) && data.orders.length > 0) {
-                AppState.orders = data.orders;
-            } else if (Array.isArray(data.orders) && data.orders.length === 0 && AppState.orders.length > 0) {
-                try { forcePushLocalStateToCloud(); } catch(e) {}
+            if (Array.isArray(data.orders)) {
+                data.orders.forEach(so => {
+                    const idx = AppState.orders.findIndex(o => o.orderNo === so.orderNo || (so.id && o.id === so.id));
+                    if (idx !== -1) {
+                        AppState.orders[idx] = { ...AppState.orders[idx], ...so };
+                    } else {
+                        AppState.orders.unshift(so);
+                    }
+                });
+                if (AppState.orders.length > data.orders.length) needsPush = true;
             }
 
-            if (Array.isArray(data.shops) && data.shops.length > 0) {
-                AppState.shops = data.shops;
-            }
-
+            if (Array.isArray(data.shops) && data.shops.length >= AppState.shops.length) AppState.shops = data.shops;
             if (Array.isArray(data.skus) && data.skus.length > 0) AppState.skus = data.skus;
             if (Array.isArray(data.pickLists)) AppState.pickLists = data.pickLists;
             if (Array.isArray(data.routes) && data.routes.length > 0) AppState.routes = data.routes;
             if (Array.isArray(data.companies) && data.companies.length > 0) AppState.companies = data.companies;
+
+            if (needsPush) {
+                try { forcePushLocalStateToCloud(); } catch(e) {}
+            }
 
             if (!AppState.initialServerHydrated) {
                 AppState.initialServerHydrated = true;
