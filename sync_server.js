@@ -6508,6 +6508,14 @@ function handleHttpRequest(req, res) {
                         else state.salesmen.push(pSales);
                     });
                 }
+                if (Array.isArray(payload.focSchemes)) {
+                    if (!Array.isArray(state.focSchemes)) state.focSchemes = [];
+                    payload.focSchemes.forEach(pFoc => {
+                        const idx = state.focSchemes.findIndex(f => f.id === pFoc.id);
+                        if (idx !== -1) state.focSchemes[idx] = { ...state.focSchemes[idx], ...pFoc };
+                        else state.focSchemes.push(pFoc);
+                    });
+                }
                 saveAppStateToStore(state);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
