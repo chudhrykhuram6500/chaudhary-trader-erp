@@ -6516,6 +6516,23 @@ function handleHttpRequest(req, res) {
                         else state.focSchemes.push(pFoc);
                     });
                 }
+
+                // Upserts above can only add/update records by key - they never
+                // remove one that's simply absent from a payload (a partial push
+                // legitimately omits everything it didn't touch). Deletions must
+                // be requested explicitly here, or a deleted record stays on the
+                // server forever and reappears on the next sync from any client.
+                if (payload.deletions && typeof payload.deletions === 'object') {
+                    const DELETE_KEY_FIELDS = { shops: 'id', routes: 'id', companies: 'id', salesmen: 'id', skus: 'code', orders: 'orderNo', bills: 'billNo', pickLists: 'pickListNo', focSchemes: 'id' };
+                    Object.keys(payload.deletions).forEach(collection => {
+                        const keyField = DELETE_KEY_FIELDS[collection];
+                        const idsToDelete = payload.deletions[collection];
+                        if (!keyField || !Array.isArray(state[collection]) || !Array.isArray(idsToDelete) || idsToDelete.length === 0) return;
+                        const idSet = new Set(idsToDelete.map(String));
+                        state[collection] = state[collection].filter(item => !idSet.has(String(item[keyField])));
+                    });
+                }
+
                 saveAppStateToStore(state);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));

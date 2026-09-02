@@ -7082,8 +7082,34 @@ const PARTIAL_SYNC_KEY_FIELDS = {
 };
 
 let _pendingPartialSync = {};   // { collectionName: { keyValue: recordObj } }
+let _pendingPartialDeletions = {}; // { collectionName: Set(keyValue) }
 let _pendingPartialToasts = []; // [{ toastEl, success, error }]
 let _partialSyncTimer = null;
+
+// Upserts (queuePartialCloudSave) can only add/update a record by key - they
+// never remove one just because it's absent from a payload (a partial push
+// legitimately omits everything it didn't touch). Deleting a record must be
+// requested explicitly, or it stays on the server and reappears on the next
+// sync pull from any device. Shares the same debounce/flush and toast list as
+// queuePartialCloudSave so a delete that happens alongside other queued
+// changes still goes out as a single request.
+function queueCloudDelete(collection, keyValue, toastConfig) {
+    if (keyValue === undefined || keyValue === null) return;
+    if (!_pendingPartialDeletions[collection]) _pendingPartialDeletions[collection] = new Set();
+    _pendingPartialDeletions[collection].add(keyValue);
+
+    if (toastConfig && toastConfig.loading) {
+        const toastEl = showSyncToast(toastConfig.loading, "loading", 0);
+        _pendingPartialToasts.push({
+            toastEl,
+            success: toastConfig.success || "✅ Deleted.",
+            error: toastConfig.error || "⚠️ Deleted locally, but cloud sync may be delayed."
+        });
+    }
+
+    if (_partialSyncTimer) clearTimeout(_partialSyncTimer);
+    _partialSyncTimer = setTimeout(flushPartialCloudSave, 50);
+}
 
 // partialPayload example: { skus: [oneUpdatedSku] } or { orders: [newOrder], bills: [newBill] }
 // toastConfig (optional - omit for a silent internal call with no user-facing toast): { loading, success, error }
@@ -7119,14 +7145,22 @@ function queuePartialCloudSave(partialPayload, toastConfig) {
 
 function flushPartialCloudSave() {
     const bufferedCollections = _pendingPartialSync;
+    const bufferedDeletions = _pendingPartialDeletions;
     const toastsToResolve = _pendingPartialToasts;
     _pendingPartialSync = {};
+    _pendingPartialDeletions = {};
     _pendingPartialToasts = [];
 
     const body = {};
     Object.keys(bufferedCollections).forEach(collection => {
         body[collection] = Object.values(bufferedCollections[collection]);
     });
+    if (Object.keys(bufferedDeletions).length > 0) {
+        body.deletions = {};
+        Object.keys(bufferedDeletions).forEach(collection => {
+            body.deletions[collection] = Array.from(bufferedDeletions[collection]);
+        });
+    }
     if (Object.keys(body).length === 0) return;
 
     const updateUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http'))
@@ -7152,13 +7186,25 @@ function flushPartialCloudSave() {
 
 function startCleanProductionMode() {
     if (confirm("Reset all dummy sales, bills, and shops to ZERO for live production? SKUs and prices will be saved.")) {
+        const billNos = AppState.bills.map(b => b.billNo);
+        const shopIds = AppState.shops.map(s => s.id);
+        const oldRouteIds = AppState.routes.map(r => r.id);
+
         AppState.bills = [];
         AppState.shops = [];
         AppState.routes = [...DEFAULT_7DAY_ROUTES];
         AppState.currentCart = [];
-        saveStateToStorage();
         renderAllViews();
-        alert("System is now reset to ZERO! Clean production ready. Next invoice will be CHT000001.");
+
+        billNos.forEach(id => queueCloudDelete("bills", id));
+        shopIds.forEach(id => queueCloudDelete("shops", id));
+        oldRouteIds.forEach(id => queueCloudDelete("routes", id));
+        queuePartialCloudSave({ routes: AppState.routes });
+        _pendingPartialToasts.push({
+            toastEl: showSyncToast("⏳ Resetting to clean production mode...", "loading", 0),
+            success: "✅ System reset to zero — clean production ready. Next invoice will be CHT000001.",
+            error: "⚠️ Reset locally, but cloud sync is delayed."
+        });
     }
 }
 
@@ -8148,13 +8194,12 @@ function deleteFocScheme(schemeId) {
 
     if (confirm(`Are you sure you want to delete FOC Scheme "${sch.name}"?`)) {
         AppState.focSchemes = AppState.focSchemes.filter(s => s.id !== schemeId);
-        saveStateToStorage();
         renderFocManagementTab();
-        showLoadingThenSyncResultToast(
-            "⏳ Deleting FOC scheme...",
-            `✅ FOC Scheme "${sch.name}" deleted.`,
-            `⚠️ FOC Scheme deleted locally, but cloud sync is delayed.`
-        );
+        queueCloudDelete("focSchemes", schemeId, {
+            loading: "⏳ Deleting FOC scheme...",
+            success: `✅ FOC Scheme "${sch.name}" deleted.`,
+            error: `⚠️ FOC Scheme deleted locally, but cloud sync is delayed.`
+        });
     }
 }
 
@@ -10837,13 +10882,12 @@ function deleteSkuMaster(skuCode) {
 
     if (confirm(`🗑️ Are you sure you want to DELETE SKU "${sku.desc}" (${sku.code})?\n\nIf this product company is closed/discontinued, deleting it will remove it permanently from SKU master list and stock picker.`)) {
         AppState.skus = AppState.skus.filter(s => String(s.code) !== codeStr);
-        saveStateToStorage();
         renderAllViews();
-        showLoadingThenSyncResultToast(
-            "⏳ Deleting SKU...",
-            `✅ SKU "${sku.desc}" (${sku.code}) deleted from master catalog.`,
-            `⚠️ SKU deleted locally, but cloud sync is delayed.`
-        );
+        queueCloudDelete("skus", codeStr, {
+            loading: "⏳ Deleting SKU...",
+            success: `✅ SKU "${sku.desc}" (${sku.code}) deleted from master catalog.`,
+            error: `⚠️ SKU deleted locally, but cloud sync is delayed.`
+        });
     }
 }
 
@@ -11106,14 +11150,14 @@ function deleteCompany(companyId) {
         if (AppState.selectedCompanyId === companyId) AppState.selectedCompanyId = "all";
         if (AppState.posCompanyId === companyId) AppState.posCompanyId = "lays";
         if (AppState.orderCompanyId === companyId) AppState.orderCompanyId = "lays";
-        saveStateToStorage();
         updateAllCompanyDropdowns();
         renderAllViews();
-        showLoadingThenSyncResultToast(
-            "⏳ Deleting company...",
-            `✅ Company "${comp.name}" deleted.`,
-            `⚠️ Company deleted locally, but cloud sync is delayed.`
-        );
+        if (linkedSkus.length > 0) queuePartialCloudSave({ skus: linkedSkus });
+        queueCloudDelete("companies", companyId, {
+            loading: "⏳ Deleting company...",
+            success: `✅ Company "${comp.name}" deleted.`,
+            error: `⚠️ Company deleted locally, but cloud sync is delayed.`
+        });
     }
 }
 
@@ -12946,13 +12990,12 @@ function deleteRoute(routeId) {
 
     if (confirm(`Are you sure you want to delete Route "${route.name}"?`)) {
         AppState.routes = AppState.routes.filter(r => r.id !== routeId);
-        saveStateToStorage();
         renderAllViews();
-        showLoadingThenSyncResultToast(
-            "⏳ Deleting route...",
-            `✅ Route "${route.name}" deleted.`,
-            `⚠️ Route deleted locally, but cloud sync is delayed.`
-        );
+        queueCloudDelete("routes", routeId, {
+            loading: "⏳ Deleting route...",
+            success: `✅ Route "${route.name}" deleted.`,
+            error: `⚠️ Route deleted locally, but cloud sync is delayed.`
+        });
     }
 }
 
@@ -13044,13 +13087,12 @@ function deleteShop(shopId) {
 
     if (confirm(`Are you sure you want to delete Shop "${shop.name}"?`)) {
         AppState.shops = AppState.shops.filter(s => s.id !== shopId);
-        saveStateToStorage();
         renderAllViews();
-        showLoadingThenSyncResultToast(
-            "⏳ Deleting shop...",
-            `✅ Shop "${shop.name}" deleted.`,
-            `⚠️ Shop deleted locally, but cloud sync is delayed.`
-        );
+        queueCloudDelete("shops", shopId, {
+            loading: "⏳ Deleting shop...",
+            success: `✅ Shop "${shop.name}" deleted.`,
+            error: `⚠️ Shop deleted locally, but cloud sync is delayed.`
+        });
     }
 }
 
@@ -14550,15 +14592,22 @@ function renderPickListTable() {
 
 function deletePickList(pickListNo) {
     if (confirm(`Delete Pick List ${pickListNo}? Associated invoices will revert to Unpicked status.`)) {
+        const affectedBills = [];
         AppState.bills.forEach(b => {
             if (b.pickListNo === pickListNo) {
                 b.pickStatus = "Unpicked";
                 b.pickListNo = null;
+                affectedBills.push(b);
             }
         });
         AppState.pickLists = AppState.pickLists.filter(p => p.pickListNo !== pickListNo);
-        saveStateToStorage();
         renderAllViews();
+        if (affectedBills.length > 0) queuePartialCloudSave({ bills: affectedBills });
+        queueCloudDelete("pickLists", pickListNo, {
+            loading: "⏳ Deleting pick list...",
+            success: `✅ Pick List ${pickListNo} deleted — invoices reverted to Unpicked.`,
+            error: `⚠️ Pick List deleted locally, but cloud sync is delayed.`
+        });
     }
 }
 
@@ -16218,13 +16267,13 @@ function deleteSalesman(salesmanId) {
     if (!confirm(`Are you sure you want to delete Salesman '${sales.name}'?`)) return;
 
     AppState.salesmen = AppState.salesmen.filter(s => s.id !== salesmanId);
-    // Note: deletions can't be pushed via the upsert-only partial-save endpoint
-    // (there's no delete verb there), so this one still needs the full-state
-    // push to actually remove the salesman from the server's list too.
-    saveStateToStorage();
     openManageSalesmenModal();
     renderAllViews();
-    alert(`🗑️ Salesman '${sales.name}' deleted.`);
+    queueCloudDelete("salesmen", salesmanId, {
+        loading: "⏳ Deleting salesman...",
+        success: `✅ Salesman '${sales.name}' deleted.`,
+        error: `⚠️ Salesman deleted locally, but cloud sync is delayed.`
+    });
 }
 
 function renderSyncHistoryLogTable() {
@@ -16775,6 +16824,15 @@ function returnOrVoidBill(billNo) {
 
 
 function clearAllSalesBillsAndPicklists() {
+    // A wipe like this needs to actually remove every existing order/bill/pick
+    // list server-side, not just locally - sending empty arrays through the
+    // upsert-only save endpoint would do nothing (nothing to upsert), leaving
+    // all of it still on the server. Capture the keys before clearing so they
+    // can be explicitly deleted.
+    const orderNos = AppState.orders.map(o => o.orderNo);
+    const billNos = AppState.bills.map(b => b.billNo);
+    const pickListNos = AppState.pickLists.map(p => p.pickListNo);
+
     AppState.orders = [];
     AppState.bills = [];
     AppState.pickLists = [];
@@ -16785,8 +16843,18 @@ function clearAllSalesBillsAndPicklists() {
     AppState.billCounter = 1;
     AppState.pickListCounter = 1;
 
-    saveStateToStorage();
     if (typeof renderAllViews === 'function') renderAllViews();
+
+    orderNos.forEach(id => queueCloudDelete("orders", id));
+    billNos.forEach(id => queueCloudDelete("bills", id));
+    pickListNos.forEach(id => queueCloudDelete("pickLists", id));
+    if (orderNos.length + billNos.length + pickListNos.length > 0) {
+        _pendingPartialToasts.push({
+            toastEl: showSyncToast("⏳ Clearing all sales data...", "loading", 0),
+            success: "✅ All sales, bills, orders & pick lists reset to zero.",
+            error: "⚠️ Cleared locally, but cloud sync is delayed."
+        });
+    }
     console.log("✅ All Sales, Bills, Orders & Pick Lists successfully reset to ZERO!");
 }
 
