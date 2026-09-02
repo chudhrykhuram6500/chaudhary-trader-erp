@@ -7198,8 +7198,9 @@ function getConfirmedDeliveredBillsForDashboard() {
         const rawDateStr = b.billDate || b.date || b.createdDate || b.orderDate || "";
         const bDate = normalizeDateToISO(rawDateStr);
         const matchesDate = (!start || !bDate || bDate >= start) && (!end || !bDate || bDate <= end);
-        
-        const isConfirmedSale = !b.isVoid && b.deliveryStatus !== "Cancelled" && b.deliveryStatus !== "Returned";
+
+        const isConfirmedSale = !b.isVoid &&
+            (b.deliveryStatus === "Confirmed" || b.deliveryStatus === "Delivered" || b.salesRecorded === true || b.isManuallyConfirmed === true);
 
         if (!matchesDate || !isConfirmedSale) return false;
 
@@ -7230,8 +7231,9 @@ function getConfirmedDeliveredBillsForReport(reportType) {
         const rawDateStr = b.billDate || b.date || b.createdDate || b.orderDate || "";
         const bDate = normalizeDateToISO(rawDateStr);
         const matchesDate = (!start || !bDate || bDate >= start) && (!end || !bDate || bDate <= end);
-        
-        const isConfirmedSale = !b.isVoid && b.deliveryStatus !== "Cancelled" && b.deliveryStatus !== "Returned";
+
+        const isConfirmedSale = !b.isVoid &&
+            (b.deliveryStatus === "Confirmed" || b.deliveryStatus === "Delivered" || b.salesRecorded === true || b.isManuallyConfirmed === true);
 
         if (!matchesDate || !isConfirmedSale) return false;
 
