@@ -6856,7 +6856,8 @@ function resetAndRestoreAllStock(defaultCtns = 100) {
 
 function deductStockForItems(items) {
 
-    if (!items || !Array.isArray(items)) return;
+    if (!items || !Array.isArray(items)) return [];
+    const affectedSkus = [];
     items.forEach(item => {
         const sku = AppState.skus.find(s => String(s.code).trim() === String(item.code).trim() || (item.desc && s.desc.toLowerCase() === item.desc.toLowerCase()));
         if (sku) {
@@ -6866,13 +6867,20 @@ function deductStockForItems(items) {
             const remainingUnits = Math.max(0, currentUnits - reqUnits);
             sku.stockCartons = Math.floor(remainingUnits / pack);
             sku.stockUnits = remainingUnits % pack;
+            affectedSkus.push(sku);
         }
     });
-    saveStateToStorage();
+    // Queued silently (no toast) - this runs mid-flow inside a larger action
+    // (e.g. order processing) that shows its own single toast for the overall
+    // step. Merges into the same pending buffer as the caller's own save, so
+    // nothing is lost even though this fires moments before the caller's call.
+    queuePartialCloudSave({ skus: affectedSkus });
+    return affectedSkus;
 }
 
 function restoreStockForItems(items) {
-    if (!items || !Array.isArray(items)) return;
+    if (!items || !Array.isArray(items)) return [];
+    const affectedSkus = [];
     items.forEach(item => {
         const sku = AppState.skus.find(s => String(s.code).trim() === String(item.code).trim() || (item.desc && s.desc.toLowerCase() === item.desc.toLowerCase()));
         if (sku) {
@@ -6882,9 +6890,11 @@ function restoreStockForItems(items) {
             const totalUnits = currentUnits + returnUnits;
             sku.stockCartons = Math.floor(totalUnits / pack);
             sku.stockUnits = totalUnits % pack;
+            affectedSkus.push(sku);
         }
     });
-    saveStateToStorage();
+    queuePartialCloudSave({ skus: affectedSkus });
+    return affectedSkus;
 }
 
 /* ==========================================================================
@@ -14070,7 +14080,6 @@ function applyInModalShortageAdjustmentAndProcess() {
 
     closeModal("stockValidationModal");
     executeOrderProcessing(targetOrders, deliveryDate);
-    alert("🎉 Order quantities adjusted and processed successfully! Warehouse stock updated.");
 }
 
 function resolveStockValidation(optionNumber) {
@@ -14098,7 +14107,6 @@ function resolveStockValidation(optionNumber) {
             o.netAmount = Math.round(tBasic - (tBasic * (getBillDiscountPct(o) / 100)));
         });
         executeOrderProcessing(targetOrders, deliveryDate);
-        alert("Out-of-stock SKUs removed automatically and remaining items processed!");
 
     } else if (optionNumber === 2) {
         applyInModalShortageAdjustmentAndProcess();
@@ -14109,6 +14117,7 @@ function resolveStockValidation(optionNumber) {
 }
 
 function executeOrderProcessing(targetOrders, deliveryDate) {
+    const processedBills = [];
     targetOrders.forEach(o => {
         const shop = AppState.shops.find(s => s.id === o.shopId);
 
@@ -14237,6 +14246,7 @@ function executeOrderProcessing(targetOrders, deliveryDate) {
             };
 
             AppState.bills.unshift(newBill);
+            processedBills.push(newBill);
             logOrderAction(o.orderNo, "Order", "Processed", `Order ${o.orderNo} (${cKey.toUpperCase()}) processed into Invoice ${invoiceId} for delivery on ${deliveryDate}.`);
         });
     });
@@ -14244,10 +14254,12 @@ function executeOrderProcessing(targetOrders, deliveryDate) {
 
     AppState.selectedOrderIds = [];
     AppState.pendingShortageData = null;
-    saveStateToStorage();
-    try { forcePushLocalStateToCloud(); } catch(e) {}
+    queuePartialCloudSave({ orders: targetOrders, bills: processedBills }, {
+        loading: `⏳ Processing ${targetOrders.length} order(s)...`,
+        success: `✅ ${targetOrders.length} order(s) processed — ${processedBills.length} invoice(s) generated & pick list updated.`,
+        error: `⚠️ Order(s) processed locally, but cloud sync is delayed — check the Data Sync tab.`
+    });
     renderAllViews();
-    alert(`🎉 Successfully processed ${targetOrders.length} order(s)! Invoices created & Pick List updated.`);
 }
 
 /* ==========================================================================
