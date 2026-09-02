@@ -1,0 +1,16 @@
+node_modules/
+
+# Local runtime data and generated folders (created by database.js / sync_server.js)
+Backups/
+Logs/
+Reports/
+Exports/
+Imports/
+Settings/
+Assets/
+Temp/
+Updates/
+
+# OS files
+Thumbs.db
+.DS_Store
