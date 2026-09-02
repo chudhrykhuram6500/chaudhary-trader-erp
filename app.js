@@ -9921,10 +9921,13 @@ function saveStockInwardFromModal() {
     if (sku) {
         sku.stockCartons = (sku.stockCartons || 0) + cartons;
         sku.stockUnits = (sku.stockUnits || 0) + packets;
-        saveStateToStorage();
+        queuePartialCloudSave({ skus: [sku] }, {
+            loading: "⏳ Saving stock inward...",
+            success: `✅ Stock inward saved — added ${cartons} Ctns & ${packets} Pkts to ${sku.desc}.`,
+            error: `⚠️ Stock inward saved locally, but cloud sync is delayed for ${sku.desc}.`
+        });
         closeModal("receiveStockModal");
         renderAllViews();
-        alert(`Warehouse Inward Received: Added ${cartons} Cartons & ${packets} Loose Units to ${sku.desc}!`);
     } else {
         alert("Selected SKU not found!");
     }
@@ -9965,10 +9968,13 @@ function saveStockAdjustmentFromModal() {
             sku.stockCartons = Math.max(0, (sku.stockCartons || 0) - cartons);
             sku.stockUnits = Math.max(0, (sku.stockUnits || 0) - packets);
         }
-        saveStateToStorage();
+        queuePartialCloudSave({ skus: [sku] }, {
+            loading: "⏳ Saving stock adjustment...",
+            success: `✅ Stock adjustment saved for ${sku.desc}.`,
+            error: `⚠️ Stock adjustment saved locally, but cloud sync is delayed for ${sku.desc}.`
+        });
         closeModal("adjustStockModal");
         renderAllViews();
-        alert(`Stock Adjustment Applied for ${sku.desc}!`);
     } else {
         alert("Selected SKU not found!");
     }
@@ -10008,10 +10014,13 @@ function saveQuickEditStockFromModal() {
     if (sku) {
         sku.stockCartons = cartons;
         sku.stockUnits = packets;
-        saveStateToStorage();
+        queuePartialCloudSave({ skus: [sku] }, {
+            loading: "⏳ Updating stock...",
+            success: `✅ Stock updated — ${sku.desc} now ${cartons} Ctns / ${packets} Pkts.`,
+            error: `⚠️ Stock updated locally, but cloud sync is delayed for ${sku.desc}.`
+        });
         closeModal("quickEditStockModal");
         renderAllViews();
-        alert(`Exact Stock Updated for ${sku.desc}! Now available: ${cartons} Ctns / ${packets} Loose Pkts.`);
     } else {
         alert("Selected SKU not found!");
     }
