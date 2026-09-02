@@ -9705,14 +9705,15 @@ function saveAndPrintPosBill(shouldPrint) {
 
     AppState.orders.unshift(newOrderObj);
     AppState.bills.unshift(newBill);
-    deductStockForItems(billItems);
-    saveStateToStorage();
-
+    deductStockForItems(billItems); // queues affected SKUs into the same pending buffer, silently (no toast of its own)
+    queuePartialCloudSave({ orders: [newOrderObj], bills: [newBill] }, {
+        loading: "⏳ Saving invoice...",
+        success: `✅ Invoice ${invoiceId} saved — ${totalCartons} Ctns, ${totalUnits} loose units.`,
+        error: `⚠️ Invoice ${invoiceId} saved locally, but cloud sync is delayed.`
+    });
 
     if (shouldPrint) {
         printBill(invoiceId);
-    } else {
-        alert(`Invoice ${invoiceId} created & processed! Cartons: ${totalCartons}, Loose Units: ${totalUnits}. Listed in Orders & Invoices modules.`);
     }
 
     clearPosCart();
@@ -10120,18 +10121,23 @@ function voidCurrentModalBill() {
             bill.isVoid = true;
             bill.deliveryStatus = "Returned";
 
+            const affectedSkus = [];
             bill.items.forEach(i => {
                 const targetSku = AppState.skus.find(s => s.code === i.code);
                 if (targetSku) {
                     targetSku.stockCartons = (targetSku.stockCartons || 0) + (i.cartons || 0);
                     targetSku.stockUnits = (targetSku.stockUnits || 0) + (i.units || 0);
+                    affectedSkus.push(targetSku);
                 }
             });
 
-            saveStateToStorage();
+            queuePartialCloudSave({ bills: [bill], skus: affectedSkus }, {
+                loading: "⏳ Returning invoice...",
+                success: `✅ Invoice ${bill.billNo} returned — stock restored to warehouse.`,
+                error: `⚠️ Invoice ${bill.billNo} returned locally, but cloud sync is delayed.`
+            });
             closeModal("billViewModal");
             renderAllViews();
-            alert(`Invoice ${bill.billNo} returned and cartons/units restored to warehouse stock!`);
         }
     }
 }
@@ -10142,9 +10148,12 @@ function confirmBillDelivery(billNo) {
 
     if (confirm(`Confirm Invoice ${bill.billNo} delivered to ${bill.shopName}? Sales weight (${bill.totalWeightKg.toFixed(2)} KG) and Rs. ${bill.netAmount.toLocaleString()} will now be added to system!`)) {
         bill.deliveryStatus = "Delivered";
-        saveStateToStorage();
+        queuePartialCloudSave({ bills: [bill] }, {
+            loading: "⏳ Confirming delivery...",
+            success: `✅ Invoice ${bill.billNo} marked Delivered — sales added to dashboard.`,
+            error: `⚠️ Invoice ${bill.billNo} marked Delivered locally, but cloud sync is delayed.`
+        });
         renderAllViews();
-        alert(`Invoice ${bill.billNo} marked DELIVERED! Sales weight & revenue added to dashboard.`);
     }
 }
 
@@ -10328,6 +10337,7 @@ function saveInModalDeliveryWithReturns() {
 
     let newTotalBasic = 0, newTotalAdwh = 0, newTotalCartons = 0, newTotalUnits = 0, newTotalWeight = 0, newTotalPackets = 0;
     let totalItemsReturnedCount = 0;
+    const affectedSkus = [];
 
     bill.items.forEach((item, idx) => {
         const tr = rows[idx];
@@ -10348,6 +10358,7 @@ function saveInModalDeliveryWithReturns() {
             // Add newly returned stock to warehouse!
             sku.stockCartons = (sku.stockCartons || 0) + retCtns;
             sku.stockUnits = (sku.stockUnits || 0) + retUnits;
+            affectedSkus.push(sku);
         }
 
         item.returnedCartons = retCtns;
@@ -10412,10 +10423,13 @@ function saveInModalDeliveryWithReturns() {
         bill.isVoid = false;
     }
 
-    saveStateToStorage();
+    queuePartialCloudSave({ bills: [bill], skus: affectedSkus }, {
+        loading: "⏳ Saving delivery & returns...",
+        success: `✅ Invoice ${bill.billNo} delivery confirmed — Net Revenue Rs. ${Math.round(newNetPayable).toLocaleString()}.`,
+        error: `⚠️ Invoice ${bill.billNo} saved locally, but cloud sync is delayed.`
+    });
     closeModal("billViewModal");
     renderAllViews();
-    alert(`Invoice ${bill.billNo} Delivery Confirmed! Net Revenue: Rs. ${Math.round(newNetPayable).toLocaleString()}. Returned stock restored to warehouse!`);
 }
 
 function voidInModalOrder100Percent() {
@@ -13667,18 +13681,15 @@ function savePosCartAsDraftOrder() {
 
     AppState.orders.unshift(newOrder);
     logOrderAction(orderNo, "Order", "Created", `Order ${orderNo} created via POS for ${shop.name} in Draft status.`);
-    saveStateToStorage();
+    queuePartialCloudSave({ orders: [newOrder] }, {
+        loading: "⏳ Saving order...",
+        success: `✅ Order ${orderNo} saved (Draft) — ${shop.name}, ${items.length} SKUs, ${totalCtns} Ctns, Rs. ${netAmount.toLocaleString()}.`,
+        error: `⚠️ Order ${orderNo} saved locally, but cloud sync is delayed.`
+    });
 
     clearPosCart();
     switchTab("ordersTab");
     renderAllViews();
-
-    alert(`🎉 Order ${orderNo} created & saved as DRAFT successfully!\n\n` +
-          `• Customer: ${shop.name}\n` +
-          `• Items Count: ${items.length} SKUs\n` +
-          `• Total Cartons: ${totalCtns} Ctns\n` +
-          `• Net Amount: Rs. ${netAmount.toLocaleString()}\n\n` +
-          `No warehouse stock deducted yet. Order is now listed in Orders tab!`);
 }
 
 function openAddOrderModal() {
@@ -13795,10 +13806,13 @@ function saveManualOrder() {
 
     AppState.orders.unshift(newOrder);
     logOrderAction(orderNo, "Order", "Created", `Order ${orderNo} created for ${shop.name} in Draft status.`);
-    saveStateToStorage();
+    queuePartialCloudSave({ orders: [newOrder] }, {
+        loading: "⏳ Saving order...",
+        success: `✅ Order ${orderNo} saved (Draft) for ${shop.name}.`,
+        error: `⚠️ Order ${orderNo} saved locally, but cloud sync is delayed.`
+    });
     closeModal("addOrderModal");
     renderAllViews();
-    alert(`Order ${orderNo} created successfully in DRAFT status! No warehouse stock deducted yet.`);
 }
 
 function renderOrdersTable() {
@@ -13926,18 +13940,23 @@ function batchConfirmSelectedOrders() {
     if (targetOrders.length === 0) return alert("No valid orders selected to confirm!");
 
     if (confirm(`Confirm ${targetOrders.length} selected order(s)? Official sales will be recorded.`)) {
+        const affectedBills = [];
         targetOrders.forEach(o => {
             o.status = "Confirmed";
             const bill = AppState.bills.find(b => b.orderNo === o.orderNo);
             if (bill) {
                 bill.deliveryStatus = "Confirmed";
                 bill.salesRecorded = true;
+                affectedBills.push(bill);
             }
         });
         AppState.selectedOrderIds = [];
-        saveStateToStorage();
+        queuePartialCloudSave({ orders: targetOrders, bills: affectedBills }, {
+            loading: `⏳ Confirming ${targetOrders.length} order(s)...`,
+            success: `✅ ${targetOrders.length} order(s) confirmed — official sales recorded.`,
+            error: `⚠️ Order(s) confirmed locally, but cloud sync is delayed.`
+        });
         renderAllViews();
-        alert(`Successfully CONFIRMED ${targetOrders.length} order(s)! Official sales recorded for Dashboard & Reports.`);
     }
 }
 
@@ -14393,10 +14412,15 @@ function confirmSavePickList() {
 
     AppState.pickLists.unshift(newPickList);
     logOrderAction(pickListNo, "PickList", "Created", `Pick List ${pickListNo} created with ${selectedBillNos.length} invoices.`);
-    saveStateToStorage();
+    // selectedBills were mutated above (pickStatus/pickListNo/totals) - must be
+    // sent along with the new pick list itself, not just the pick list alone.
+    queuePartialCloudSave({ pickLists: [newPickList], bills: selectedBills }, {
+        loading: "⏳ Generating pick list...",
+        success: `✅ Pick List ${pickListNo} saved — ${totalCtns} Ctns (${totalKG.toFixed(2)} KG) across ${selectedBillNos.length} invoice(s).`,
+        error: `⚠️ Pick List ${pickListNo} saved locally, but cloud sync is delayed.`
+    });
     closeModal("newPickListModal");
     renderAllViews();
-    alert(`🎉 Pick List ${pickListNo} saved successfully! Total: ${totalCtns} Cartons (${totalKG.toFixed(2)} KG) across ${selectedBillNos.length} Invoices.`);
 }
 
 function renderPickListTable() {
@@ -14823,24 +14847,27 @@ function batchConfirmSelectedInvoices() {
     if (openInvoices.length === 0) return alert("Select at least 1 OPEN invoice using checkboxes to confirm!");
 
     if (confirm(`Confirm ${openInvoices.length} selected invoice(s)? Sales will be officially recorded for dashboard & reports.`)) {
+        const affectedOrders = [];
         openInvoices.forEach(bill => {
             bill.deliveryStatus = "Confirmed";
             bill.isManuallyConfirmed = true;
             bill.salesRecorded = true;
             if (bill.orderNo) {
                 const order = AppState.orders.find(o => o.orderNo === bill.orderNo);
-                if (order) order.status = "Confirmed";
+                if (order) {
+                    order.status = "Confirmed";
+                    affectedOrders.push(order);
+                }
             }
         });
 
         AppState.selectedInvoiceIds = [];
-        saveStateToStorage();
+        queuePartialCloudSave({ bills: openInvoices, orders: affectedOrders }, {
+            loading: `⏳ Saving ${openInvoices.length} confirmed invoice(s) to database...`,
+            success: `✅ ${openInvoices.length} invoice(s) confirmed & saved — official sales recorded on Dashboard & Reports.`,
+            error: `⚠️ Invoice(s) confirmed locally, but cloud save is delayed — check the Data Sync tab.`
+        });
         renderAllViews();
-        showLoadingThenSyncResultToast(
-            `⏳ Saving ${openInvoices.length} confirmed invoice(s) to database...`,
-            `✅ ${openInvoices.length} invoice(s) confirmed & saved — official sales recorded on Dashboard & Reports.`,
-            `⚠️ Invoice(s) confirmed locally, but cloud save is delayed — check the Data Sync tab.`
-        );
     }
 }
 
@@ -15098,6 +15125,7 @@ function batchCancelSelectedInvoices() {
     if (openInvoices.length === 0) return alert("No valid OPEN invoices selected to cancel!");
 
     if (confirm(`Cancel ${openInvoices.length} selected open invoice(s)? Stock will be restored to warehouse inventory.`)) {
+        const affectedSkus = [], affectedOrders = [], affectedPickLists = [];
         openInvoices.forEach(bill => {
             if (bill.stockDeducted) {
                 bill.items.forEach(i => {
@@ -15105,6 +15133,7 @@ function batchCancelSelectedInvoices() {
                     if (sku) {
                         sku.stockCartons = (sku.stockCartons || 0) + i.cartons;
                         sku.stockUnits = (sku.stockUnits || 0) + i.units;
+                        affectedSkus.push(sku);
                     }
                 });
                 bill.stockDeducted = false;
@@ -15114,20 +15143,27 @@ function batchCancelSelectedInvoices() {
             bill.salesRecorded = false;
             if (bill.orderNo) {
                 const order = AppState.orders.find(o => o.orderNo === bill.orderNo);
-                if (order) order.status = "Cancelled";
+                if (order) {
+                    order.status = "Cancelled";
+                    affectedOrders.push(order);
+                }
             }
             if (bill.pickListNo) {
                 const pl = AppState.pickLists.find(p => p.pickListNo === bill.pickListNo);
                 if (pl) {
                     pl.billNos = pl.billNos.filter(bId => bId !== bill.billNo);
                     pl.ordersCount = pl.billNos.length;
+                    affectedPickLists.push(pl);
                 }
             }
         });
         AppState.selectedInvoiceIds = [];
-        saveStateToStorage();
+        queuePartialCloudSave({ bills: openInvoices, orders: affectedOrders, skus: affectedSkus, pickLists: affectedPickLists }, {
+            loading: `⏳ Cancelling ${openInvoices.length} invoice(s)...`,
+            success: `✅ ${openInvoices.length} invoice(s) cancelled — stock restored to warehouse.`,
+            error: `⚠️ Invoice(s) cancelled locally, but cloud sync is delayed.`
+        });
         renderAllViews();
-        alert(`Successfully CANCELLED ${openInvoices.length} open invoice(s)! Stock restored to warehouse.`);
     }
 }
 
@@ -15301,6 +15337,7 @@ function saveDeliveryConfirmationWithAdjustments() {
     bill.isManuallyConfirmed = true;
     bill.salesRecorded = true;
 
+    let affectedOrder = null;
     if (bill.orderNo) {
         const order = AppState.orders.find(o => o.orderNo === bill.orderNo);
         if (order) {
@@ -15308,15 +15345,18 @@ function saveDeliveryConfirmationWithAdjustments() {
             order.netAmount = netPayable;
             order.totalCartons = tCtns;
             order.items = bill.items;
+            affectedOrder = order;
         }
     }
 
     closeModal("confirmDeliveryAdjustmentModal");
-    saveStateToStorage();
+    const retMsg = returnedItemsToStock.length > 0 ? ` (${returnedItemsToStock.reduce((s, r) => s + r.cartons, 0)} returned carton(s) restored to warehouse)` : "";
+    queuePartialCloudSave({ bills: [bill], orders: affectedOrder ? [affectedOrder] : [] }, {
+        loading: "⏳ Confirming delivery...",
+        success: `✅ Invoice ${bill.billNo} delivered & confirmed — Rs. ${netPayable.toLocaleString()} recorded${retMsg}.`,
+        error: `⚠️ Invoice ${bill.billNo} saved locally, but cloud sync is delayed.`
+    });
     renderAllViews();
-
-    const retMsg = returnedItemsToStock.length > 0 ? `\n\n📦 ${returnedItemsToStock.reduce((s, r) => s + r.cartons, 0)} Returned Carton(s) RESTORED BACK TO WAREHOUSE STOCK.` : ``;
-    alert(`🎉 Invoice ${bill.billNo} DELIVERED & CONFIRMED SUCCESSFULLY!${retMsg}\n\nOfficial sale of Rs. ${netPayable.toLocaleString()} is now recorded in Dashboard & Sales Reports.`);
 }
 
 function confirmInvoiceOrder(billNo) {
@@ -15328,14 +15368,18 @@ function confirmInvoiceOrder(billNo) {
         bill.isManuallyConfirmed = true;
         bill.salesRecorded = true;
 
+        const affectedOrders = [];
         if (bill.orderNo) {
             const order = AppState.orders.find(o => o.orderNo === bill.orderNo);
-            if (order) order.status = "Confirmed";
+            if (order) { order.status = "Confirmed"; affectedOrders.push(order); }
         }
 
-        saveStateToStorage();
+        queuePartialCloudSave({ bills: [bill], orders: affectedOrders }, {
+            loading: "⏳ Confirming invoice...",
+            success: `✅ Invoice ${bill.billNo} confirmed — official sale recorded.`,
+            error: `⚠️ Invoice ${bill.billNo} confirmed locally, but cloud sync is delayed.`
+        });
         renderAllViews();
-        alert(`Invoice ${bill.billNo} CONFIRMED! Official sale recorded.`);
     }
 }
 
@@ -15359,9 +15403,10 @@ function cancelInvoiceOrder(billNo) {
         bill.isVoid = true;
         bill.salesRecorded = false;
 
+        const affectedOrders = [], affectedPickLists = [];
         if (bill.orderNo) {
             const order = AppState.orders.find(o => o.orderNo === bill.orderNo);
-            if (order) order.status = "Cancelled";
+            if (order) { order.status = "Cancelled"; affectedOrders.push(order); }
         }
 
         if (bill.pickListNo) {
@@ -15369,12 +15414,16 @@ function cancelInvoiceOrder(billNo) {
             if (pl) {
                 pl.billNos = pl.billNos.filter(bId => bId !== billNo);
                 pl.ordersCount = pl.billNos.length;
+                affectedPickLists.push(pl);
             }
         }
 
-        saveStateToStorage();
+        queuePartialCloudSave({ bills: [bill], orders: affectedOrders, pickLists: affectedPickLists }, {
+            loading: "⏳ Cancelling invoice...",
+            success: `✅ Invoice ${bill.billNo} cancelled — stock restored to warehouse.`,
+            error: `⚠️ Invoice ${bill.billNo} cancelled locally, but cloud sync is delayed.`
+        });
         renderAllViews();
-        alert(`Invoice ${bill.billNo} CANCELLED! Deducted stock restored to warehouse.`);
     }
 }
 
@@ -15391,15 +15440,20 @@ function cancelOrder(orderNo) {
         order.status = "Cancelled";
         order.deliveryStatus = "Cancelled";
 
+        const affectedBills = [];
         const bill = AppState.bills.find(b => b.orderNo === orderNo);
         if (bill) {
             bill.isVoid = true;
             bill.deliveryStatus = "Returned";
+            affectedBills.push(bill);
         }
 
-        saveStateToStorage();
+        queuePartialCloudSave({ orders: [order], bills: affectedBills }, {
+            loading: "⏳ Cancelling order...",
+            success: `✅ Order ${order.orderNo} cancelled — stock restored to warehouse.`,
+            error: `⚠️ Order ${order.orderNo} cancelled locally, but cloud sync is delayed.`
+        });
         renderAllViews();
-        alert(`🔴 Order ${order.orderNo} cancelled! Stock restored to warehouse inventory.`);
     }
 }
 
@@ -16027,6 +16081,8 @@ function saveSalesmanFromModal() {
 
     if (!name) return alert("Please enter Salesman Full Name!");
 
+    let savedSalesman = null, affectedRoutes = [], affectedOrders = [], affectedBills = [];
+
     if (editId) {
         const sales = (AppState.salesmen || []).find(s => s.id === editId);
         if (sales) {
@@ -16037,18 +16093,19 @@ function saveSalesmanFromModal() {
             sales.pin = pin;
             sales.routeId = routeId;
             sales.active = isActive;
+            savedSalesman = sales;
 
             // Also update associated route's salesman name
             const route = (AppState.routes || []).find(r => r.id === routeId);
-            if (route) route.salesman = name;
+            if (route) { route.salesman = name; affectedRoutes.push(route); }
 
             // Also update any orders/bills with oldName
-            (AppState.orders || []).forEach(o => { if (o.salesman === oldName) o.salesman = name; });
-            (AppState.bills || []).forEach(b => { if (b.salesman === oldName) b.salesman = name; });
+            (AppState.orders || []).forEach(o => { if (o.salesman === oldName) { o.salesman = name; affectedOrders.push(o); } });
+            (AppState.bills || []).forEach(b => { if (b.salesman === oldName) { b.salesman = name; affectedBills.push(b); } });
         }
     } else {
         const newId = `sales_${Date.now()}`;
-        AppState.salesmen.push({
+        savedSalesman = {
             id: newId,
             name: name,
             username: username,
@@ -16059,28 +16116,32 @@ function saveSalesmanFromModal() {
             mtdSalesKg: 0,
             mtdLaysKg: 0,
             mtdHashKg: 0
-        });
+        };
+        AppState.salesmen.push(savedSalesman);
 
         const route = (AppState.routes || []).find(r => r.id === routeId);
-        if (route) route.salesman = name;
+        if (route) { route.salesman = name; affectedRoutes.push(route); }
     }
 
-    saveStateToStorage();
     closeModal("salesmanModal");
     closeModal("manageSalesmenModal");
     renderAllViews();
-    showLoadingThenSyncResultToast(
-        `⏳ Saving salesman '${name}'...`,
-        `✅ Salesman '${name}' saved & synced — will now show on their mobile app and reports.`,
-        `⚠️ Salesman '${name}' saved locally, but cloud sync is delayed.`
-    );
+    queuePartialCloudSave({ salesmen: savedSalesman ? [savedSalesman] : [], routes: affectedRoutes, orders: affectedOrders, bills: affectedBills }, {
+        loading: `⏳ Saving salesman '${name}'...`,
+        success: `✅ Salesman '${name}' saved & synced — will now show on their mobile app and reports.`,
+        error: `⚠️ Salesman '${name}' saved locally, but cloud sync is delayed.`
+    });
 }
 
 function toggleSalesmanActiveStatus(salesmanId) {
     const sales = (AppState.salesmen || []).find(s => s.id === salesmanId);
     if (!sales) return;
     sales.active = (sales.active === false);
-    saveStateToStorage();
+    queuePartialCloudSave({ salesmen: [sales] }, {
+        loading: "⏳ Updating salesman status...",
+        success: `✅ Salesman '${sales.name}' is now ${sales.active ? "Active" : "Inactive"}.`,
+        error: `⚠️ Status updated locally, but cloud sync is delayed.`
+    });
     openManageSalesmenModal();
     renderAllViews();
 }
@@ -16092,6 +16153,9 @@ function deleteSalesman(salesmanId) {
     if (!confirm(`Are you sure you want to delete Salesman '${sales.name}'?`)) return;
 
     AppState.salesmen = AppState.salesmen.filter(s => s.id !== salesmanId);
+    // Note: deletions can't be pushed via the upsert-only partial-save endpoint
+    // (there's no delete verb there), so this one still needs the full-state
+    // push to actually remove the salesman from the server's list too.
     saveStateToStorage();
     openManageSalesmenModal();
     renderAllViews();
@@ -16524,6 +16588,7 @@ function batchCancelSelectedOrders() {
     if (!confirm(`Are you sure you want to cancel ${targetOrderNos.length} selected order(s)?`)) return;
 
     let cancelledCount = 0;
+    const affectedOrders = [], affectedBills = [];
     targetOrderNos.forEach(orderNo => {
         const ord = (AppState.orders || []).find(o => o.orderNo === orderNo);
         if (ord && ord.status !== "Cancelled") {
@@ -16533,19 +16598,24 @@ function batchCancelSelectedOrders() {
             }
             ord.status = "Cancelled";
             ord.deliveryStatus = "Cancelled";
+            affectedOrders.push(ord);
 
             const bill = (AppState.bills || []).find(b => b.orderNo === orderNo);
             if (bill) {
                 bill.isVoid = true;
                 bill.deliveryStatus = "Returned";
+                affectedBills.push(bill);
             }
             cancelledCount++;
         }
     });
 
-    saveStateToStorage();
+    queuePartialCloudSave({ orders: affectedOrders, bills: affectedBills }, {
+        loading: `⏳ Cancelling ${cancelledCount} order(s)...`,
+        success: `✅ ${cancelledCount} order(s) cancelled — warehouse stock restored.`,
+        error: `⚠️ Order(s) cancelled locally, but cloud sync is delayed.`
+    });
     renderAllViews();
-    alert(`🔴 Successfully cancelled ${cancelledCount} order(s) and restored warehouse stock!`);
 }
 
 function exportEmergencyReturnFileModal(salesmanId = "sales_01") {
@@ -16585,16 +16655,21 @@ function cancelSingleOrder(orderNo) {
         order.deliveryStatus = "Cancelled";
         order.isVoid = true;
 
+        const affectedBills = [];
         const bill = (AppState.bills || []).find(b => b.orderNo === orderNo);
         if (bill) {
             bill.isVoid = true;
             bill.deliveryStatus = "Returned";
+            affectedBills.push(bill);
         }
 
-        saveStateToStorage();
+        const msg = wasStockDeducted ? `✅ Order ${orderNo} cancelled — stock restored to warehouse.` : `✅ Order ${orderNo} cancelled (Draft, no stock was deducted).`;
+        queuePartialCloudSave({ orders: [order], bills: affectedBills }, {
+            loading: "⏳ Cancelling order...",
+            success: msg,
+            error: `⚠️ Order ${orderNo} cancelled locally, but cloud sync is delayed.`
+        });
         renderAllViews();
-        const msg = wasStockDeducted ? `🔴 Order ${orderNo} cancelled & deducted stock restored to warehouse inventory!` : `🔴 Order ${orderNo} cancelled! (Stock was not deducted as order was still Draft).`;
-        alert(msg);
     }
 }
 
