@@ -6465,6 +6465,14 @@ function handleHttpRequest(req, res) {
                 if (Array.isArray(payload.orders)) state.orders = payload.orders;
                 if (Array.isArray(payload.bills)) state.bills = payload.bills;
                 if (Array.isArray(payload.pickLists)) state.pickLists = payload.pickLists;
+                if (Array.isArray(payload.salesmen)) {
+                    if (!Array.isArray(state.salesmen)) state.salesmen = [];
+                    payload.salesmen.forEach(pSales => {
+                        const idx = state.salesmen.findIndex(s => s.id === pSales.id);
+                        if (idx !== -1) state.salesmen[idx] = { ...state.salesmen[idx], ...pSales };
+                        else state.salesmen.push(pSales);
+                    });
+                }
                 saveAppStateToStore(state);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));

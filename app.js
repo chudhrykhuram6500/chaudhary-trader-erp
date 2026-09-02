@@ -15549,7 +15549,8 @@ function forcePushLocalStateToCloud() {
             orders: AppState.orders || [],
             bills: AppState.bills || [],
             pickLists: AppState.pickLists || [],
-            focSchemes: AppState.focSchemes || []
+            focSchemes: AppState.focSchemes || [],
+            salesmen: AppState.salesmen || []
         })
     })
     .then(r => r.json())
