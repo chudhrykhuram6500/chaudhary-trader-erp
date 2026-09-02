@@ -13667,18 +13667,15 @@ function savePosCartAsDraftOrder() {
 
     AppState.orders.unshift(newOrder);
     logOrderAction(orderNo, "Order", "Created", `Order ${orderNo} created via POS for ${shop.name} in Draft status.`);
-    saveStateToStorage();
+    queuePartialCloudSave({ orders: [newOrder] }, {
+        loading: "⏳ Saving order...",
+        success: `✅ Order ${orderNo} saved (Draft) — ${shop.name}, ${items.length} SKUs, ${totalCtns} Ctns, Rs. ${netAmount.toLocaleString()}.`,
+        error: `⚠️ Order ${orderNo} saved locally, but cloud sync is delayed.`
+    });
 
     clearPosCart();
     switchTab("ordersTab");
     renderAllViews();
-
-    alert(`🎉 Order ${orderNo} created & saved as DRAFT successfully!\n\n` +
-          `• Customer: ${shop.name}\n` +
-          `• Items Count: ${items.length} SKUs\n` +
-          `• Total Cartons: ${totalCtns} Ctns\n` +
-          `• Net Amount: Rs. ${netAmount.toLocaleString()}\n\n` +
-          `No warehouse stock deducted yet. Order is now listed in Orders tab!`);
 }
 
 function openAddOrderModal() {
@@ -13795,10 +13792,13 @@ function saveManualOrder() {
 
     AppState.orders.unshift(newOrder);
     logOrderAction(orderNo, "Order", "Created", `Order ${orderNo} created for ${shop.name} in Draft status.`);
-    saveStateToStorage();
+    queuePartialCloudSave({ orders: [newOrder] }, {
+        loading: "⏳ Saving order...",
+        success: `✅ Order ${orderNo} saved (Draft) for ${shop.name}.`,
+        error: `⚠️ Order ${orderNo} saved locally, but cloud sync is delayed.`
+    });
     closeModal("addOrderModal");
     renderAllViews();
-    alert(`Order ${orderNo} created successfully in DRAFT status! No warehouse stock deducted yet.`);
 }
 
 function renderOrdersTable() {
@@ -14393,10 +14393,15 @@ function confirmSavePickList() {
 
     AppState.pickLists.unshift(newPickList);
     logOrderAction(pickListNo, "PickList", "Created", `Pick List ${pickListNo} created with ${selectedBillNos.length} invoices.`);
-    saveStateToStorage();
+    // selectedBills were mutated above (pickStatus/pickListNo/totals) - must be
+    // sent along with the new pick list itself, not just the pick list alone.
+    queuePartialCloudSave({ pickLists: [newPickList], bills: selectedBills }, {
+        loading: "⏳ Generating pick list...",
+        success: `✅ Pick List ${pickListNo} saved — ${totalCtns} Ctns (${totalKG.toFixed(2)} KG) across ${selectedBillNos.length} invoice(s).`,
+        error: `⚠️ Pick List ${pickListNo} saved locally, but cloud sync is delayed.`
+    });
     closeModal("newPickListModal");
     renderAllViews();
-    alert(`🎉 Pick List ${pickListNo} saved successfully! Total: ${totalCtns} Cartons (${totalKG.toFixed(2)} KG) across ${selectedBillNos.length} Invoices.`);
 }
 
 function renderPickListTable() {
