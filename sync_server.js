@@ -6286,18 +6286,25 @@ function getAppStateFromStore() {
     // Asynchronously hydrate from Supabase Cloud PostgreSQL if available
     if (!_supabaseInitTried) {
         _supabaseInitTried = true;
+        const hydrationStartedAt = Date.now();
         (async () => {
             try {
                 const client = new Client({ connectionString: SUPABASE_CONN_STRING, ssl: { rejectUnauthorized: false } });
                 await client.connect();
                 const res = await client.query("SELECT data FROM erp_master_store WHERE id = 'master_state';");
                 if (res && res.rows && res.rows.length > 0 && res.rows[0].data) {
-                    const cloudData = res.rows[0].data;
-                    if (cloudData.bills && cloudData.bills.length > 0) _cachedAppState.bills = cloudData.bills;
-                    if (cloudData.shops && cloudData.shops.length > 0) _cachedAppState.shops = cloudData.shops;
-                    if (cloudData.orders && cloudData.orders.length > 0) _cachedAppState.orders = cloudData.orders;
-                    if (cloudData.skus && cloudData.skus.length > 0) _cachedAppState.skus = cloudData.skus;
-                    console.log('✓ Hydrated state from Supabase Cloud PostgreSQL!');
+                    // Guard: skip if a local write has already landed since this hydration query started,
+                    // so a slow cold-start hydration can't clobber a newer local change (e.g. a stock deduction).
+                    if (!_cachedAppState.__lastLocalWriteAt || _cachedAppState.__lastLocalWriteAt < hydrationStartedAt) {
+                        const cloudData = res.rows[0].data;
+                        if (cloudData.bills && cloudData.bills.length > 0) _cachedAppState.bills = cloudData.bills;
+                        if (cloudData.shops && cloudData.shops.length > 0) _cachedAppState.shops = cloudData.shops;
+                        if (cloudData.orders && cloudData.orders.length > 0) _cachedAppState.orders = cloudData.orders;
+                        if (cloudData.skus && cloudData.skus.length > 0) _cachedAppState.skus = cloudData.skus;
+                        console.log('✓ Hydrated state from Supabase Cloud PostgreSQL!');
+                    } else {
+                        console.log('↷ Skipped Supabase hydration: a newer local write already landed.');
+                    }
                 }
                 await client.end();
             } catch(e) {}
@@ -6308,6 +6315,7 @@ function getAppStateFromStore() {
 }
 
 function saveAppStateToStore(state) {
+    state.__lastLocalWriteAt = Date.now();
     _cachedAppState = state;
     if (_saveDiskTimer) clearTimeout(_saveDiskTimer);
     _saveDiskTimer = setTimeout(() => {
@@ -6436,13 +6444,35 @@ function handleHttpRequest(req, res) {
             try {
                 const payload = JSON.parse(body);
                 const state = getAppStateFromStore();
-                if (Array.isArray(payload.shops)) state.shops = payload.shops;
-                if (Array.isArray(payload.skus) && payload.skus.length >= (state.skus ? state.skus.length : 0)) state.skus = payload.skus;
+                if (Array.isArray(payload.shops)) {
+                    if (!Array.isArray(state.shops)) state.shops = [];
+                    payload.shops.forEach(pShop => {
+                        const idx = state.shops.findIndex(s => s.id === pShop.id);
+                        if (idx !== -1) state.shops[idx] = { ...state.shops[idx], ...pShop };
+                        else state.shops.push(pShop);
+                    });
+                }
+                if (Array.isArray(payload.skus)) {
+                    if (!Array.isArray(state.skus)) state.skus = [];
+                    payload.skus.forEach(pSku => {
+                        const idx = state.skus.findIndex(s => s.code === pSku.code);
+                        if (idx !== -1) state.skus[idx] = { ...state.skus[idx], ...pSku };
+                        else state.skus.push(pSku);
+                    });
+                }
                 if (Array.isArray(payload.routes)) state.routes = payload.routes;
                 if (Array.isArray(payload.companies)) state.companies = payload.companies;
                 if (Array.isArray(payload.orders)) state.orders = payload.orders;
                 if (Array.isArray(payload.bills)) state.bills = payload.bills;
                 if (Array.isArray(payload.pickLists)) state.pickLists = payload.pickLists;
+                if (Array.isArray(payload.salesmen)) {
+                    if (!Array.isArray(state.salesmen)) state.salesmen = [];
+                    payload.salesmen.forEach(pSales => {
+                        const idx = state.salesmen.findIndex(s => s.id === pSales.id);
+                        if (idx !== -1) state.salesmen[idx] = { ...state.salesmen[idx], ...pSales };
+                        else state.salesmen.push(pSales);
+                    });
+                }
                 saveAppStateToStore(state);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));

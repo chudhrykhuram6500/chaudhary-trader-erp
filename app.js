@@ -7198,8 +7198,9 @@ function getConfirmedDeliveredBillsForDashboard() {
         const rawDateStr = b.billDate || b.date || b.createdDate || b.orderDate || "";
         const bDate = normalizeDateToISO(rawDateStr);
         const matchesDate = (!start || !bDate || bDate >= start) && (!end || !bDate || bDate <= end);
-        
-        const isConfirmedSale = !b.isVoid && b.deliveryStatus !== "Cancelled" && b.deliveryStatus !== "Returned";
+
+        const isConfirmedSale = !b.isVoid &&
+            (b.deliveryStatus === "Confirmed" || b.deliveryStatus === "Delivered" || b.salesRecorded === true || b.isManuallyConfirmed === true);
 
         if (!matchesDate || !isConfirmedSale) return false;
 
@@ -7230,8 +7231,9 @@ function getConfirmedDeliveredBillsForReport(reportType) {
         const rawDateStr = b.billDate || b.date || b.createdDate || b.orderDate || "";
         const bDate = normalizeDateToISO(rawDateStr);
         const matchesDate = (!start || !bDate || bDate >= start) && (!end || !bDate || bDate <= end);
-        
-        const isConfirmedSale = !b.isVoid && b.deliveryStatus !== "Cancelled" && b.deliveryStatus !== "Returned";
+
+        const isConfirmedSale = !b.isVoid &&
+            (b.deliveryStatus === "Confirmed" || b.deliveryStatus === "Delivered" || b.salesRecorded === true || b.isManuallyConfirmed === true);
 
         if (!matchesDate || !isConfirmedSale) return false;
 
@@ -15484,8 +15486,31 @@ function syncWithLocalServerStore() {
                 if (AppState.orders.length > data.orders.length) needsPush = true;
             }
 
-            if (Array.isArray(data.shops) && data.shops.length >= AppState.shops.length) AppState.shops = data.shops;
-            if (Array.isArray(data.skus) && data.skus.length > 0) AppState.skus = data.skus;
+            if (Array.isArray(data.shops)) {
+                data.shops.forEach(sShop => {
+                    const idx = AppState.shops.findIndex(s => s.id === sShop.id);
+                    if (idx !== -1) AppState.shops[idx] = { ...AppState.shops[idx], ...sShop };
+                    else AppState.shops.push(sShop);
+                });
+            }
+
+            if (Array.isArray(data.skus)) {
+                data.skus.forEach(sSku => {
+                    const idx = AppState.skus.findIndex(s => s.code === sSku.code);
+                    if (idx !== -1) AppState.skus[idx] = { ...AppState.skus[idx], ...sSku };
+                    else AppState.skus.push(sSku);
+                });
+            }
+
+            if (Array.isArray(data.salesmen)) {
+                if (!Array.isArray(AppState.salesmen)) AppState.salesmen = [];
+                data.salesmen.forEach(sSales => {
+                    const idx = AppState.salesmen.findIndex(s => s.id === sSales.id);
+                    if (idx !== -1) AppState.salesmen[idx] = { ...AppState.salesmen[idx], ...sSales };
+                    else AppState.salesmen.push(sSales);
+                });
+            }
+
             if (Array.isArray(data.pickLists)) AppState.pickLists = data.pickLists;
             if (Array.isArray(data.routes) && data.routes.length > 0) AppState.routes = data.routes;
             if (Array.isArray(data.companies) && data.companies.length > 0) AppState.companies = data.companies;
@@ -15496,10 +15521,8 @@ function syncWithLocalServerStore() {
 
             if (!AppState.initialServerHydrated) {
                 AppState.initialServerHydrated = true;
-                AppState._lastStateHash = newHash;
                 renderAllViews();
-            } else if (hasDataChanged) {
-                AppState._lastStateHash = newHash;
+            } else {
                 if (typeof renderOrdersTable === "function") renderOrdersTable();
                 if (typeof renderDashboard === "function") renderDashboard();
                 if (typeof renderPickListTable === "function") renderPickListTable();
@@ -15526,7 +15549,8 @@ function forcePushLocalStateToCloud() {
             orders: AppState.orders || [],
             bills: AppState.bills || [],
             pickLists: AppState.pickLists || [],
-            focSchemes: AppState.focSchemes || []
+            focSchemes: AppState.focSchemes || [],
+            salesmen: AppState.salesmen || []
         })
     })
     .then(r => r.json())
