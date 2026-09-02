@@ -15546,13 +15546,29 @@ function syncWithLocalServerStore() {
                    : "https://chaudharytraders.online/api/sync/latest-state";
                    
     fetch(apiUri)
-        .then(r => r.json())
-        .then(data => {
+        .then(r => r.text())
+        .then(rawText => {
+            const data = JSON.parse(rawText);
             if (!data.success) return;
 
-            // Enforce 100% Pure Cloud SSOT Architecture with Zero-Wipe Protection & Zero-Flicker Change Detection!
-            let needsPush = false;
+            // Zero-Flicker Change Detection: skip the (expensive, DOM-heavy) table
+            // re-renders below when the server returned the exact same data as last
+            // time - otherwise every 4-second poll would re-render the whole
+            // dashboard/orders/reports even when nothing actually changed, which is
+            // noticeably janky with hundreds of bills/shops loaded.
+            const newHash = (typeof SyncEngine !== "undefined" && SyncEngine.calculateSimpleChecksum)
+                ? SyncEngine.calculateSimpleChecksum(rawText)
+                : String(rawText.length);
+            const hasDataChanged = AppState._lastStateHash !== newHash;
+            AppState._lastStateHash = newHash;
 
+            // Merge remote records into local state (pull direction only). Pushing
+            // local changes to the cloud is handled explicitly by whichever action
+            // caused them (saveStateToStorage()/forcePushLocalStateToCloud()) - the
+            // poll loop itself no longer guesses at whether a push is needed, since
+            // a brief server-side hydration lag right after a cold start could make
+            // this look true even when nothing was actually changed locally,
+            // triggering an unprompted "syncing..." push on page load.
             if (Array.isArray(data.bills)) {
                 data.bills.forEach(sb => {
                     const idx = AppState.bills.findIndex(b => b.billNo === sb.billNo || (sb.id && b.id === sb.id));
@@ -15562,7 +15578,6 @@ function syncWithLocalServerStore() {
                         AppState.bills.unshift(sb);
                     }
                 });
-                if (AppState.bills.length > data.bills.length) needsPush = true;
             }
 
             if (Array.isArray(data.orders)) {
@@ -15574,7 +15589,6 @@ function syncWithLocalServerStore() {
                         AppState.orders.unshift(so);
                     }
                 });
-                if (AppState.orders.length > data.orders.length) needsPush = true;
             }
 
             if (Array.isArray(data.shops)) {
@@ -15606,14 +15620,10 @@ function syncWithLocalServerStore() {
             if (Array.isArray(data.routes) && data.routes.length > 0) AppState.routes = data.routes;
             if (Array.isArray(data.companies) && data.companies.length > 0) AppState.companies = data.companies;
 
-            if (needsPush) {
-                try { forcePushLocalStateToCloud(); } catch(e) {}
-            }
-
             if (!AppState.initialServerHydrated) {
                 AppState.initialServerHydrated = true;
                 renderAllViews();
-            } else {
+            } else if (hasDataChanged) {
                 if (typeof renderOrdersTable === "function") renderOrdersTable();
                 if (typeof renderDashboard === "function") renderDashboard();
                 if (typeof renderPickListTable === "function") renderPickListTable();
