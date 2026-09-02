@@ -6224,34 +6224,53 @@ const DEFAULT_ROUTES = [
     }
 ];
 
-const { Client } = require('pg');
+const { Pool } = require('pg');
 const SUPABASE_CONN_STRING = process.env.SUPABASE_DB_URL || 'postgresql://postgres.lyimkjrtbicdonsimvqg:33202-5922754-5195438ck@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres';
 
+// A shared pool instead of opening a brand new TCP+SSL connection for every
+// single save - now that saves are awaited on the request path (see
+// saveAppStateToStore below), reconnecting from scratch each time added a
+// full connection handshake of latency to every write.
+const supabasePool = new Pool({ connectionString: SUPABASE_CONN_STRING, ssl: { rejectUnauthorized: false }, max: 5 });
+let _supabaseTableEnsured = false;
+
 let _cachedAppState = null;
-let _saveDiskTimer = null;
 let _supabaseInitTried = false;
 
-async function syncWithSupabaseCloud(state) {
-    if (!state) return;
-    try {
-        const client = new Client({ connectionString: SUPABASE_CONN_STRING, ssl: { rejectUnauthorized: false } });
-        await client.connect();
-        await client.query(`
+async function syncWithSupabaseCloudOnce(state) {
+    if (!_supabaseTableEnsured) {
+        await supabasePool.query(`
             CREATE TABLE IF NOT EXISTS erp_master_store (
                 id VARCHAR(50) PRIMARY KEY,
                 data JSONB NOT NULL,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
-        await client.query(`
-            INSERT INTO erp_master_store (id, data, updated_at)
-            VALUES ('master_state', $1, NOW())
-            ON CONFLICT (id) DO UPDATE
-            SET data = EXCLUDED.data, updated_at = NOW();
-        `, [JSON.stringify(state)]);
-        await client.end();
-    } catch(e) {
-        console.warn('Supabase Cloud Sync Note:', e.message);
+        _supabaseTableEnsured = true;
+    }
+    await supabasePool.query(`
+        INSERT INTO erp_master_store (id, data, updated_at)
+        VALUES ('master_state', $1, NOW())
+        ON CONFLICT (id) DO UPDATE
+        SET data = EXCLUDED.data, updated_at = NOW();
+    `, [JSON.stringify(state)]);
+}
+
+// Render's local disk is not guaranteed to survive a restart, so Supabase is
+// the only truly durable copy - a save that returns success to the client
+// without this actually landing can silently disappear the next time the
+// process restarts (which is how a confirmed stock deduction was observed
+// reverting back to its pre-sale value with no code change in between).
+// Retries once on transient failure; throws if both attempts fail so the
+// caller can avoid telling the client "saved" when it wasn't.
+async function syncWithSupabaseCloud(state) {
+    if (!state) return;
+    try {
+        await syncWithSupabaseCloudOnce(state);
+    } catch (e) {
+        console.warn('Supabase Cloud Sync failed, retrying once:', e.message);
+        await new Promise(r => setTimeout(r, 500));
+        await syncWithSupabaseCloudOnce(state); // let a second failure throw to the caller
     }
 }
 
@@ -6289,24 +6308,27 @@ function getAppStateFromStore() {
         const hydrationStartedAt = Date.now();
         (async () => {
             try {
-                const client = new Client({ connectionString: SUPABASE_CONN_STRING, ssl: { rejectUnauthorized: false } });
-                await client.connect();
-                const res = await client.query("SELECT data FROM erp_master_store WHERE id = 'master_state';");
+                const res = await supabasePool.query("SELECT data FROM erp_master_store WHERE id = 'master_state';");
                 if (res && res.rows && res.rows.length > 0 && res.rows[0].data) {
                     // Guard: skip if a local write has already landed since this hydration query started,
                     // so a slow cold-start hydration can't clobber a newer local change (e.g. a stock deduction).
                     if (!_cachedAppState.__lastLocalWriteAt || _cachedAppState.__lastLocalWriteAt < hydrationStartedAt) {
                         const cloudData = res.rows[0].data;
-                        if (cloudData.bills && cloudData.bills.length > 0) _cachedAppState.bills = cloudData.bills;
-                        if (cloudData.shops && cloudData.shops.length > 0) _cachedAppState.shops = cloudData.shops;
-                        if (cloudData.orders && cloudData.orders.length > 0) _cachedAppState.orders = cloudData.orders;
-                        if (cloudData.skus && cloudData.skus.length > 0) _cachedAppState.skus = cloudData.skus;
+                        // Covers every collection the server persists, not just
+                        // bills/shops/orders/skus - routes/companies/salesmen/
+                        // pickLists/focSchemes were previously left on whatever
+                        // the local JSON file (or hardcoded defaults, if that
+                        // file didn't survive a restart) happened to have.
+                        ['bills', 'shops', 'orders', 'skus', 'routes', 'companies', 'salesmen', 'pickLists', 'focSchemes'].forEach(collection => {
+                            if (Array.isArray(cloudData[collection]) && cloudData[collection].length > 0) {
+                                _cachedAppState[collection] = cloudData[collection];
+                            }
+                        });
                         console.log('✓ Hydrated state from Supabase Cloud PostgreSQL!');
                     } else {
                         console.log('↷ Skipped Supabase hydration: a newer local write already landed.');
                     }
                 }
-                await client.end();
             } catch(e) {}
         })();
     }
@@ -6314,16 +6336,18 @@ function getAppStateFromStore() {
     return _cachedAppState;
 }
 
-function saveAppStateToStore(state) {
+// Async and awaited by the request handlers below (not fire-and-forget) so a
+// "success" response is only sent once the write has actually reached
+// Supabase - the durable store. The local JSON file is still written first as
+// a fast local cache, but it lives on Render's disk, which is not guaranteed
+// to survive a restart, so it cannot be treated as the confirmation itself.
+async function saveAppStateToStore(state) {
     state.__lastLocalWriteAt = Date.now();
     _cachedAppState = state;
-    if (_saveDiskTimer) clearTimeout(_saveDiskTimer);
-    _saveDiskTimer = setTimeout(() => {
-        try {
-            dbManager.writeJsonStore(_cachedAppState);
-        } catch(e) {}
-        syncWithSupabaseCloud(_cachedAppState);
-    }, 100);
+    try {
+        dbManager.writeJsonStore(_cachedAppState);
+    } catch(e) {}
+    await syncWithSupabaseCloud(_cachedAppState);
 }
 
 function createAutoBackup(state) {
@@ -6440,7 +6464,7 @@ function handleHttpRequest(req, res) {
     if (pathname === '/api/sync/update-master-data' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
-        req.on('end', () => {
+        req.on('end', async () => {
             try {
                 const payload = JSON.parse(body);
                 const state = getAppStateFromStore();
@@ -6533,11 +6557,11 @@ function handleHttpRequest(req, res) {
                     });
                 }
 
-                saveAppStateToStore(state);
+                await saveAppStateToStore(state);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
             } catch(e) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.writeHead(502, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: e.message }));
             }
         });
@@ -6662,7 +6686,7 @@ function handleHttpRequest(req, res) {
     if (pathname === '/api/sync/evening-upload' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
-        req.on('end', () => {
+        req.on('end', async () => {
             try {
                 const payload = JSON.parse(body);
                 const salesmanId = payload.salesmanId || "sales_01";
@@ -6766,7 +6790,7 @@ function handleHttpRequest(req, res) {
 
                 if (!state.syncSessions) state.syncSessions = [];
                 state.syncSessions.unshift(sessionObj);
-                saveAppStateToStore(state);
+                await saveAppStateToStore(state);
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
@@ -6781,7 +6805,7 @@ function handleHttpRequest(req, res) {
                     timestamp: new Date().toISOString()
                 }));
             } catch (err) {
-                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.writeHead(502, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));
             }
         });
@@ -6791,7 +6815,7 @@ function handleHttpRequest(req, res) {
     if (pathname === '/api/sync/import-emergency-file' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
-        req.on('end', () => {
+        req.on('end', async () => {
             try {
                 const reqObj = JSON.parse(body);
                 const syncFileString = reqObj.fileContent;
@@ -6851,7 +6875,7 @@ function handleHttpRequest(req, res) {
                 };
                 if (!state.syncSessions) state.syncSessions = [];
                 state.syncSessions.unshift(sessionObj);
-                saveAppStateToStore(state);
+                await saveAppStateToStore(state);
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
@@ -6861,7 +6885,7 @@ function handleHttpRequest(req, res) {
                     returnSyncString: returnSyncString
                 }));
             } catch (err) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.writeHead(err && err.message && err.message.includes('Supabase') ? 502 : 400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));
             }
         });
