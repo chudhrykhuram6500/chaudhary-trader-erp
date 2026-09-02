@@ -7077,7 +7077,8 @@ const PARTIAL_SYNC_KEY_FIELDS = {
     skus: "code",
     orders: "orderNo",
     bills: "billNo",
-    pickLists: "pickListNo"
+    pickLists: "pickListNo",
+    focSchemes: "id"
 };
 
 let _pendingPartialSync = {};   // { collectionName: { keyValue: recordObj } }
@@ -8119,10 +8120,13 @@ function saveFocSchemeFromModal() {
         AppState.focSchemes.push(schemeObj);
     }
 
-    saveStateToStorage();
     closeModal("focSchemeModal");
     renderFocManagementTab();
-    alert(`🎉 FOC Scheme "${name}" saved successfully!`);
+    queuePartialCloudSave({ focSchemes: [schemeObj] }, {
+        loading: "⏳ Saving FOC scheme...",
+        success: `✅ FOC Scheme "${name}" saved.`,
+        error: `⚠️ FOC Scheme "${name}" saved locally, but cloud sync is delayed.`
+    });
 }
 
 function toggleFocSchemeStatus(schemeId) {
@@ -8130,7 +8134,11 @@ function toggleFocSchemeStatus(schemeId) {
     if (!sch) return;
 
     sch.status = (sch.status === "Disabled") ? "Active" : "Disabled";
-    saveStateToStorage();
+    queuePartialCloudSave({ focSchemes: [sch] }, {
+        loading: "⏳ Updating FOC scheme status...",
+        success: `✅ FOC Scheme "${sch.name}" is now ${sch.status}.`,
+        error: `⚠️ Status updated locally, but cloud sync is delayed.`
+    });
     renderFocSchemesTable();
 }
 
@@ -8142,6 +8150,11 @@ function deleteFocScheme(schemeId) {
         AppState.focSchemes = AppState.focSchemes.filter(s => s.id !== schemeId);
         saveStateToStorage();
         renderFocManagementTab();
+        showLoadingThenSyncResultToast(
+            "⏳ Deleting FOC scheme...",
+            `✅ FOC Scheme "${sch.name}" deleted.`,
+            `⚠️ FOC Scheme deleted locally, but cloud sync is delayed.`
+        );
     }
 }
 
@@ -10826,7 +10839,11 @@ function deleteSkuMaster(skuCode) {
         AppState.skus = AppState.skus.filter(s => String(s.code) !== codeStr);
         saveStateToStorage();
         renderAllViews();
-        alert(`🗑️ SKU "${sku.desc}" (${sku.code}) deleted successfully from master catalog!`);
+        showLoadingThenSyncResultToast(
+            "⏳ Deleting SKU...",
+            `✅ SKU "${sku.desc}" (${sku.code}) deleted from master catalog.`,
+            `⚠️ SKU deleted locally, but cloud sync is delayed.`
+        );
     }
 }
 
@@ -10924,20 +10941,38 @@ function saveSkuFromModal() {
     if (!brand) brand = (companyId === "hash") ? "Fast" : "Lays";
     type = getCategoryTypeForItem({ code, companyId, categoryType: type, brand, desc });
 
+    let savedSku = null;
+    const codeChanged = editCode && editCode !== code;
+
     if (editCode) {
         const sku = AppState.skus.find(s => s.code === editCode);
         if (sku) {
             sku.code = code; sku.companyId = companyId; sku.categoryType = type; sku.brand = brand;
             sku.desc = desc; sku.pricePoint = pricePoint; sku.grams = grams;
             sku.pack = pack; sku.tpRate = tpRate;
+            savedSku = sku;
         }
     } else {
-        AppState.skus.push({ code, companyId, categoryType: type, brand, desc, pricePoint, grams, pack, tpRate, stockCartons: 50, stockUnits: 0 });
+        savedSku = { code, companyId, categoryType: type, brand, desc, pricePoint, grams, pack, tpRate, stockCartons: 50, stockUnits: 0 };
+        AppState.skus.push(savedSku);
     }
 
-    saveStateToStorage();
-    closeModal("skuModal");
-    renderAllViews();
+    if (codeChanged) {
+        // The partial-save endpoint only upserts by code - if the code itself
+        // changed, a partial push would leave the old code's entry orphaned on
+        // the server (never removed). Fall back to a full push for this case.
+        saveStateToStorage();
+        closeModal("skuModal");
+        renderAllViews();
+    } else {
+        queuePartialCloudSave({ skus: savedSku ? [savedSku] : [] }, {
+            loading: "⏳ Saving SKU...",
+            success: `✅ SKU ${code} saved.`,
+            error: `⚠️ SKU ${code} saved locally, but cloud sync is delayed.`
+        });
+        closeModal("skuModal");
+        renderAllViews();
+    }
 }
 
 function editSku(code) {
@@ -11022,6 +11057,7 @@ function saveCompanyModal() {
 
     if (!name) return alert("Enter Company / Brand Name!");
 
+    let savedComp = null;
     if (editId) {
         const comp = AppState.companies.find(c => c.id === editId);
         if (comp) {
@@ -11029,24 +11065,29 @@ function saveCompanyModal() {
             comp.metric = metric;
             comp.taxMode = taxMode;
             comp.description = desc;
+            savedComp = comp;
         }
     } else {
         const newId = name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now().toString().slice(-4);
-        AppState.companies.push({
+        savedComp = {
             id: newId,
             name: name,
             metric: metric,
             taxMode: taxMode,
             description: desc,
             isSystem: false
-        });
+        };
+        AppState.companies.push(savedComp);
     }
 
-    saveStateToStorage();
     closeModal("companyModal");
     updateAllCompanyDropdowns();
     renderAllViews();
-    alert(`Company "${name}" saved successfully with metric: ${metric === 'kg' ? 'Kilograms (KG)' : 'Cartons (Ctns)'}!`);
+    queuePartialCloudSave({ companies: savedComp ? [savedComp] : [] }, {
+        loading: "⏳ Saving company...",
+        success: `✅ Company "${name}" saved (${metric === 'kg' ? 'KG' : 'Cartons'}).`,
+        error: `⚠️ Company "${name}" saved locally, but cloud sync is delayed.`
+    });
 }
 
 function deleteCompany(companyId) {
@@ -11068,7 +11109,11 @@ function deleteCompany(companyId) {
         saveStateToStorage();
         updateAllCompanyDropdowns();
         renderAllViews();
-        alert(`Company "${comp.name}" deleted.`);
+        showLoadingThenSyncResultToast(
+            "⏳ Deleting company...",
+            `✅ Company "${comp.name}" deleted.`,
+            `⚠️ Company deleted locally, but cloud sync is delayed.`
+        );
     }
 }
 
@@ -12869,22 +12914,28 @@ function saveRouteFromModal() {
 
     if (!name) return alert("Enter Route name!");
 
+    let savedRoute = null;
     if (editId) {
         const route = AppState.routes.find(r => r.id === editId);
         if (route) {
             route.name = name;
             route.salesman = salesman;
+            savedRoute = route;
         }
     } else {
-        const newRoute = {
+        savedRoute = {
             id: `r${Date.now()}`,
             name: name,
             salesman: salesman
         };
-        AppState.routes.push(newRoute);
+        AppState.routes.push(savedRoute);
     }
 
-    saveStateToStorage();
+    queuePartialCloudSave({ routes: savedRoute ? [savedRoute] : [] }, {
+        loading: "⏳ Saving route...",
+        success: `✅ Route "${name}" saved.`,
+        error: `⚠️ Route "${name}" saved locally, but cloud sync is delayed.`
+    });
     closeModal("routeModal");
     renderAllViews();
 }
@@ -12897,7 +12948,11 @@ function deleteRoute(routeId) {
         AppState.routes = AppState.routes.filter(r => r.id !== routeId);
         saveStateToStorage();
         renderAllViews();
-        alert(`Route "${route.name}" deleted successfully!`);
+        showLoadingThenSyncResultToast(
+            "⏳ Deleting route...",
+            `✅ Route "${route.name}" deleted.`,
+            `⚠️ Route deleted locally, but cloud sync is delayed.`
+        );
     }
 }
 
@@ -12943,6 +12998,7 @@ function saveShopFromModal() {
 
     if (!name) return alert("Enter Shop Name!");
 
+    let savedShop = null;
     if (editId) {
         const shop = AppState.shops.find(s => s.id === editId);
         if (shop) {
@@ -12955,9 +13011,10 @@ function saveShopFromModal() {
             shop.defaultDiscountPct = discountPct;
             shop.taxStatus = taxMode;
             shop.taxMode = taxMode;
+            savedShop = shop;
         }
     } else {
-        const newShop = {
+        savedShop = {
             id: `S_${String(AppState.shops.length + 1).padStart(3, '0')}`,
             name: name,
             visitDay: visitDay,
@@ -12969,10 +13026,14 @@ function saveShopFromModal() {
             taxStatus: taxMode,
             taxMode: taxMode
         };
-        AppState.shops.push(newShop);
+        AppState.shops.push(savedShop);
     }
 
-    saveStateToStorage();
+    queuePartialCloudSave({ shops: savedShop ? [savedShop] : [] }, {
+        loading: "⏳ Saving shop...",
+        success: `✅ Shop "${name}" saved.`,
+        error: `⚠️ Shop "${name}" saved locally, but cloud sync is delayed.`
+    });
     closeModal("shopModal");
     renderAllViews();
 }
@@ -12985,7 +13046,11 @@ function deleteShop(shopId) {
         AppState.shops = AppState.shops.filter(s => s.id !== shopId);
         saveStateToStorage();
         renderAllViews();
-        alert(`Shop "${shop.name}" deleted successfully!`);
+        showLoadingThenSyncResultToast(
+            "⏳ Deleting shop...",
+            `✅ Shop "${shop.name}" deleted.`,
+            `⚠️ Shop deleted locally, but cloud sync is delayed.`
+        );
     }
 }
 
