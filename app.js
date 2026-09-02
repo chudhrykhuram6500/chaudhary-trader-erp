@@ -6856,7 +6856,8 @@ function resetAndRestoreAllStock(defaultCtns = 100) {
 
 function deductStockForItems(items) {
 
-    if (!items || !Array.isArray(items)) return;
+    if (!items || !Array.isArray(items)) return [];
+    const affectedSkus = [];
     items.forEach(item => {
         const sku = AppState.skus.find(s => String(s.code).trim() === String(item.code).trim() || (item.desc && s.desc.toLowerCase() === item.desc.toLowerCase()));
         if (sku) {
@@ -6866,13 +6867,20 @@ function deductStockForItems(items) {
             const remainingUnits = Math.max(0, currentUnits - reqUnits);
             sku.stockCartons = Math.floor(remainingUnits / pack);
             sku.stockUnits = remainingUnits % pack;
+            affectedSkus.push(sku);
         }
     });
-    saveStateToStorage();
+    // Queued silently (no toast) - this runs mid-flow inside a larger action
+    // (e.g. order processing) that shows its own single toast for the overall
+    // step. Merges into the same pending buffer as the caller's own save, so
+    // nothing is lost even though this fires moments before the caller's call.
+    queuePartialCloudSave({ skus: affectedSkus });
+    return affectedSkus;
 }
 
 function restoreStockForItems(items) {
-    if (!items || !Array.isArray(items)) return;
+    if (!items || !Array.isArray(items)) return [];
+    const affectedSkus = [];
     items.forEach(item => {
         const sku = AppState.skus.find(s => String(s.code).trim() === String(item.code).trim() || (item.desc && s.desc.toLowerCase() === item.desc.toLowerCase()));
         if (sku) {
@@ -6882,15 +6890,52 @@ function restoreStockForItems(items) {
             const totalUnits = currentUnits + returnUnits;
             sku.stockCartons = Math.floor(totalUnits / pack);
             sku.stockUnits = totalUnits % pack;
+            affectedSkus.push(sku);
         }
     });
-    saveStateToStorage();
+    queuePartialCloudSave({ skus: affectedSkus });
+    return affectedSkus;
 }
 
 /* ==========================================================================
    Lightweight non-blocking toast notifications (replaces blocking alert()
    popups for sync/save progress feedback).
    ========================================================================== */
+// One consistent dark "card" style for every toast (background/shape never
+// changes by type) - only a left accent bar + small icon change to show
+// loading/success/error, so the notification always looks like the same
+// professional system instead of switching between a green box and a grey
+// box depending on what happened.
+const SYNC_TOAST_ACCENTS = {
+    loading: { border: "#f59e0b", icon: "⏳", spin: true },
+    success: { border: "#22c55e", icon: "✅", spin: false },
+    error:   { border: "#ef4444", icon: "⚠️", spin: false },
+    info:    { border: "#3b82f6", icon: "ℹ️", spin: false }
+};
+
+function _applySyncToastContent(toastEl, message, type) {
+    // Built with createElement/textContent (not innerHTML) since `message` can
+    // contain user-entered data (e.g. a SKU/shop name) that must never be
+    // interpreted as HTML.
+    const accent = SYNC_TOAST_ACCENTS[type] || SYNC_TOAST_ACCENTS.info;
+    toastEl.style.borderLeftColor = accent.border;
+    toastEl.textContent = "";
+
+    const iconEl = document.createElement("span");
+    iconEl.style.flex = "0 0 auto";
+    if (accent.spin) {
+        iconEl.style.cssText += "display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.35); border-top-color:#fff; border-radius:50%; animation:chaudharyToastSpin 0.7s linear infinite;";
+    } else {
+        iconEl.textContent = accent.icon;
+    }
+
+    const textEl = document.createElement("span");
+    textEl.textContent = String(message || "").replace(/^[\u{1F300}-\u{1FAFF}☀-➿]\s*/u, "");
+
+    toastEl.appendChild(iconEl);
+    toastEl.appendChild(textEl);
+}
+
 function showSyncToast(message, type, duration) {
     type = type || "info";
     if (duration === undefined) duration = 3000;
@@ -6901,12 +6946,18 @@ function showSyncToast(message, type, duration) {
         container.id = "chaudharyToastContainer";
         container.style.cssText = "position:fixed; bottom:20px; right:20px; z-index:99999; display:flex; flex-direction:column; gap:8px; max-width:340px;";
         document.body.appendChild(container);
+
+        if (!document.getElementById("chaudharyToastStyles")) {
+            const styleEl = document.createElement("style");
+            styleEl.id = "chaudharyToastStyles";
+            styleEl.textContent = "@keyframes chaudharyToastSpin { to { transform: rotate(360deg); } }";
+            document.head.appendChild(styleEl);
+        }
     }
 
-    const colors = { info: "#2563eb", success: "#16a34a", error: "#dc2626", loading: "#4b5563" };
     const toast = document.createElement("div");
-    toast.style.cssText = `background:${colors[type] || colors.info}; color:#fff; padding:10px 16px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.25); font-size:13.5px; line-height:1.4; opacity:0; transform:translateY(6px); transition:opacity 0.25s ease, transform 0.25s ease;`;
-    toast.innerText = message;
+    toast.style.cssText = "background:#1e293b; color:#f1f5f9; padding:10px 14px; border-radius:8px; border-left:4px solid #3b82f6; box-shadow:0 4px 14px rgba(0,0,0,0.3); font-size:13.5px; line-height:1.4; display:flex; align-items:center; gap:9px; opacity:0; transform:translateY(6px); transition:opacity 0.25s ease, transform 0.25s ease;";
+    _applySyncToastContent(toast, message, type);
     container.appendChild(toast);
     requestAnimationFrame(() => { toast.style.opacity = "1"; toast.style.transform = "translateY(0)"; });
 
@@ -6923,9 +6974,7 @@ function updateSyncToast(toastEl, message, type, duration) {
     if (!toastEl || !toastEl.isConnected) return showSyncToast(message, type, duration);
     type = type || "info";
     if (duration === undefined) duration = 3000;
-    const colors = { info: "#2563eb", success: "#16a34a", error: "#dc2626", loading: "#4b5563" };
-    toastEl.style.background = colors[type] || colors.info;
-    toastEl.innerText = message;
+    _applySyncToastContent(toastEl, message, type);
     if (duration > 0) {
         setTimeout(() => {
             toastEl.style.opacity = "0";
@@ -14031,7 +14080,6 @@ function applyInModalShortageAdjustmentAndProcess() {
 
     closeModal("stockValidationModal");
     executeOrderProcessing(targetOrders, deliveryDate);
-    alert("🎉 Order quantities adjusted and processed successfully! Warehouse stock updated.");
 }
 
 function resolveStockValidation(optionNumber) {
@@ -14059,7 +14107,6 @@ function resolveStockValidation(optionNumber) {
             o.netAmount = Math.round(tBasic - (tBasic * (getBillDiscountPct(o) / 100)));
         });
         executeOrderProcessing(targetOrders, deliveryDate);
-        alert("Out-of-stock SKUs removed automatically and remaining items processed!");
 
     } else if (optionNumber === 2) {
         applyInModalShortageAdjustmentAndProcess();
@@ -14070,6 +14117,7 @@ function resolveStockValidation(optionNumber) {
 }
 
 function executeOrderProcessing(targetOrders, deliveryDate) {
+    const processedBills = [];
     targetOrders.forEach(o => {
         const shop = AppState.shops.find(s => s.id === o.shopId);
 
@@ -14198,6 +14246,7 @@ function executeOrderProcessing(targetOrders, deliveryDate) {
             };
 
             AppState.bills.unshift(newBill);
+            processedBills.push(newBill);
             logOrderAction(o.orderNo, "Order", "Processed", `Order ${o.orderNo} (${cKey.toUpperCase()}) processed into Invoice ${invoiceId} for delivery on ${deliveryDate}.`);
         });
     });
@@ -14205,10 +14254,12 @@ function executeOrderProcessing(targetOrders, deliveryDate) {
 
     AppState.selectedOrderIds = [];
     AppState.pendingShortageData = null;
-    saveStateToStorage();
-    try { forcePushLocalStateToCloud(); } catch(e) {}
+    queuePartialCloudSave({ orders: targetOrders, bills: processedBills }, {
+        loading: `⏳ Processing ${targetOrders.length} order(s)...`,
+        success: `✅ ${targetOrders.length} order(s) processed — ${processedBills.length} invoice(s) generated & pick list updated.`,
+        error: `⚠️ Order(s) processed locally, but cloud sync is delayed — check the Data Sync tab.`
+    });
     renderAllViews();
-    alert(`🎉 Successfully processed ${targetOrders.length} order(s)! Invoices created & Pick List updated.`);
 }
 
 /* ==========================================================================
