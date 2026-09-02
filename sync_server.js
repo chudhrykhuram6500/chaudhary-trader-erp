@@ -6460,11 +6460,46 @@ function handleHttpRequest(req, res) {
                         else state.skus.push(pSku);
                     });
                 }
-                if (Array.isArray(payload.routes)) state.routes = payload.routes;
-                if (Array.isArray(payload.companies)) state.companies = payload.companies;
-                if (Array.isArray(payload.orders)) state.orders = payload.orders;
-                if (Array.isArray(payload.bills)) state.bills = payload.bills;
-                if (Array.isArray(payload.pickLists)) state.pickLists = payload.pickLists;
+                if (Array.isArray(payload.routes)) {
+                    if (!Array.isArray(state.routes)) state.routes = [];
+                    payload.routes.forEach(pRoute => {
+                        const idx = state.routes.findIndex(r => r.id === pRoute.id);
+                        if (idx !== -1) state.routes[idx] = { ...state.routes[idx], ...pRoute };
+                        else state.routes.push(pRoute);
+                    });
+                }
+                if (Array.isArray(payload.companies)) {
+                    if (!Array.isArray(state.companies)) state.companies = [];
+                    payload.companies.forEach(pComp => {
+                        const idx = state.companies.findIndex(c => c.id === pComp.id);
+                        if (idx !== -1) state.companies[idx] = { ...state.companies[idx], ...pComp };
+                        else state.companies.push(pComp);
+                    });
+                }
+                if (Array.isArray(payload.orders)) {
+                    if (!Array.isArray(state.orders)) state.orders = [];
+                    payload.orders.forEach(pOrder => {
+                        const idx = state.orders.findIndex(o => o.orderNo === pOrder.orderNo);
+                        if (idx !== -1) state.orders[idx] = { ...state.orders[idx], ...pOrder };
+                        else state.orders.push(pOrder);
+                    });
+                }
+                if (Array.isArray(payload.bills)) {
+                    if (!Array.isArray(state.bills)) state.bills = [];
+                    payload.bills.forEach(pBill => {
+                        const idx = state.bills.findIndex(b => b.billNo === pBill.billNo);
+                        if (idx !== -1) state.bills[idx] = { ...state.bills[idx], ...pBill };
+                        else state.bills.push(pBill);
+                    });
+                }
+                if (Array.isArray(payload.pickLists)) {
+                    if (!Array.isArray(state.pickLists)) state.pickLists = [];
+                    payload.pickLists.forEach(pPick => {
+                        const idx = state.pickLists.findIndex(p => p.pickListNo === pPick.pickListNo);
+                        if (idx !== -1) state.pickLists[idx] = { ...state.pickLists[idx], ...pPick };
+                        else state.pickLists.push(pPick);
+                    });
+                }
                 if (Array.isArray(payload.salesmen)) {
                     if (!Array.isArray(state.salesmen)) state.salesmen = [];
                     payload.salesmen.forEach(pSales => {

@@ -7014,6 +7014,91 @@ function saveStateToStorage() {
     }, 50);
 }
 
+/* ==========================================================================
+   Partial (delta) cloud save — pushes only the specific records that
+   changed instead of the entire AppState, with a per-action loading/success
+   toast. Opt-in: existing call sites keep using saveStateToStorage() above
+   unchanged; individual actions are migrated to this one at a time.
+   ========================================================================== */
+const PARTIAL_SYNC_KEY_FIELDS = {
+    shops: "id",
+    routes: "id",
+    companies: "id",
+    salesmen: "id",
+    skus: "code",
+    orders: "orderNo",
+    bills: "billNo",
+    pickLists: "pickListNo"
+};
+
+let _pendingPartialSync = {};   // { collectionName: { keyValue: recordObj } }
+let _pendingPartialToasts = []; // [{ toastEl, success, error }]
+let _partialSyncTimer = null;
+
+// partialPayload example: { skus: [oneUpdatedSku] } or { orders: [newOrder], bills: [newBill] }
+// toastConfig (optional - omit for a silent internal call with no user-facing toast): { loading, success, error }
+function queuePartialCloudSave(partialPayload, toastConfig) {
+    // Merge each collection's records into the pending buffer by key, so a
+    // call that lands moments before another (within the same debounce
+    // window) is never silently dropped - the eventual flush always sends
+    // the union of everything currently pending, not just the latest call.
+    Object.keys(partialPayload || {}).forEach(collection => {
+        const keyField = PARTIAL_SYNC_KEY_FIELDS[collection];
+        const records = partialPayload[collection];
+        if (!keyField || !Array.isArray(records)) return;
+        if (!_pendingPartialSync[collection]) _pendingPartialSync[collection] = {};
+        records.forEach(rec => {
+            const keyVal = rec && rec[keyField];
+            if (keyVal === undefined || keyVal === null) return;
+            _pendingPartialSync[collection][keyVal] = rec;
+        });
+    });
+
+    if (toastConfig && toastConfig.loading) {
+        const toastEl = showSyncToast(toastConfig.loading, "loading", 0);
+        _pendingPartialToasts.push({
+            toastEl,
+            success: toastConfig.success || "✅ Saved.",
+            error: toastConfig.error || "⚠️ Saved locally, but cloud sync may be delayed."
+        });
+    }
+
+    if (_partialSyncTimer) clearTimeout(_partialSyncTimer);
+    _partialSyncTimer = setTimeout(flushPartialCloudSave, 50);
+}
+
+function flushPartialCloudSave() {
+    const bufferedCollections = _pendingPartialSync;
+    const toastsToResolve = _pendingPartialToasts;
+    _pendingPartialSync = {};
+    _pendingPartialToasts = [];
+
+    const body = {};
+    Object.keys(bufferedCollections).forEach(collection => {
+        body[collection] = Object.values(bufferedCollections[collection]);
+    });
+    if (Object.keys(body).length === 0) return;
+
+    const updateUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http'))
+                    ? (window.location.origin + "/api/sync/update-master-data")
+                    : "https://chaudharytraders.online/api/sync/update-master-data";
+
+    fetch(updateUri, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(res => {
+        const success = !!(res && res.success);
+        toastsToResolve.forEach(t => updateSyncToast(t.toastEl, success ? t.success : t.error, success ? "success" : "error", success ? 3000 : 4000));
+        try { window.dispatchEvent(new CustomEvent('chaudharyPartialSyncDone', { detail: { success, collections: Object.keys(body) } })); } catch(e) {}
+    })
+    .catch(() => {
+        toastsToResolve.forEach(t => updateSyncToast(t.toastEl, t.error, "error", 4000));
+        try { window.dispatchEvent(new CustomEvent('chaudharyPartialSyncDone', { detail: { success: false, collections: Object.keys(body) } })); } catch(e) {}
+    });
+}
 
 function startCleanProductionMode() {
     if (confirm("Reset all dummy sales, bills, and shops to ZERO for live production? SKUs and prices will be saved.")) {
@@ -9836,10 +9921,13 @@ function saveStockInwardFromModal() {
     if (sku) {
         sku.stockCartons = (sku.stockCartons || 0) + cartons;
         sku.stockUnits = (sku.stockUnits || 0) + packets;
-        saveStateToStorage();
+        queuePartialCloudSave({ skus: [sku] }, {
+            loading: "⏳ Saving stock inward...",
+            success: `✅ Stock inward saved — added ${cartons} Ctns & ${packets} Pkts to ${sku.desc}.`,
+            error: `⚠️ Stock inward saved locally, but cloud sync is delayed for ${sku.desc}.`
+        });
         closeModal("receiveStockModal");
         renderAllViews();
-        alert(`Warehouse Inward Received: Added ${cartons} Cartons & ${packets} Loose Units to ${sku.desc}!`);
     } else {
         alert("Selected SKU not found!");
     }
@@ -9880,10 +9968,13 @@ function saveStockAdjustmentFromModal() {
             sku.stockCartons = Math.max(0, (sku.stockCartons || 0) - cartons);
             sku.stockUnits = Math.max(0, (sku.stockUnits || 0) - packets);
         }
-        saveStateToStorage();
+        queuePartialCloudSave({ skus: [sku] }, {
+            loading: "⏳ Saving stock adjustment...",
+            success: `✅ Stock adjustment saved for ${sku.desc}.`,
+            error: `⚠️ Stock adjustment saved locally, but cloud sync is delayed for ${sku.desc}.`
+        });
         closeModal("adjustStockModal");
         renderAllViews();
-        alert(`Stock Adjustment Applied for ${sku.desc}!`);
     } else {
         alert("Selected SKU not found!");
     }
@@ -9923,10 +10014,13 @@ function saveQuickEditStockFromModal() {
     if (sku) {
         sku.stockCartons = cartons;
         sku.stockUnits = packets;
-        saveStateToStorage();
+        queuePartialCloudSave({ skus: [sku] }, {
+            loading: "⏳ Updating stock...",
+            success: `✅ Stock updated — ${sku.desc} now ${cartons} Ctns / ${packets} Pkts.`,
+            error: `⚠️ Stock updated locally, but cloud sync is delayed for ${sku.desc}.`
+        });
         closeModal("quickEditStockModal");
         renderAllViews();
-        alert(`Exact Stock Updated for ${sku.desc}! Now available: ${cartons} Ctns / ${packets} Loose Pkts.`);
     } else {
         alert("Selected SKU not found!");
     }
@@ -13450,7 +13544,10 @@ function logOrderAction(entityId, entityType, action, details) {
         action: action,
         details: details
     });
-    saveStateToStorage();
+    // Note: orderLogs is never sent to /api/sync/update-master-data (it's only
+    // included in the separate manual JSON export/import feature), so this used
+    // to trigger a redundant full-state cloud push for no server-visible reason.
+    // The caller is responsible for saving whatever it actually changed.
 }
 
 function savePosCartAsDraftOrder() {
