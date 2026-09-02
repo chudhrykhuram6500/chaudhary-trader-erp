@@ -15585,7 +15585,6 @@ function checkPcServerSyncStatus() {
                 const ip = data.primaryIp || "192.168.100.129";
                 ipText.innerText = `Local IP: http://${ip}:8888`;
             }
-            syncWithLocalServerStore();
         })
         .catch(() => {
             if (badge) {
