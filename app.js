@@ -6887,6 +6887,85 @@ function restoreStockForItems(items) {
     saveStateToStorage();
 }
 
+/* ==========================================================================
+   Lightweight non-blocking toast notifications (replaces blocking alert()
+   popups for sync/save progress feedback).
+   ========================================================================== */
+function showSyncToast(message, type, duration) {
+    type = type || "info";
+    if (duration === undefined) duration = 3000;
+
+    let container = document.getElementById("chaudharyToastContainer");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "chaudharyToastContainer";
+        container.style.cssText = "position:fixed; bottom:20px; right:20px; z-index:99999; display:flex; flex-direction:column; gap:8px; max-width:340px;";
+        document.body.appendChild(container);
+    }
+
+    const colors = { info: "#2563eb", success: "#16a34a", error: "#dc2626", loading: "#4b5563" };
+    const toast = document.createElement("div");
+    toast.style.cssText = `background:${colors[type] || colors.info}; color:#fff; padding:10px 16px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.25); font-size:13.5px; line-height:1.4; opacity:0; transform:translateY(6px); transition:opacity 0.25s ease, transform 0.25s ease;`;
+    toast.innerText = message;
+    container.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.opacity = "1"; toast.style.transform = "translateY(0)"; });
+
+    if (duration > 0) {
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
+    }
+    return toast;
+}
+
+function updateSyncToast(toastEl, message, type, duration) {
+    if (!toastEl || !toastEl.isConnected) return showSyncToast(message, type, duration);
+    type = type || "info";
+    if (duration === undefined) duration = 3000;
+    const colors = { info: "#2563eb", success: "#16a34a", error: "#dc2626", loading: "#4b5563" };
+    toastEl.style.background = colors[type] || colors.info;
+    toastEl.innerText = message;
+    if (duration > 0) {
+        setTimeout(() => {
+            toastEl.style.opacity = "0";
+            setTimeout(() => toastEl.remove(), 300);
+        }, duration);
+    }
+    return toastEl;
+}
+
+// Shows a loading toast now, then flips it to a success/error message once the
+// next debounced cloud save actually completes (event fired from
+// saveStateToStorage's fetch). Falls back to a timeout if the event never
+// arrives, so the toast never gets stuck on screen forever.
+function showLoadingThenSyncResultToast(loadingMessage, successMessage, errorMessage) {
+    const toastEl = showSyncToast(loadingMessage, "loading", 0);
+    let settled = false;
+
+    const onDone = (evt) => {
+        if (settled) return;
+        settled = true;
+        window.removeEventListener("chaudharyCloudSyncDone", onDone);
+        if (evt && evt.detail && evt.detail.success) {
+            updateSyncToast(toastEl, successMessage, "success", 3000);
+        } else {
+            updateSyncToast(toastEl, errorMessage || "⚠️ Saved locally, but cloud sync may be delayed.", "error", 4000);
+        }
+    };
+
+    window.addEventListener("chaudharyCloudSyncDone", onDone);
+
+    // Fallback: if no sync event arrives within 6s (e.g. offline), don't leave
+    // the toast stuck on "saving..." forever.
+    setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        window.removeEventListener("chaudharyCloudSyncDone", onDone);
+        updateSyncToast(toastEl, "⚠️ Still syncing in background...", "error", 4000);
+    }, 6000);
+}
+
 let _saveStorageTimer = null;
 function saveStateToStorage() {
     AppState.lastLocalEditTime = Date.now();
@@ -6920,9 +6999,17 @@ function saveStateToStorage() {
                     orders: AppState.orders,
                     bills: AppState.bills,
                     pickLists: AppState.pickLists,
-                    focSchemes: AppState.focSchemes
+                    focSchemes: AppState.focSchemes,
+                    salesmen: AppState.salesmen || []
                 })
-            }).catch(() => {});
+            })
+            .then(r => r.json())
+            .then(res => {
+                try { window.dispatchEvent(new CustomEvent('chaudharyCloudSyncDone', { detail: { success: !!(res && res.success) } })); } catch(e) {}
+            })
+            .catch(() => {
+                try { window.dispatchEvent(new CustomEvent('chaudharyCloudSyncDone', { detail: { success: false } })); } catch(e) {}
+            });
         } catch (e) {}
     }, 50);
 }
@@ -14601,7 +14688,11 @@ function batchConfirmSelectedInvoices() {
         AppState.selectedInvoiceIds = [];
         saveStateToStorage();
         renderAllViews();
-        alert(`Successfully CONFIRMED ${openInvoices.length} invoice(s)! Official sales recorded.`);
+        showLoadingThenSyncResultToast(
+            `⏳ Saving ${openInvoices.length} confirmed invoice(s) to database...`,
+            `✅ ${openInvoices.length} invoice(s) confirmed & saved — official sales recorded on Dashboard & Reports.`,
+            `⚠️ Invoice(s) confirmed locally, but cloud save is delayed — check the Data Sync tab.`
+        );
     }
 }
 
@@ -15534,9 +15625,11 @@ function syncWithLocalServerStore() {
 }
 
 function forcePushLocalStateToCloud() {
-    const updateUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
-                    ? (window.location.origin + "/api/sync/update-master-data") 
+    const updateUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http'))
+                    ? (window.location.origin + "/api/sync/update-master-data")
                     : "https://chaudharytraders.online/api/sync/update-master-data";
+
+    const loadingToast = showSyncToast("⏳ Syncing data to cloud server...", "loading", 0);
 
     fetch(updateUri, {
         method: "POST",
@@ -15556,14 +15649,14 @@ function forcePushLocalStateToCloud() {
     .then(r => r.json())
     .then(res => {
         if (res && res.success) {
-            alert("🎉 SUCCESS! Your full 142 Shops & Rs. 929,989 data has been PUSHED to 24/7 Cloud Server!\n\nAll browsers, mobiles and devices will now show 100% equal data!");
+            updateSyncToast(loadingToast, `✅ Synced — ${(AppState.shops||[]).length} shops, ${(AppState.bills||[]).length} bills up to date on all devices.`, "success", 3500);
             syncWithLocalServerStore();
         } else {
-            alert("⚠️ Cloud Push Note: " + (res.error || "Pushed to server"));
+            updateSyncToast(loadingToast, "⚠️ Cloud push issue: " + (res.error || "Pushed to server"), "error", 4000);
         }
     })
     .catch(err => {
-        alert("⚠️ Cloud Push Error: " + err.message);
+        updateSyncToast(loadingToast, "⚠️ Cloud push error: " + err.message, "error", 4000);
     });
 }
 
@@ -15818,7 +15911,11 @@ function saveSalesmanFromModal() {
     closeModal("salesmanModal");
     closeModal("manageSalesmenModal");
     renderAllViews();
-    alert(`🎉 Salesman '${name}' saved successfully!`);
+    showLoadingThenSyncResultToast(
+        `⏳ Saving salesman '${name}'...`,
+        `✅ Salesman '${name}' saved & synced — will now show on their mobile app and reports.`,
+        `⚠️ Salesman '${name}' saved locally, but cloud sync is delayed.`
+    );
 }
 
 function toggleSalesmanActiveStatus(salesmanId) {
