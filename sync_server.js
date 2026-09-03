@@ -6248,12 +6248,29 @@ async function syncWithSupabaseCloudOnce(state) {
         `);
         _supabaseTableEnsured = true;
     }
-    await supabasePool.query(`
+    // Guards against the exact race that caused observed stock reverts: two
+    // overlapping requests both merge into the same in-memory state (so the
+    // later one always already contains everything the earlier one had),
+    // but their Supabase writes can land out of order if the earlier
+    // request's connection happens to be slower. Without this WHERE clause,
+    // that slow-but-stale write would land second and silently overwrite the
+    // newer, more complete one already saved. __lastLocalWriteAt increases
+    // strictly with wall-clock time (unlike an in-memory counter, so it
+    // survives a process restart) and is set once per save in
+    // saveAppStateToStore, so comparing it here safely turns a stale write
+    // into a no-op instead of a silent data loss.
+    const result = await supabasePool.query(`
         INSERT INTO erp_master_store (id, data, updated_at)
         VALUES ('master_state', $1, NOW())
         ON CONFLICT (id) DO UPDATE
-        SET data = EXCLUDED.data, updated_at = NOW();
+        SET data = EXCLUDED.data, updated_at = NOW()
+        WHERE (erp_master_store.data->>'__lastLocalWriteAt') IS NULL
+           OR (erp_master_store.data->>'__lastLocalWriteAt')::bigint < (EXCLUDED.data->>'__lastLocalWriteAt')::bigint;
     `, [JSON.stringify(state)]);
+
+    if (result.rowCount === 0) {
+        console.log('↷ Skipped a stale Supabase write - a newer save already landed for this record.');
+    }
 }
 
 // Render's local disk is not guaranteed to survive a restart, so Supabase is
