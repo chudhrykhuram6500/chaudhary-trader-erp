@@ -372,6 +372,38 @@ body.light .brand-info h1 {
     box-shadow: var(--shadow-lg);
 }
 
+/* Vibrant gradient KPI cards - self-contained colors, look good on both Dark & Light */
+.kpi-gradient-card {
+    border-radius: 16px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: #fff;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.kpi-gradient-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26);
+}
+.kpi-grad-icon {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.22);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: #fff; flex-shrink: 0;
+}
+.kpi-grad-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.85); letter-spacing: 0.3px; }
+.kpi-grad-value { font-family: var(--font-heading); font-size: 21px; font-weight: 800; color: #fff; margin: 2px 0; }
+.kpi-grad-growth { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.95); display: flex; align-items: center; gap: 4px; }
+.kpi-grad-growth .kpi-grad-growth-sub { color: rgba(255,255,255,0.7); font-weight: 400; }
+
+.kpi-grad-gold { background: linear-gradient(135deg, #ffd700, #c78f00); }
+.kpi-grad-green { background: linear-gradient(135deg, #22c58b, #0f9e6e); }
+.kpi-grad-purple { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+.kpi-grad-orange { background: linear-gradient(135deg, #fb923c, #ea580c); }
+.kpi-grad-blue { background: linear-gradient(135deg, #4f8cf0, #2f6fe0); }
+
 .dash-brand-btn {
     background: transparent;
     border: none;
