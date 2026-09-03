@@ -8364,6 +8364,9 @@ function renderDashboard() {
         prodSubtitleEl.innerText = `Showing data for: ${dateRangeLabelEl.innerText}`;
     }
 
+    const periodEchoEl = document.getElementById("selectedPeriodEcho");
+    if (periodEchoEl && dateRangeLabelEl) periodEchoEl.innerText = dateRangeLabelEl.innerText;
+
     // 3. Filter Bills & Construct Timeline
     const deliveredBills = getConfirmedDeliveredBillsForDashboard();
 
@@ -8556,6 +8559,164 @@ function renderDashboard() {
     renderSalesmanPerformanceTable(salesmanMap, totalSalesValue);
     renderKeyInsights(totalSalesValue, productTotals, dailyOverallSales, dateList);
     renderTopSkusTable(skuSalesMap);
+    renderDashboardSnapshotCards(brandFilter);
+    renderWeightDistributionChart(dateList, dailyBrandSales);
+    renderCollectionSummary(deliveredBills);
+    renderRecentInvoicesWidget();
+}
+
+function computeBillItemAmount(i) {
+    const basicAmt = i.basicAmount || ((i.tpRate || i.price || 0) * (i.cartons || 0));
+    const discAmt = (i.discAmount !== undefined && i.discAmount !== null) ? i.discAmount : (basicAmt * 0.04);
+    return (i.amount && i.amount > 0) ? i.amount : (basicAmt - discAmt);
+}
+
+function renderDashboardSnapshotCards(brandFilter) {
+    const todayISO = new Date().toISOString().split('T')[0];
+    const monthStartISO = todayISO.slice(0, 7) + '-01';
+
+    let todaySale = 0, mtdSale = 0;
+
+    AppState.bills.forEach(b => {
+        const isConfirmedSale = !b.isVoid &&
+            (b.deliveryStatus === "Confirmed" || b.deliveryStatus === "Delivered" || b.salesRecorded === true || b.isManuallyConfirmed === true);
+        if (!isConfirmedSale) return;
+
+        if (brandFilter && brandFilter !== "all") {
+            const normalizedComp = (brandFilter.toLowerCase() === "fast") ? "hash" : brandFilter.toLowerCase();
+            const bCompRaw = String(b.companyId || "lays").toLowerCase();
+            const bComp = (bCompRaw === "fast") ? "hash" : bCompRaw;
+            const matchesBrand = (bComp === normalizedComp) || (b.items || []).some(i => getCompanyIdForItem(i) === normalizedComp);
+            if (!matchesBrand) return;
+        }
+
+        const bDate = normalizeDateToISO(b.billDate || b.date || b.createdDate || b.orderDate || "");
+        if (!bDate) return;
+
+        const bAmt = (b.items || []).reduce((sum, i) => sum + computeBillItemAmount(i), 0);
+
+        if (bDate === todayISO) todaySale += bAmt;
+        if (bDate >= monthStartISO && bDate <= todayISO) mtdSale += bAmt;
+    });
+
+    const pendingInvoicesCount = AppState.bills.filter(b => b.deliveryStatus === "Pending" && !b.isVoid).length;
+    const lowStockCount = (AppState.skus || []).filter(s => (s.stockCartons || 0) <= 0).length;
+
+    const setText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
+    setText("kpiTodaySale", `Rs. ${Math.round(todaySale).toLocaleString()}`);
+    setText("kpiMtdSale", `Rs. ${Math.round(mtdSale).toLocaleString()}`);
+    setText("kpiPendingInvoices", `${pendingInvoicesCount} Bills`);
+    setText("kpiLowStockSkus", `${lowStockCount} SKUs`);
+}
+
+function renderWeightDistributionChart(dateList, dailyBrandSales) {
+    const canvas = document.getElementById("weightDistributionChart");
+    if (!canvas || typeof Chart === "undefined") return;
+
+    if (window.DashboardCharts.weightDistribution) {
+        window.DashboardCharts.weightDistribution.destroy();
+    }
+
+    const labels = dateList.map(d => {
+        const parts = d.split('-');
+        return parts.length === 3 ? `${parts[2]}` : d;
+    });
+
+    const barColors = ['#2f6fe0', '#8b5cf6', '#0f9e6e', '#e6ac00', '#ea580c', '#d91424', '#2f6fe0'];
+    const data = dateList.map(d => {
+        const lays = dailyBrandSales.lays[d] || { kg: 0 };
+        const fast = dailyBrandSales.fast[d] || { kg: 0 };
+        return parseFloat((lays.kg + fast.kg).toFixed(2));
+    });
+
+    const ctx = canvas.getContext('2d');
+    window.DashboardCharts.weightDistribution = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Weight (KG)',
+                data,
+                backgroundColor: dateList.map((_, idx) => barColors[idx % barColors.length]),
+                borderRadius: 6,
+                maxBarThickness: 28
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y} KG` } }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: '#8892b0', font: { size: 10 } } },
+                y: { grid: { color: 'rgba(136,146,176,0.15)' }, ticks: { color: '#8892b0', font: { size: 10 } } }
+            }
+        }
+    });
+}
+
+function renderCollectionSummary(deliveredBills) {
+    const container = document.getElementById("collectionSummaryContainer");
+    if (!container) return;
+
+    let cashAmt = 0, creditAmt = 0;
+    deliveredBills.forEach(b => {
+        const bAmt = (b.items || []).reduce((sum, i) => sum + computeBillItemAmount(i), 0);
+        if (b.paymentStatus === "Credit") creditAmt += bAmt;
+        else cashAmt += bAmt;
+    });
+
+    const total = cashAmt + creditAmt;
+    const cashPct = total > 0 ? ((cashAmt / total) * 100) : 0;
+    const creditPct = total > 0 ? ((creditAmt / total) * 100) : 0;
+
+    container.innerHTML = `
+        <div style="display:flex; height:14px; border-radius:8px; overflow:hidden; margin-bottom:16px; background: var(--bg-card-hover);">
+            ${cashPct > 0 ? `<div style="width:${cashPct}%; background:linear-gradient(90deg,#ffd700,#c78f00);"></div>` : ''}
+            ${creditPct > 0 ? `<div style="width:${creditPct}%; background:linear-gradient(90deg,#2f6fe0,#1d4ed8);"></div>` : ''}
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-secondary);"><span style="width:9px;height:9px;border-radius:50%;background:#ffd700;display:inline-block;"></span> Cash Collected <span style="color:var(--text-muted);">(${cashPct.toFixed(0)}%)</span></div>
+                <strong style="color:var(--text-primary); font-size:13px;">Rs. ${Math.round(cashAmt).toLocaleString()}</strong>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-secondary);"><span style="width:9px;height:9px;border-radius:50%;background:#2f6fe0;display:inline-block;"></span> Credit / Pending <span style="color:var(--text-muted);">(${creditPct.toFixed(0)}%)</span></div>
+                <strong style="color:var(--text-primary); font-size:13px;">Rs. ${Math.round(creditAmt).toLocaleString()}</strong>
+            </div>
+        </div>
+    `;
+}
+
+function renderRecentInvoicesWidget() {
+    const container = document.getElementById("recentInvoicesContainer");
+    if (!container) return;
+
+    const recent = (AppState.bills || [])
+        .filter(b => !b.isVoid)
+        .slice()
+        .sort((a, b) => new Date(b.date || b.createdDate || 0) - new Date(a.date || a.createdDate || 0))
+        .slice(0, 5);
+
+    if (recent.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">No invoices yet.</div>`;
+        return;
+    }
+
+    container.innerHTML = recent.map(b => {
+        const netAmt = b.netAmount || (b.items || []).reduce((sum, i) => sum + computeBillItemAmount(i), 0);
+        return `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border-color);">
+                <div>
+                    <div style="font-size:12.5px; font-weight:700; color:var(--text-primary);">${b.shopName || '-'}</div>
+                    <div style="font-size:10.5px; color:var(--text-muted);">${b.billNo || ''} &middot; ${b.date || ''}</div>
+                </div>
+                <strong style="font-size:12.5px; color:var(--accent-green);">Rs. ${Math.round(netAmt).toLocaleString()}</strong>
+            </div>
+        `;
+    }).join('');
 }
 
 function renderOverallSalesTrendChart(dateList, dailyBrandSales) {
