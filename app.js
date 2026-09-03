@@ -14101,6 +14101,49 @@ function saveManualOrder() {
     renderAllViews();
 }
 
+function renderPaginationControls(containerId, totalItems, currentPage, pageSize, onPageChangeFnName) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (totalItems === 0) { container.innerHTML = ''; return; }
+
+    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+    currentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+    const startItem = (currentPage - 1) * pageSize + 1;
+    const endItem = Math.min(currentPage * pageSize, totalItems);
+
+    const pageBtns = [];
+    const addBtn = (n) => pageBtns.push(`<button class="${n === currentPage ? 'active' : ''}" onclick="${onPageChangeFnName}(${n})">${n}</button>`);
+    const addEllipsis = () => pageBtns.push(`<span style="padding:0 4px; color: var(--text-muted);">&hellip;</span>`);
+
+    const windowStart = Math.max(1, currentPage - 2);
+    const windowEnd = Math.min(totalPages, currentPage + 2);
+
+    if (windowStart > 1) { addBtn(1); if (windowStart > 2) addEllipsis(); }
+    for (let n = windowStart; n <= windowEnd; n++) addBtn(n);
+    if (windowEnd < totalPages) { if (windowEnd < totalPages - 1) addEllipsis(); addBtn(totalPages); }
+
+    container.innerHTML = `
+        <div class="pagination-info">Showing ${startItem}-${endItem} of ${totalItems}</div>
+        <div class="pagination-pages">
+            <button ${currentPage <= 1 ? 'disabled' : ''} onclick="${onPageChangeFnName}(${currentPage - 1})"><i class="fa-solid fa-chevron-left"></i></button>
+            ${pageBtns.join('')}
+            <button ${currentPage >= totalPages ? 'disabled' : ''} onclick="${onPageChangeFnName}(${currentPage + 1})"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+    `;
+}
+
+function goToOrdersPage(n) {
+    AppState.ordersPage = n;
+    renderOrdersTable();
+}
+
+function goToInvoicesPage(n) {
+    AppState.invoicesPage = n;
+    renderInvoicesTable();
+}
+
 function renderOrdersTable() {
     const tbody = document.getElementById("ordersTableBody");
     if (!tbody) return;
@@ -14146,13 +14189,21 @@ function renderOrdersTable() {
 
     if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 24px;">No Customer Orders found.</td></tr>`;
+        renderPaginationControls("ordersPaginationContainer", 0, 1, 1, "goToOrdersPage");
         return;
     }
+
+    const ORDERS_PAGE_SIZE = 25;
+    if (!AppState.ordersPage) AppState.ordersPage = 1;
+    const ordersTotalPages = Math.max(1, Math.ceil(filtered.length / ORDERS_PAGE_SIZE));
+    if (AppState.ordersPage > ordersTotalPages) AppState.ordersPage = ordersTotalPages;
+    const ordersStartIdx = (AppState.ordersPage - 1) * ORDERS_PAGE_SIZE;
+    const pagedOrders = filtered.slice(ordersStartIdx, ordersStartIdx + ORDERS_PAGE_SIZE);
 
     const selectedIds = AppState.selectedOrderIds || [];
     const rows = [];
 
-    filtered.forEach(o => {
+    pagedOrders.forEach(o => {
         const isChecked = selectedIds.includes(o.orderNo) ? "checked" : "";
         const compBadge = o.companyId === "hash" ? `<span class="badge badge-success">Fast</span>` : `<span class="badge badge-warning">Lays</span>`;
         
@@ -14197,6 +14248,7 @@ function renderOrdersTable() {
         `);
     });
     tbody.innerHTML = rows.join('');
+    renderPaginationControls("ordersPaginationContainer", filtered.length, AppState.ordersPage, ORDERS_PAGE_SIZE, "goToOrdersPage");
 }
 
 function toggleOrderSelection(orderNo, checked) {
@@ -15030,13 +15082,21 @@ function renderInvoicesTable() {
 
     if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; color: var(--text-muted); padding: 24px;">No Invoices found matching search & filter criteria.</td></tr>`;
+        renderPaginationControls("invoicesPaginationContainer", 0, 1, 1, "goToInvoicesPage");
         return;
     }
+
+    const INVOICES_PAGE_SIZE = 25;
+    if (!AppState.invoicesPage) AppState.invoicesPage = 1;
+    const invoicesTotalPages = Math.max(1, Math.ceil(filtered.length / INVOICES_PAGE_SIZE));
+    if (AppState.invoicesPage > invoicesTotalPages) AppState.invoicesPage = invoicesTotalPages;
+    const invoicesStartIdx = (AppState.invoicesPage - 1) * INVOICES_PAGE_SIZE;
+    const pagedInvoices = filtered.slice(invoicesStartIdx, invoicesStartIdx + INVOICES_PAGE_SIZE);
 
     const selectedIds = AppState.selectedInvoiceIds || [];
 
     const rows = [];
-    filtered.forEach(b => {
+    pagedInvoices.forEach(b => {
         const isChecked = selectedIds.includes(b.billNo) ? "checked" : "";
         const compBadge = b.companyId === "hash" ? `<span class="badge badge-success">Fast</span>` : `<span class="badge badge-warning">Lays</span>`;
         
@@ -15086,6 +15146,7 @@ function renderInvoicesTable() {
         `);
     });
     tbody.innerHTML = rows.join('');
+    renderPaginationControls("invoicesPaginationContainer", filtered.length, AppState.invoicesPage, INVOICES_PAGE_SIZE, "goToInvoicesPage");
 }
 
 function updateInvoiceToolbarState() {
