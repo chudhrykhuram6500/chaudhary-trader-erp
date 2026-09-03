@@ -170,25 +170,25 @@
                 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 14px; gap: 8px;">
                     <!-- Left: Title -->
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="width: 36px; height: 36px; border-radius: 10px; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: #2563eb; font-size: 16px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(47, 111, 224, 0.15); display: flex; align-items: center; justify-content: center; color: var(--accent-blue); font-size: 16px;">
                             <i class="fa-solid fa-chart-line"></i>
                         </div>
                         <div>
-                            <h2 style="font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.2;">Sales Dashboard</h2>
-                            <span style="font-size: 11px; color: #94a3b8; font-weight: 500;">Track brand &amp; product performance</span>
+                            <h2 style="font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0; line-height: 1.2;">Sales Dashboard</h2>
+                            <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Track brand &amp; product performance</span>
                         </div>
                     </div>
 
                     <!-- Right: All controls in one tight row -->
                     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                         <!-- Date Range -->
-                        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 5px 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #334155;">
-                            <i class="fa-regular fa-calendar" style="color: #94a3b8; font-size: 11px;"></i>
+                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 5px 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-secondary);">
+                            <i class="fa-regular fa-calendar" style="color: var(--text-muted); font-size: 11px;"></i>
                             <span id="dashboardDateRangeLabel" style="white-space: nowrap;">09 Aug 2026 – 15 Aug 2026</span>
                         </div>
 
                         <!-- Quick Filters -->
-                        <select id="datePresetSelect" onchange="handlePresetChange()" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 5px 8px; font-size: 12px; font-weight: 600; color: #334155; outline: none; cursor: pointer;">
+                        <select id="datePresetSelect" onchange="handlePresetChange()" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 5px 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary); outline: none; cursor: pointer;">
                             <option value="today">Today</option>
                             <option value="yesterday">Yesterday</option>
                             <option value="7days" selected>Last 7 Days</option>
@@ -206,7 +206,7 @@
                         </div>
 
                         <!-- Brand Filter Pills (compact) -->
-                        <div style="background: #f1f5f9; border-radius: 8px; padding: 2px; display: inline-flex; gap: 1px; border: 1px solid #e2e8f0;">
+                        <div style="background: var(--bg-card-hover); border-radius: 8px; padding: 2px; display: inline-flex; gap: 1px; border: 1px solid var(--border-color);">
                             <button type="button" class="dash-brand-btn active" data-brand="all" onclick="selectDashboardBrand('all')">All</button>
                             <button type="button" class="dash-brand-btn" data-brand="lays" onclick="selectDashboardBrand('lays')">Lays</button>
                             <button type="button" class="dash-brand-btn" data-brand="fast" onclick="selectDashboardBrand('fast')">Fast</button>
@@ -219,8 +219,8 @@
                         </select>
 
                         <!-- Export Button -->
-                        <button type="button" onclick="exportDashboardSummary()" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                            <i class="fa-solid fa-arrow-up-from-bracket" style="font-size: 10px; color: #94a3b8;"></i> Export
+                        <button type="button" onclick="exportDashboardSummary()" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-arrow-up-from-bracket" style="font-size: 10px; color: var(--text-muted);"></i> Export
                         </button>
                     </div>
                 </div>
@@ -231,7 +231,7 @@
                     <div class="flex-between">
                         <div>
                             <h4 style="color: #d97706; margin: 0; font-size: 14px;"><i class="fa-solid fa-truck-arrow-right"></i> Pending Delivery Orders in Draft!</h4>
-                            <p style="font-size: 12px; color: #475569; margin: 2px 0 0 0;" id="pendingBannerText">Draft bills dispatched for delivery awaiting confirmation.</p>
+                            <p style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0 0;" id="pendingBannerText">Draft bills dispatched for delivery awaiting confirmation.</p>
                         </div>
                         <button class="btn btn-warning btn-sm" onclick="navigateToTab('invoicesTab')"><i class="fa-solid fa-circle-check"></i> Confirm Deliveries</button>
                     </div>
@@ -241,7 +241,7 @@
                     <div class="flex-between">
                         <div>
                             <h4 style="color: #dc2626; margin: 0; font-size: 14px;"><i class="fa-solid fa-triangle-exclamation"></i> Warehouse Stock Alert!</h4>
-                            <p style="font-size: 12px; color: #475569; margin: 2px 0 0 0;" id="dashboardLowStockText">Some SKUs are low or out of stock.</p>
+                            <p style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0 0;" id="dashboardLowStockText">Some SKUs are low or out of stock.</p>
                         </div>
                         <div class="flex-gap">
                             <button class="btn btn-danger btn-sm" onclick="fillAllSkusStock(50)"><i class="fa-solid fa-boxes-packing"></i> Refill All SKUs (+50 Ctns)</button>
@@ -254,70 +254,70 @@
                 <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 20px;">
                     <!-- KPI 1: Total Sales Value -->
                     <div class="ref-kpi-card">
-                        <div style="width: 42px; height: 42px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0;">
+                        <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(47, 111, 224, 0.15); color: var(--accent-blue); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0;">
                             <i class="fa-solid fa-dollar-sign"></i>
                         </div>
                         <div>
-                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Sales Value</span>
-                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #0f172a; margin: 2px 0;" id="kpiTotalValue">Rs. 0</div>
-                            <div style="font-size: 11px; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiValueGrowth">
-                                <span>↑ 12.4%</span> <span style="color: #94a3b8; font-weight: 400;">vs Previous Period</span>
+                            <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Total Sales Value</span>
+                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 2px 0;" id="kpiTotalValue">Rs. 0</div>
+                            <div style="font-size: 11px; color: var(--accent-green); font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiValueGrowth">
+                                <span>↑ 12.4%</span> <span style="color: var(--text-muted); font-weight: 400;">vs Previous Period</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- KPI 2: Total Cartons -->
                     <div class="ref-kpi-card">
-                        <div style="width: 42px; height: 42px; border-radius: 50%; background: #f0fdf4; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                        <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(15, 158, 110, 0.15); color: var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
                             <i class="fa-solid fa-box"></i>
                         </div>
                         <div>
-                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Cartons</span>
-                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #0f172a; margin: 2px 0;" id="kpiTotalCartonsCount">0 Ctns</div>
-                            <div style="font-size: 11px; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiCartonsGrowth">
-                                <span>↑ 8.7%</span> <span style="color: #94a3b8; font-weight: 400;">vs Previous Period</span>
+                            <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Total Cartons</span>
+                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 2px 0;" id="kpiTotalCartonsCount">0 Ctns</div>
+                            <div style="font-size: 11px; color: var(--accent-green); font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiCartonsGrowth">
+                                <span>↑ 8.7%</span> <span style="color: var(--text-muted); font-weight: 400;">vs Previous Period</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- KPI 3: Total Weight -->
                     <div class="ref-kpi-card">
-                        <div style="width: 42px; height: 42px; border-radius: 50%; background: #f5f3ff; color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                        <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
                             <i class="fa-solid fa-scale-balanced"></i>
                         </div>
                         <div>
-                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Weight</span>
-                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #0f172a; margin: 2px 0;" id="kpiTotalKG">0.00 KG</div>
-                            <div style="font-size: 11px; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiWeightGrowth">
-                                <span>↑ 9.5%</span> <span style="color: #94a3b8; font-weight: 400;">vs Previous Period</span>
+                            <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Total Weight</span>
+                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 2px 0;" id="kpiTotalKG">0.00 KG</div>
+                            <div style="font-size: 11px; color: var(--accent-green); font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiWeightGrowth">
+                                <span>↑ 9.5%</span> <span style="color: var(--text-muted); font-weight: 400;">vs Previous Period</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- KPI 4: Billed Shops -->
                     <div class="ref-kpi-card">
-                        <div style="width: 42px; height: 42px; border-radius: 50%; background: #fff7ed; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                        <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(230, 172, 0, 0.15); color: var(--accent-gold); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
                             <i class="fa-solid fa-store"></i>
                         </div>
                         <div>
-                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Billed Shops</span>
-                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #0f172a; margin: 2px 0;" id="kpiBilledShops">0 Shops</div>
-                            <div style="font-size: 11px; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiShopsGrowth">
-                                <span>↑ 14.3%</span> <span style="color: #94a3b8; font-weight: 400;">vs Previous Period</span>
+                            <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Billed Shops</span>
+                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 2px 0;" id="kpiBilledShops">0 Shops</div>
+                            <div style="font-size: 11px; color: var(--accent-green); font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiShopsGrowth">
+                                <span>↑ 14.3%</span> <span style="color: var(--text-muted); font-weight: 400;">vs Previous Period</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- KPI 5: Total Invoices -->
                     <div class="ref-kpi-card">
-                        <div style="width: 42px; height: 42px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                        <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(47, 111, 224, 0.15); color: var(--accent-blue); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
                             <i class="fa-solid fa-file-invoice"></i>
                         </div>
                         <div>
-                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Invoices</span>
-                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #0f172a; margin: 2px 0;" id="kpiTotalInvoices">0 Bills</div>
-                            <div style="font-size: 11px; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiInvoicesGrowth">
-                                <span>↑ 6.1%</span> <span style="color: #94a3b8; font-weight: 400;">vs Previous Period</span>
+                            <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Total Invoices</span>
+                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 2px 0;" id="kpiTotalInvoices">0 Bills</div>
+                            <div style="font-size: 11px; color: var(--accent-green); font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiInvoicesGrowth">
+                                <span>↑ 6.1%</span> <span style="color: var(--text-muted); font-weight: 400;">vs Previous Period</span>
                             </div>
                         </div>
                     </div>
@@ -329,10 +329,10 @@
                     <div class="ref-glass-card">
                         <div class="flex-between" style="margin-bottom: 12px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-chart-line" style="color: #2563eb; font-size: 16px;"></i>
-                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Sales Trend (All Brands)</h3>
+                                <i class="fa-solid fa-chart-line" style="color: var(--accent-blue); font-size: 16px;"></i>
+                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Sales Trend (All Brands)</h3>
                             </div>
-                            <select id="salesTrendMetricSelect" onchange="setSalesTrendMetricToggle(this.value)" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #475569; outline: none; cursor: pointer;">
+                            <select id="salesTrendMetricSelect" onchange="setSalesTrendMetricToggle(this.value)" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: var(--text-secondary); outline: none; cursor: pointer;">
                                 <option value="value">Value (Rs.)</option>
                                 <option value="kg">Weight (KG)</option>
                                 <option value="cartons">Cartons (Ctns)</option>
@@ -340,9 +340,9 @@
                         </div>
 
                         <!-- Legend Subtitle -->
-                        <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 14px;">
+                        <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 14px;">
                             <div style="display: flex; align-items: center; gap: 6px;">
-                                <span style="width: 10px; height: 10px; border-radius: 50%; background: #2563eb; display: inline-block;"></span>
+                                <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--accent-blue); display: inline-block;"></span>
                                 <span id="laysBrandLegendLabel">Lays Brand</span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 6px;">
@@ -360,10 +360,10 @@
                     <div class="ref-glass-card">
                         <div class="flex-between" style="margin-bottom: 16px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-chart-pie" style="color: #2563eb; font-size: 16px;"></i>
-                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Lays vs Fast — Brand Comparison</h3>
+                                <i class="fa-solid fa-chart-pie" style="color: var(--accent-blue); font-size: 16px;"></i>
+                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Lays vs Fast — Brand Comparison</h3>
                             </div>
-                            <select id="brandComparisonMetricSelect" onchange="setBrandComparisonMetricToggle(this.value)" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #475569; outline: none; cursor: pointer;">
+                            <select id="brandComparisonMetricSelect" onchange="setBrandComparisonMetricToggle(this.value)" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: var(--text-secondary); outline: none; cursor: pointer;">
                                 <option value="value">Value (Rs.)</option>
                                 <option value="kg">Weight (KG)</option>
                                 <option value="cartons">Cartons (Ctns)</option>
@@ -380,8 +380,8 @@
                             <div style="position: relative; height: 210px; width: 100%; display: flex; align-items: center; justify-content: center;">
                                 <canvas id="brandComparisonChart"></canvas>
                                 <div style="position: absolute; text-align: center; pointer-events: none;" id="donutCenterInfo">
-                                    <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Total</div>
-                                    <div style="font-size: 17px; font-weight: 800; color: #0f172a;" id="donutCenterTotal">Rs. 0</div>
+                                    <div style="font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Total</div>
+                                    <div style="font-size: 17px; font-weight: 800; color: var(--text-primary);" id="donutCenterTotal">Rs. 0</div>
                                 </div>
                             </div>
                         </div>
@@ -393,17 +393,17 @@
                     <div class="flex-between" style="margin-bottom: 18px;">
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-chart-simple" style="color: #2563eb; font-size: 18px;"></i>
-                                <h3 style="font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: #0f172a; margin: 0;">Product Performance Analytics</h3>
+                                <i class="fa-solid fa-chart-simple" style="color: var(--accent-blue); font-size: 18px;"></i>
+                                <h3 style="font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0;">Product Performance Analytics</h3>
                             </div>
-                            <div style="font-size: 12px; color: #64748b; margin-top: 2px;" id="productSectionSubtitle">Showing data for: 09 Aug 2026 – 15 Aug 2026</div>
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;" id="productSectionSubtitle">Showing data for: 09 Aug 2026 – 15 Aug 2026</div>
                         </div>
                     </div>
 
                     <!-- LAYS BRAND PRODUCTS CONTAINER -->
                     <div id="laysProductsContainer" style="margin-bottom: 24px;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
-                            <span style="font-size: 14px; font-weight: 800; color: #2563eb; letter-spacing: 0.5px;">📊 LAYS BRAND</span>
+                            <span style="font-size: 14px; font-weight: 800; color: var(--accent-blue); letter-spacing: 0.5px;">📊 LAYS BRAND</span>
                         </div>
                         <div class="dashboard-product-grid" id="laysProductGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
                             <!-- Populated dynamically for Lays (PC), Kurkure (NPC), Cheetos (NPC) -->
@@ -427,14 +427,14 @@
                     <div class="ref-glass-card">
                         <div class="flex-between" style="margin-bottom: 14px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-users" style="color: #2563eb; font-size: 16px;"></i>
-                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Salesman Performance <span style="font-size: 12px; font-weight: 500; color: #64748b;">(All Brands)</span></h3>
+                                <i class="fa-solid fa-users" style="color: var(--accent-blue); font-size: 16px;"></i>
+                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Salesman Performance <span style="font-size: 12px; font-weight: 500; color: var(--text-secondary);">(All Brands)</span></h3>
                             </div>
                         </div>
                         <div class="table-responsive">
                             <table class="data-table ref-salesman-table" style="width: 100%; border-collapse: collapse;">
                                 <thead>
-                                    <tr style="border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: 700;">
+                                    <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); font-size: 11px; text-transform: uppercase; font-weight: 700;">
                                         <th style="padding: 8px 10px;">Salesman</th>
                                         <th style="padding: 8px 10px; text-align: center;">Invoices</th>
                                         <th style="padding: 8px 10px; text-align: right;">Sales Value</th>
@@ -453,7 +453,7 @@
                         <div class="flex-between" style="margin-bottom: 14px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <i class="fa-solid fa-lightbulb" style="color: #f59e0b; font-size: 16px;"></i>
-                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Key Insights</h3>
+                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Key Insights</h3>
                             </div>
                         </div>
                         <div id="dashboardKeyInsightsContainer" style="display: flex; flex-direction: column; gap: 10px;">
