@@ -68,7 +68,7 @@ body {
     z-index: -1;
     opacity: 0;
     transition: opacity 0.5s ease;
-    background: 
+    background:
         radial-gradient(circle at 15% 20%, rgba(230, 0, 0, 0.12) 0%, transparent 45%),
         radial-gradient(circle at 85% 80%, rgba(255, 204, 0, 0.12) 0%, transparent 45%),
         radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
@@ -78,8 +78,16 @@ body.anim-active .ambient-bg-glow {
     opacity: 1;
     animation: ambientGlow 12s infinite alternate ease-in-out;
 }
-/* Dark theme: keep the page flat black, no ambient color wash - only Light theme gets the subtle glow */
-body.anim-active:not(.light) .ambient-bg-glow { opacity: 0; }
+/* Dark theme: pure black base, but keep a very subtle, slow-moving dark gradient wash
+   so backdrop-filter glass cards have something to actually blur (pure flat black
+   under a glass card looks identical to no blur at all). */
+body.anim-active:not(.light) .ambient-bg-glow {
+    opacity: 0.55;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(217, 20, 36, 0.05) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(255, 215, 0, 0.05) 0%, transparent 45%),
+        radial-gradient(circle at 50% 50%, rgba(47, 111, 224, 0.045) 0%, transparent 60%);
+}
 
 @keyframes ambientGlow {
     0% { transform: scale(1) rotate(0deg); }
