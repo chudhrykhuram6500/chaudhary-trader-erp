@@ -542,6 +542,39 @@ body.light .brand-info h1 {
 .dashboard-dual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 
 .table-responsive { overflow-x: auto; }
+
+.pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 4px 4px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+.pagination-bar .pagination-info { font-weight: 600; }
+.pagination-bar .pagination-pages { display: flex; align-items: center; gap: 4px; }
+.pagination-bar .pagination-pages button {
+    min-width: 30px;
+    height: 30px;
+    padding: 0 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.pagination-bar .pagination-pages button:hover:not(:disabled) { background: var(--bg-card-hover); color: var(--text-primary); }
+.pagination-bar .pagination-pages button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagination-bar .pagination-pages button.active {
+    background: linear-gradient(135deg, var(--brand-gold), var(--brand-gold-deep));
+    color: #1a1a1a;
+    border-color: transparent;
+}
 .data-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
 .data-table th { background: rgba(255, 255, 255, 0.04); color: var(--text-secondary); font-weight: 700; padding: 14px 16px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
 .data-table td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); color: var(--text-primary); transition: background 0.2s ease; }
