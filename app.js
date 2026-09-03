@@ -15042,26 +15042,28 @@ function printPickList(pickListNo) {
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
             <style>
                 @page { size: A4 portrait; margin: 8mm; }
-                body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; margin: 0; padding: 15px; color: #000; background: #fff; font-size: 11px; line-height: 1.4; }
-                .a4-header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 12px; }
+                body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; margin: 0; padding: 15px; color: #1a1a1a; background: #fff; font-size: 11px; line-height: 1.4; }
+                .a4-header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #e6ac00; padding-bottom: 12px; margin-bottom: 14px; }
                 .a4-brand-logo-group { display: flex; align-items: center; gap: 14px; }
                 .a4-print-logo { height: 70px; width: auto; }
-                .a4-company-brand h2 { font-size: 22px; font-weight: 800; color: #000; margin: 0 0 2px 0; }
-                .company-sub { font-size: 11px; font-weight: 700; color: #333; margin: 0 0 4px 0; }
-                .a4-invoice-meta-box { text-align: right; border: 1px solid #000; padding: 8px 12px; border-radius: 4px; background: #f9f9f9; }
-                .a4-invoice-meta-box h3 { font-size: 16px; font-weight: 800; margin: 0 0 4px 0; }
+                .a4-company-brand h2 { font-size: 22px; font-weight: 800; color: #1a1a1a; margin: 0 0 2px 0; letter-spacing: 0.3px; }
+                .company-sub { font-size: 11px; font-weight: 700; color: #b8860b; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+                .a4-invoice-meta-box { text-align: right; border: 1px solid #e2c04a; padding: 8px 14px; border-radius: 6px; background: #fffbea; }
+                .a4-invoice-meta-box h3 { font-size: 16px; font-weight: 800; margin: 0 0 4px 0; color: #1a1a1a; }
                 .a4-invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-                .a4-invoice-table th { background: #eeeeee !important; color: #000 !important; border: 1px solid #000; padding: 7px 6px; font-size: 11px; font-weight: 800; text-align: left; }
-                .a4-invoice-table td { border: 1px solid #000; padding: 6px 6px; font-size: 11px; }
+                .a4-invoice-table th { background: #1a1a1a !important; color: #ffd700 !important; border: 1px solid #1a1a1a; padding: 8px 6px; font-size: 11px; font-weight: 800; text-align: left; text-transform: uppercase; letter-spacing: 0.3px; }
+                .a4-invoice-table td { border: 1px solid #ddd; padding: 6px 6px; font-size: 11px; }
+                .a4-invoice-table tbody tr:nth-child(even) td { background: #fafafa; }
                 .a4-summary-section { margin-bottom: 24px; }
+                .a4-summary-section p { background: #fffbea; border: 1px solid #e2c04a; border-radius: 6px; padding: 8px 12px; display: inline-block; font-weight: 700; }
                 .a4-totals-grid { display: flex; justify-content: space-between; align-items: flex-start; }
-                .totals-col-left { width: 45%; border: 1px dashed #000; padding: 10px; border-radius: 4px; }
-                .totals-col-right { width: 50%; border: 1px solid #000; padding: 10px 14px; background: #f9f9f9; border-radius: 4px; }
+                .totals-col-left { width: 45%; border: 1px dashed #999; padding: 10px; border-radius: 4px; }
+                .totals-col-right { width: 50%; border: 1px solid #1a1a1a; padding: 10px 14px; background: #fffbea; border-radius: 4px; }
                 .t-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 11px; }
-                .grand-total { border-top: 2px solid #000; margin-top: 6px; padding-top: 8px; font-size: 16px; font-weight: 900; }
+                .grand-total { border-top: 2px solid #1a1a1a; margin-top: 6px; padding-top: 8px; font-size: 16px; font-weight: 900; }
                 .a4-signatures-block { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 10px; }
                 .sig-box { width: 30%; text-align: center; }
-                .sig-line { border-top: 1px solid #000; padding-top: 6px; font-size: 11px; font-weight: 700; }
+                .sig-line { border-top: 1px solid #1a1a1a; padding-top: 6px; font-size: 11px; font-weight: 700; }
             </style>
         </head>
         <body>
