@@ -6516,7 +6516,7 @@ document.addEventListener("DOMContentLoaded", () => {
         initNavigation();
         initDateFilters();
 
-        const savedTheme = localStorage.getItem("chaudhary_theme") || "light-glass";
+        const savedTheme = localStorage.getItem("chaudhary_theme") || "dark";
         selectAppTheme(savedTheme);
 
         const todayStr = new Date().toISOString().split('T')[0];
@@ -12839,13 +12839,15 @@ function toggleThemePanel() {
 }
 
 function selectAppTheme(themeName, optionEl) {
-    const themeClasses = [
-        "chaudhary-royal", "dark-glass", "light-glass", "cyber-gold", "cosmic-blue", "pepsi-red",
-        "neon-sunset", "emerald-glass", "aurora-glow", "pearl-rosegold", "sky-cloud", "platinum-sapphire"
-    ];
+    // Normalize any theme name saved by an older version of the app (when
+    // there were ~12 themes) down to the current Dark/Light pair, so an old
+    // localStorage value never applies a class with no matching CSS. Dark is
+    // the :root default - only "light" is a real override class.
+    const legacyLightThemes = ["light-glass", "pearl-rosegold", "sky-cloud"];
+    themeName = legacyLightThemes.includes(themeName) ? "light" : (themeName === "light" ? "light" : "dark");
 
-    themeClasses.forEach(tc => document.body.classList.remove(tc));
-    document.body.classList.add(themeName);
+    document.body.classList.remove("dark", "light");
+    if (themeName === "light") document.body.classList.add("light");
 
     document.querySelectorAll(".theme-card-option").forEach(opt => {
         if (opt.getAttribute("data-theme") === themeName) opt.classList.add("active");
