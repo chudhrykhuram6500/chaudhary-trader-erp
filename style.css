@@ -988,17 +988,18 @@ body.light .data-table tbody tr:hover td { background: rgba(37,99,235,.06); }
     align-items:center;
     padding:10px 12px;
     border-radius:14px;
-    background:rgba(255,255,255,.58);
-    border:1px solid rgba(15,23,42,.07);
-    color:var(--text-secondary);
-    box-shadow:0 4px 15px rgba(15,23,42,.035);
+    background:var(--bg-card);
+    border:1px solid var(--border-color);
+    color:var(--text-primary);
+    box-shadow:var(--shadow-sm);
     transform:none;
 }
 .report-category-grid .report-pill i { color:var(--brand-gold); width:19px; text-align:center; }
 .report-category-grid .report-pill:hover {
     transform:translateY(-2px);
+    background:var(--bg-card-hover);
     border-color:rgba(197,138,22,.28);
-    box-shadow:0 8px 22px rgba(15,23,42,.08);
+    box-shadow:var(--shadow-lg);
 }
 .report-category-grid .report-pill.active {
     color:#fff;
@@ -1011,12 +1012,12 @@ body.light .data-table tbody tr:hover td { background: rgba(37,99,235,.06); }
 .global-date-filter {
     border-radius:14px;
     padding:7px 9px;
-    background:rgba(255,255,255,.58);
-    box-shadow:0 4px 16px rgba(15,23,42,.04);
+    background:var(--bg-card);
+    box-shadow:var(--shadow-sm);
 }
 .global-date-filter select, .global-date-filter input {
-    background:rgba(248,250,252,.9);
-    border-color:rgba(15,23,42,.08);
+    background:var(--bg-card-hover);
+    border-color:var(--border-color);
     color:var(--text-primary);
     border-radius:10px;
     min-height:34px;
