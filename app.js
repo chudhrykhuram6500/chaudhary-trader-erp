@@ -6514,6 +6514,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
         loadStateFromStorage();
         initNavigation();
+        applySavedSidebarState();
         initDateFilters();
 
         const savedTheme = localStorage.getItem("chaudhary_theme") || "dark";
@@ -6541,6 +6542,21 @@ function runAdobeSplashScreen() {
 function toggleThemePanel() {
     const panel = document.getElementById("themeSidePanel");
     if (panel) panel.classList.toggle("open");
+}
+
+function toggleSidebarCollapse() {
+    const sidebar = document.querySelector(".app-sidebar");
+    if (!sidebar) return;
+    const collapsed = sidebar.classList.toggle("collapsed");
+    localStorage.setItem("chaudhary_sidebar_collapsed", collapsed ? "1" : "0");
+}
+
+function applySavedSidebarState() {
+    const sidebar = document.querySelector(".app-sidebar");
+    if (!sidebar) return;
+    if (localStorage.getItem("chaudhary_sidebar_collapsed") === "1") {
+        sidebar.classList.add("collapsed");
+    }
 }
 
 function selectAppTheme(themeName, cardEl) {

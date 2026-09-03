@@ -87,7 +87,7 @@
                 <div class="theme-card-option active" data-theme="dark" onclick="selectAppTheme('dark', this)">
                     <div class="theme-preview-circle dark-preview"></div>
                     <div class="theme-name">🌙 Dark</div>
-                    <span class="theme-desc">Obsidian navy glass with gold &amp; green accents</span>
+                    <span class="theme-desc">Deep black glass with gold &amp; green accents</span>
                 </div>
 
                 <div class="theme-card-option" data-theme="light" onclick="selectAppTheme('light', this)">
@@ -111,52 +111,61 @@
         
         <!-- Sidebar Navigation Drawer -->
         <aside class="app-sidebar">
+            <button class="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" title="Collapse Sidebar">
+                <i class="fa-solid fa-angles-left"></i>
+            </button>
             <nav class="nav-menu">
+                <div class="nav-section-label">Main</div>
                 <button class="nav-item active" data-tab="dashboardTab" title="Dashboard">
-                    <i class="fa-solid fa-chart-pie"></i>
+                    <i class="fa-solid fa-chart-pie"></i><span>Dashboard</span>
                 </button>
                 <button class="nav-item" data-tab="ordersTab" title="Orders">
-                    <i class="fa-solid fa-cart-flatbed"></i>
+                    <i class="fa-solid fa-cart-flatbed"></i><span>Orders</span>
                 </button>
                 <button class="nav-item" data-tab="pickListTab" title="Pick List">
-                    <i class="fa-solid fa-clipboard-list"></i>
+                    <i class="fa-solid fa-clipboard-list"></i><span>Pick List</span>
                 </button>
                 <button class="nav-item" data-tab="invoicesTab" title="Invoices">
-                    <i class="fa-solid fa-file-invoice"></i>
+                    <i class="fa-solid fa-file-invoice"></i><span>Invoices</span>
                 </button>
 
+                <div class="nav-section-label">Manage</div>
                 <button class="nav-item" data-tab="inventoryTab" title="Warehouse Inventory">
-                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <i class="fa-solid fa-boxes-stacked"></i><span>Inventory</span>
                 </button>
                 <button class="nav-item" data-tab="outletsTab" title="Beat Plans & Shops">
-                    <i class="fa-solid fa-map-location-dot"></i>
+                    <i class="fa-solid fa-map-location-dot"></i><span>Shops &amp; Routes</span>
                 </button>
                 <button class="nav-item" data-tab="skuMasterTab" title="SKU Master & Prices">
-                    <i class="fa-solid fa-box-open"></i>
+                    <i class="fa-solid fa-box-open"></i><span>SKU Master</span>
                 </button>
                 <button class="nav-item" data-tab="focManagementTab" title="FOC Scheme Management">
-                    <i class="fa-solid fa-gift"></i>
+                    <i class="fa-solid fa-gift"></i><span>FOC Schemes</span>
                 </button>
+
+                <div class="nav-section-label">Reports</div>
                 <button class="nav-item" data-tab="salesReportsTab" title="Sales Reports">
-                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <i class="fa-solid fa-file-invoice-dollar"></i><span>Sales Reports</span>
                 </button>
                 <button class="nav-item" data-tab="financialReportsTab" title="Financial Reports">
-                    <i class="fa-solid fa-sack-dollar"></i>
+                    <i class="fa-solid fa-sack-dollar"></i><span>Financial Reports</span>
                 </button>
                 <button class="nav-item" data-tab="analysisReportsTab" title="Analysis Reports">
-                    <i class="fa-solid fa-chart-column"></i>
+                    <i class="fa-solid fa-chart-column"></i><span>Analysis</span>
                 </button>
+
+                <div class="nav-section-label">System</div>
                 <button class="nav-item" data-tab="dataSyncTab" title="Data Sync Center">
-                    <i class="fa-solid fa-rotate"></i>
+                    <i class="fa-solid fa-rotate"></i><span>Data Sync</span>
                 </button>
                 <button class="nav-item" data-tab="settingsTab" title="Backup & Settings">
-                    <i class="fa-solid fa-sliders"></i>
+                    <i class="fa-solid fa-sliders"></i><span>Settings</span>
                 </button>
             </nav>
 
             <div class="sidebar-footer">
                 <div class="agency-badge" title="Chund Adda, Jhang">
-                    <i class="fa-solid fa-location-dot"></i>
+                    <i class="fa-solid fa-location-dot"></i><span>Chund Adda, Jhang</span>
                 </div>
             </div>
         </aside>
