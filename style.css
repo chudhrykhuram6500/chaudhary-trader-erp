@@ -870,6 +870,9 @@ body.light .modal-content {
     border-color: rgba(255,255,255,.86);
     box-shadow: 0 10px 35px rgba(15,23,42,.07), inset 0 1px 0 rgba(255,255,255,.95);
 }
+body.light .kpi-card::after { background: radial-gradient(circle, rgba(255,255,255,.7), transparent 68%); }
+body.light .data-table th { background: rgba(248,250,252,.92); color: #59677b; }
+body.light .data-table tbody tr:hover td { background: rgba(37,99,235,.06); }
 
 .app-header {
     height: 78px;
@@ -901,7 +904,7 @@ body.light .modal-content {
 .kpi-card {
     min-height: 132px;
     padding: 18px;
-    border: 1px solid rgba(255,255,255,.86);
+    border: 1px solid var(--border-color);
     position: relative;
     overflow: hidden;
 }
@@ -909,7 +912,7 @@ body.light .modal-content {
     content:'';
     position:absolute;
     width:120px;height:120px;right:-60px;top:-65px;border-radius:50%;
-    background: radial-gradient(circle, rgba(255,255,255,.7), transparent 68%);
+    background: radial-gradient(circle, rgba(255,255,255,.08), transparent 68%);
     pointer-events:none;
 }
 .kpi-card:hover { transform: translateY(-3px); }
@@ -920,16 +923,16 @@ body.light .modal-content {
 .data-table { font-size: 12px; }
 .data-table thead { position: sticky; top: 0; z-index: 2; }
 .data-table th {
-    background: rgba(248,250,252,.92);
-    color: #59677b;
+    background: var(--bg-card-hover);
+    color: var(--text-secondary);
     padding: 12px 13px;
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: .55px;
 }
-.data-table td { padding: 11px 13px; border-bottom-color: rgba(15,23,42,.055); }
+.data-table td { padding: 11px 13px; border-bottom-color: var(--border-color); }
 .data-table tbody tr { transition: background .18s ease, transform .18s ease; }
-.data-table tbody tr:hover td { background: rgba(37,99,235,.035); }
+.data-table tbody tr:hover td { background: rgba(47, 111, 224, 0.10); }
 
 .report-category-grid {
     display:grid;

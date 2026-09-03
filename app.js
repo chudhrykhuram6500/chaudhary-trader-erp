@@ -14028,7 +14028,7 @@ function renderOrdersTable() {
                 <td><strong style="color: #059669;">Rs. ${Math.round(netAmt).toLocaleString()}</strong></td>
                 <td>${statusBadge}</td>
                 <td>
-                    <button class="btn btn-outline btn-sm" style="padding: 5px 14px; font-size: 13px; font-weight: 600; border-radius: 20px; background: rgba(255,255,255,0.9); color: #0f172a; border: 1px solid #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.05);" onclick="viewOrderDetails('${o.orderNo}')">
+                    <button class="btn btn-outline btn-sm" style="padding: 5px 14px; font-size: 13px; font-weight: 600; border-radius: 20px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);" onclick="viewOrderDetails('${o.orderNo}')">
                         <i class="fa-solid fa-eye"></i> View
                     </button>
                 </td>
@@ -14917,7 +14917,7 @@ function renderInvoicesTable() {
                 <td style="color: #b91c1c;">-Rs. ${Math.round(discAmt).toLocaleString()}</td>
                 <td><strong style="color: #059669;">Rs. ${Math.round(netAmt).toLocaleString()}</strong></td>
                 <td>
-                    <button class="btn btn-outline btn-sm" style="padding: 5px 14px; font-size: 13px; font-weight: 600; border-radius: 20px; background: rgba(255,255,255,0.9); color: #0f172a; border: 1px solid #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.05);" onclick="viewBillDetails('${b.billNo}')">
+                    <button class="btn btn-outline btn-sm" style="padding: 5px 14px; font-size: 13px; font-weight: 600; border-radius: 20px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);" onclick="viewBillDetails('${b.billNo}')">
                         <i class="fa-solid fa-eye"></i> Details
                     </button>
                 </td>
@@ -16061,17 +16061,17 @@ function renderSalesmenSyncCards() {
         const mtdKg = getSalesmanMtdSalesKg(sales.id);
 
         html += `
-            <div class="kpi-card accent-blue" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.9); border-radius: 16px; padding: 16px;">
+            <div class="kpi-card accent-blue" style="background: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px;">
                 <div class="flex-between">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px;">
                             <i class="fa-solid fa-user-tie"></i>
                         </div>
                         <div>
-                            <h4 style="font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 2px;">${sales.name}</h4>
+                            <h4 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin-bottom: 2px;">${sales.name}</h4>
                             <span style="font-size: 11px; font-weight: 700; color: #3b82f6;">📍 ${route.name}</span>
-                            <div style="font-size: 10px; font-weight: 800; color: #334155; margin-top: 3px;">
-                                👤 Username: <code style="background: #e2e8f0; color: #0f172a; padding: 1px 5px; border-radius: 4px; font-weight: 800;">${sales.username || sales.name.toLowerCase().replace(/\s+/g, '_')}</code> | 🔑 PIN: <code style="background: #dcfce7; color: #166534; padding: 1px 5px; border-radius: 4px; font-weight: 800;">${sales.pin || '1234'}</code>
+                            <div style="font-size: 10px; font-weight: 800; color: var(--text-secondary); margin-top: 3px;">
+                                👤 Username: <code style="background: var(--bg-card-hover); color: var(--text-primary); padding: 1px 5px; border-radius: 4px; font-weight: 800;">${sales.username || sales.name.toLowerCase().replace(/\s+/g, '_')}</code> | 🔑 PIN: <code style="background: #dcfce7; color: #166534; padding: 1px 5px; border-radius: 4px; font-weight: 800;">${sales.pin || '1234'}</code>
                             </div>
                         </div>
                     </div>
@@ -16081,7 +16081,7 @@ function renderSalesmenSyncCards() {
                     </div>
                 </div>
                 <div class="summary-divider" style="margin: 12px 0;"></div>
-                <div class="flex-between" style="font-size: 11px; color: #64748b; gap: 6px; flex-wrap: wrap;">
+                <div class="flex-between" style="font-size: 11px; color: var(--text-secondary); gap: 6px; flex-wrap: wrap;">
                     <span>Last Sync: <strong>${lastSyncTime}</strong></span>
                     <div style="display: flex; gap: 6px;">
                         <button class="btn btn-sm btn-success" onclick="exportDedicatedMobileApp('${sales.id}')" title="Download Dedicated Mobile App for ${sales.name}"><i class="fa-solid fa-mobile-screen-button"></i> Dedicated App</button>
