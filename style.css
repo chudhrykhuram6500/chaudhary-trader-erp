@@ -78,6 +78,8 @@ body.anim-active .ambient-bg-glow {
     opacity: 1;
     animation: ambientGlow 12s infinite alternate ease-in-out;
 }
+/* Dark theme: keep the page flat black, no ambient color wash - only Light theme gets the subtle glow */
+body.anim-active:not(.light) .ambient-bg-glow { opacity: 0; }
 
 @keyframes ambientGlow {
     0% { transform: scale(1) rotate(0deg); }
@@ -339,7 +341,7 @@ body.light .brand-info h1 {
     white-space: nowrap; overflow: hidden; cursor: pointer;
 }
 
-.app-content { flex: 1; overflow-y: auto; padding: 20px; position: relative; z-index: 1; min-width: 0; }
+.app-content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 20px; position: relative; z-index: 1; min-width: 0; max-width: 100%; }
 .tab-page { display: none; }
 .tab-page.active { display: block; animation: slideUpFade 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
 
