@@ -594,7 +594,7 @@
                     <div class="search-filter-grid">
                         <div class="form-group">
                             <label><i class="fa-solid fa-magnifying-glass"></i> Search Orders:</label>
-                            <div style="display: flex; gap: 6px;">
+                            <div class="search-with-refresh-btn">
                                 <input type="text" id="ordersSearchQuery" placeholder="Search Order No, Customer, Route..." onkeyup="renderOrdersTable()" style="flex: 1;">
                                 <button type="button" class="btn btn-warning btn-sm" onclick="manualSearchRefresh('renderOrdersTable')" title="Pull latest data from server before searching"><i class="fa-solid fa-rotate"></i> Search</button>
                             </div>
@@ -690,7 +690,7 @@
                     <div class="search-filter-grid">
                         <div class="form-group">
                             <label><i class="fa-solid fa-magnifying-glass"></i> Search Pick Lists:</label>
-                            <div style="display: flex; gap: 6px;">
+                            <div class="search-with-refresh-btn">
                                 <input type="text" id="pickListSearchQuery" placeholder="Search Pick List No, Date, Status..." onkeyup="renderPickListTable()" style="flex: 1;">
                                 <button type="button" class="btn btn-warning btn-sm" onclick="manualSearchRefresh('renderPickListTable')" title="Pull latest data from server before searching"><i class="fa-solid fa-rotate"></i> Search</button>
                             </div>
@@ -757,7 +757,7 @@
                     <div class="search-filter-grid" style="margin-bottom: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
                         <div class="form-group">
                             <label><i class="fa-solid fa-magnifying-glass"></i> Search Invoices:</label>
-                            <div style="display: flex; gap: 6px;">
+                            <div class="search-with-refresh-btn">
                                 <input type="text" id="invoiceSearchQuery" placeholder="Search Invoice No, Shop..." onkeyup="renderInvoicesTable()" style="flex: 1;">
                                 <button type="button" class="btn btn-warning btn-sm" onclick="manualSearchRefresh('renderInvoicesTable')" title="Pull latest data from server before searching"><i class="fa-solid fa-rotate"></i> Search</button>
                             </div>
