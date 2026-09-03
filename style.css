@@ -612,6 +612,21 @@ body.light .brand-info h1 {
 }
 .form-group input:focus, .form-group select:focus { border-color: var(--brand-gold); box-shadow: 0 0 10px rgba(255, 204, 0, 0.2); }
 
+/* The dropdown POPUP list of a native <select> renders as an OS-level
+   surface, not part of the page - it can't composite with our translucent
+   --bg-card, so inheriting that (nearly transparent) background there left
+   the popup showing native white while the text stayed theme-white,
+   making every option invisible. Options need their own solid opaque
+   colors, independent of the glass-card variables used everywhere else. */
+select option {
+    background-color: #17171c;
+    color: #ffffff;
+}
+body.light select option {
+    background-color: #ffffff;
+    color: #0f172a;
+}
+
 .radio-pill-group { display: flex; gap: 8px; }
 .radio-pill { flex: 1; background: var(--bg-card); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 
