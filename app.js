@@ -16185,11 +16185,11 @@ function renderDataSyncTab() {
 }
 
 function syncWithLocalServerStore() {
-    const apiUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) 
-                   ? (window.location.origin + "/api/sync/latest-state") 
+    const apiUri = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http'))
+                   ? (window.location.origin + "/api/sync/latest-state")
                    : "https://chaudharytraders.online/api/sync/latest-state";
-                   
-    fetch(apiUri)
+
+    return fetch(apiUri)
         .then(r => r.text())
         .then(rawText => {
             const data = JSON.parse(rawText);
@@ -16271,11 +16271,25 @@ function syncWithLocalServerStore() {
                 if (typeof renderOrdersTable === "function") renderOrdersTable();
                 if (typeof renderDashboard === "function") renderDashboard();
                 if (typeof renderPickListTable === "function") renderPickListTable();
+                if (typeof renderInvoicesTable === "function") renderInvoicesTable();
                 if (typeof renderSalesReports === "function") renderSalesReports();
                 if (typeof renderDataSyncTab === "function") renderDataSyncTab();
             }
         })
         .catch(() => {});
+}
+
+// Manual "Search" button on Orders/PickList/Invoices: pulls the latest data
+// from the server before filtering/rendering, so a device that just logged
+// in (or whose periodic poll hasn't caught up yet) sees every record other
+// devices have already saved, not just whatever happened to be cached
+// locally when the page first loaded.
+function manualSearchRefresh(renderFnName) {
+    const toast = showSyncToast("🔍 Fetching latest data from server...", "loading", 0);
+    syncWithLocalServerStore().then(() => {
+        if (typeof window[renderFnName] === "function") window[renderFnName]();
+        updateSyncToast(toast, "✅ Data refreshed from server.", "success", 2000);
+    });
 }
 
 function forcePushLocalStateToCloud() {
