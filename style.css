@@ -66,33 +66,43 @@ body {
     top: 0; left: 0; width: 100vw; height: 100vh;
     pointer-events: none !important;
     z-index: -1;
+    overflow: hidden;
+}
+
+/* Floating glass-morphism orbs, matching the approved mockup exactly:
+   3 large blurred circles that slowly drift, giving glass surfaces
+   (backdrop-filter:blur) something visible to blur - Dark theme only,
+   Light theme keeps its own existing ::before/::after glow below. */
+.glow-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(10px);
     opacity: 0;
-    transition: opacity 0.5s ease;
-    background:
-        radial-gradient(circle at 15% 20%, rgba(230, 0, 0, 0.12) 0%, transparent 45%),
-        radial-gradient(circle at 85% 80%, rgba(255, 204, 0, 0.12) 0%, transparent 45%),
-        radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
+    transition: opacity 0.6s ease;
+}
+body.anim-active:not(.light) .glow-blob { opacity: 1; }
+
+.glow-blob-gold {
+    top: -12%; left: 4%;
+    width: 34vw; height: 34vw; max-width: 520px; max-height: 520px;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.16), transparent 70%);
+    animation: floatGlow 14s ease-in-out infinite;
+}
+.glow-blob-green {
+    top: 4%; right: -9%;
+    width: 36vw; height: 36vw; max-width: 560px; max-height: 560px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.14), transparent 70%);
+    animation: floatGlow 18s ease-in-out infinite reverse;
+}
+.glow-blob-blue {
+    bottom: -13%; left: 38%;
+    width: 38vw; height: 38vw; max-width: 600px; max-height: 600px;
+    background: radial-gradient(circle, rgba(47, 111, 224, 0.12), transparent 70%);
 }
 
-body.anim-active .ambient-bg-glow {
-    opacity: 1;
-    animation: ambientGlow 12s infinite alternate ease-in-out;
-}
-/* Dark theme: pure black base, but keep a very subtle, slow-moving dark gradient wash
-   so backdrop-filter glass cards have something to actually blur (pure flat black
-   under a glass card looks identical to no blur at all). */
-body.anim-active:not(.light) .ambient-bg-glow {
-    opacity: 0.55;
-    background:
-        radial-gradient(circle at 15% 20%, rgba(217, 20, 36, 0.05) 0%, transparent 45%),
-        radial-gradient(circle at 85% 80%, rgba(255, 215, 0, 0.05) 0%, transparent 45%),
-        radial-gradient(circle at 50% 50%, rgba(47, 111, 224, 0.045) 0%, transparent 60%);
-}
-
-@keyframes ambientGlow {
-    0% { transform: scale(1) rotate(0deg); }
-    50% { transform: scale(1.08) rotate(3deg); }
-    100% { transform: scale(1) rotate(0deg); }
+@keyframes floatGlow {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-16px, 14px); }
 }
 
 .app-header {
