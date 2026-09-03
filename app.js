@@ -12533,10 +12533,96 @@ function confirmReportExportFromModal() {
     else if (reportType === "analysis") exportAnalysisReportExcel();
 }
 
-/* HIGH-END STYLED EXCEL REPORT GENERATOR */
-function generateStyledExcelFile(reportTitle, headers, rows, filename) {
-    const cleanFilename = filename.replace(/.(xls|xlsx)$/i, '') + '.xlsx';
+/* HIGH-END STYLED EXCEL REPORT GENERATOR
+   Uses ExcelJS (not SheetJS) because SheetJS Community Edition cannot write
+   cell fill/font styling into a real .xlsx file - it silently drops any
+   cell.s style object on save. ExcelJS actually persists colors/fonts. */
+async function generateStyledExcelFile(reportTitle, headers, rows, filename) {
+    const cleanFilename = filename.replace(/\.(xls|xlsx)$/i, '') + '.xlsx';
     const generatedTime = new Date().toLocaleString();
+    const colCount = Math.max(headers.length, 1);
+
+    if (typeof ExcelJS !== "undefined") {
+        try {
+            const wb = new ExcelJS.Workbook();
+            wb.creator = "Chaudhary Trader ERP";
+            wb.created = new Date();
+            const ws = wb.addWorksheet(reportTitle.substring(0, 30).replace(/[\/\\?*:\[\]]/g, ''));
+
+            const GOLD = 'FFFFD700';
+            const DARK_NAVY = 'FF14141C';
+            const INK = 'FF1A1A1A';
+            const MUTED = 'FF6B6B76';
+            const ROW_ALT = 'FFF7F7F9';
+            const BORDER = { style: 'thin', color: { argb: 'FFE0E0E0' } };
+
+            const mergeAndStyleBanner = (rowNum, text, fillArgb, fontArgb, size, bold) => {
+                ws.mergeCells(rowNum, 1, rowNum, colCount);
+                const cell = ws.getCell(rowNum, 1);
+                cell.value = text;
+                cell.font = { bold: !!bold, size: size || 11, color: { argb: fontArgb } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillArgb } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            };
+
+            mergeAndStyleBanner(1, "CHAUDHARY TRADER \u2014 PEPSICO FMCG DISTRIBUTION SYSTEM", GOLD, INK, 15, true);
+            ws.getRow(1).height = 26;
+            mergeAndStyleBanner(2, "Sargodha Road, Chund Adda, Jhang  |  Phone/WhatsApp: 03446035632", DARK_NAVY, 'FFFFFFFF', 10, false);
+            mergeAndStyleBanner(3, `REPORT: ${reportTitle.toUpperCase()}  |  Generated: ${generatedTime}`, DARK_NAVY, GOLD, 10, true);
+
+            const headerRow = ws.addRow(headers);
+            headerRow.height = 22;
+            headerRow.eachCell((cell) => {
+                cell.font = { bold: true, size: 11, color: { argb: INK } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: GOLD } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.border = { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER };
+            });
+
+            if (!rows || rows.length === 0) {
+                ws.mergeCells(5, 1, 5, colCount);
+                const emptyCell = ws.getCell(5, 1);
+                emptyCell.value = "No records available for this report.";
+                emptyCell.font = { italic: true, color: { argb: MUTED } };
+                emptyCell.alignment = { horizontal: 'center' };
+            } else {
+                rows.forEach((row, idx) => {
+                    const dataRow = ws.addRow(row);
+                    const isEven = idx % 2 === 0;
+                    dataRow.eachCell((cell) => {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: isEven ? 'FFFFFFFF' : ROW_ALT } };
+                        cell.font = { size: 10, color: { argb: INK } };
+                        cell.border = { bottom: BORDER };
+                        cell.alignment = { vertical: 'middle', horizontal: typeof cell.value === 'number' ? 'right' : 'left' };
+                    });
+                });
+            }
+
+            headers.forEach((h, i) => {
+                let maxLen = String(h).length;
+                (rows || []).forEach(r => {
+                    const v = r[i];
+                    const s = (v !== undefined && v !== null) ? String(v) : '';
+                    if (s.length > maxLen) maxLen = s.length;
+                });
+                ws.getColumn(i + 1).width = Math.min(Math.max(maxLen + 4, 14), 50);
+            });
+
+            const buffer = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = cleanFilename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            return;
+        } catch (err) {
+            console.warn("ExcelJS export failed, falling back:", err);
+        }
+    }
 
     if (typeof XLSX !== "undefined") {
         try {
@@ -14956,26 +15042,28 @@ function printPickList(pickListNo) {
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
             <style>
                 @page { size: A4 portrait; margin: 8mm; }
-                body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; margin: 0; padding: 15px; color: #000; background: #fff; font-size: 11px; line-height: 1.4; }
-                .a4-header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 12px; }
+                body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; margin: 0; padding: 15px; color: #1a1a1a; background: #fff; font-size: 11px; line-height: 1.4; }
+                .a4-header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #e6ac00; padding-bottom: 12px; margin-bottom: 14px; }
                 .a4-brand-logo-group { display: flex; align-items: center; gap: 14px; }
                 .a4-print-logo { height: 70px; width: auto; }
-                .a4-company-brand h2 { font-size: 22px; font-weight: 800; color: #000; margin: 0 0 2px 0; }
-                .company-sub { font-size: 11px; font-weight: 700; color: #333; margin: 0 0 4px 0; }
-                .a4-invoice-meta-box { text-align: right; border: 1px solid #000; padding: 8px 12px; border-radius: 4px; background: #f9f9f9; }
-                .a4-invoice-meta-box h3 { font-size: 16px; font-weight: 800; margin: 0 0 4px 0; }
+                .a4-company-brand h2 { font-size: 22px; font-weight: 800; color: #1a1a1a; margin: 0 0 2px 0; letter-spacing: 0.3px; }
+                .company-sub { font-size: 11px; font-weight: 700; color: #b8860b; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+                .a4-invoice-meta-box { text-align: right; border: 1px solid #e2c04a; padding: 8px 14px; border-radius: 6px; background: #fffbea; }
+                .a4-invoice-meta-box h3 { font-size: 16px; font-weight: 800; margin: 0 0 4px 0; color: #1a1a1a; }
                 .a4-invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-                .a4-invoice-table th { background: #eeeeee !important; color: #000 !important; border: 1px solid #000; padding: 7px 6px; font-size: 11px; font-weight: 800; text-align: left; }
-                .a4-invoice-table td { border: 1px solid #000; padding: 6px 6px; font-size: 11px; }
+                .a4-invoice-table th { background: #1a1a1a !important; color: #ffd700 !important; border: 1px solid #1a1a1a; padding: 8px 6px; font-size: 11px; font-weight: 800; text-align: left; text-transform: uppercase; letter-spacing: 0.3px; }
+                .a4-invoice-table td { border: 1px solid #ddd; padding: 6px 6px; font-size: 11px; }
+                .a4-invoice-table tbody tr:nth-child(even) td { background: #fafafa; }
                 .a4-summary-section { margin-bottom: 24px; }
+                .a4-summary-section p { background: #fffbea; border: 1px solid #e2c04a; border-radius: 6px; padding: 8px 12px; display: inline-block; font-weight: 700; }
                 .a4-totals-grid { display: flex; justify-content: space-between; align-items: flex-start; }
-                .totals-col-left { width: 45%; border: 1px dashed #000; padding: 10px; border-radius: 4px; }
-                .totals-col-right { width: 50%; border: 1px solid #000; padding: 10px 14px; background: #f9f9f9; border-radius: 4px; }
+                .totals-col-left { width: 45%; border: 1px dashed #999; padding: 10px; border-radius: 4px; }
+                .totals-col-right { width: 50%; border: 1px solid #1a1a1a; padding: 10px 14px; background: #fffbea; border-radius: 4px; }
                 .t-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 11px; }
-                .grand-total { border-top: 2px solid #000; margin-top: 6px; padding-top: 8px; font-size: 16px; font-weight: 900; }
+                .grand-total { border-top: 2px solid #1a1a1a; margin-top: 6px; padding-top: 8px; font-size: 16px; font-weight: 900; }
                 .a4-signatures-block { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 10px; }
                 .sig-box { width: 30%; text-align: center; }
-                .sig-line { border-top: 1px solid #000; padding-top: 6px; font-size: 11px; font-weight: 700; }
+                .sig-line { border-top: 1px solid #1a1a1a; padding-top: 6px; font-size: 11px; font-weight: 700; }
             </style>
         </head>
         <body>
