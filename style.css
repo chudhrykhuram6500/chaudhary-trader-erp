@@ -765,6 +765,10 @@ body.light .brand-info h1 {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 12px;
 }
+.search-filter-grid .form-group { min-width: 0; }
+.search-with-refresh-btn { display: flex; gap: 6px; min-width: 0; }
+.search-with-refresh-btn input { flex: 1; min-width: 0; }
+.search-with-refresh-btn button { flex-shrink: 0; white-space: nowrap; }
 
 .option-cards-grid {
     display: grid;
