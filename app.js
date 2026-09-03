@@ -12533,10 +12533,96 @@ function confirmReportExportFromModal() {
     else if (reportType === "analysis") exportAnalysisReportExcel();
 }
 
-/* HIGH-END STYLED EXCEL REPORT GENERATOR */
-function generateStyledExcelFile(reportTitle, headers, rows, filename) {
-    const cleanFilename = filename.replace(/.(xls|xlsx)$/i, '') + '.xlsx';
+/* HIGH-END STYLED EXCEL REPORT GENERATOR
+   Uses ExcelJS (not SheetJS) because SheetJS Community Edition cannot write
+   cell fill/font styling into a real .xlsx file - it silently drops any
+   cell.s style object on save. ExcelJS actually persists colors/fonts. */
+async function generateStyledExcelFile(reportTitle, headers, rows, filename) {
+    const cleanFilename = filename.replace(/\.(xls|xlsx)$/i, '') + '.xlsx';
     const generatedTime = new Date().toLocaleString();
+    const colCount = Math.max(headers.length, 1);
+
+    if (typeof ExcelJS !== "undefined") {
+        try {
+            const wb = new ExcelJS.Workbook();
+            wb.creator = "Chaudhary Trader ERP";
+            wb.created = new Date();
+            const ws = wb.addWorksheet(reportTitle.substring(0, 30).replace(/[\/\\?*:\[\]]/g, ''));
+
+            const GOLD = 'FFFFD700';
+            const DARK_NAVY = 'FF14141C';
+            const INK = 'FF1A1A1A';
+            const MUTED = 'FF6B6B76';
+            const ROW_ALT = 'FFF7F7F9';
+            const BORDER = { style: 'thin', color: { argb: 'FFE0E0E0' } };
+
+            const mergeAndStyleBanner = (rowNum, text, fillArgb, fontArgb, size, bold) => {
+                ws.mergeCells(rowNum, 1, rowNum, colCount);
+                const cell = ws.getCell(rowNum, 1);
+                cell.value = text;
+                cell.font = { bold: !!bold, size: size || 11, color: { argb: fontArgb } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillArgb } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            };
+
+            mergeAndStyleBanner(1, "CHAUDHARY TRADER \u2014 PEPSICO FMCG DISTRIBUTION SYSTEM", GOLD, INK, 15, true);
+            ws.getRow(1).height = 26;
+            mergeAndStyleBanner(2, "Sargodha Road, Chund Adda, Jhang  |  Phone/WhatsApp: 03446035632", DARK_NAVY, 'FFFFFFFF', 10, false);
+            mergeAndStyleBanner(3, `REPORT: ${reportTitle.toUpperCase()}  |  Generated: ${generatedTime}`, DARK_NAVY, GOLD, 10, true);
+
+            const headerRow = ws.addRow(headers);
+            headerRow.height = 22;
+            headerRow.eachCell((cell) => {
+                cell.font = { bold: true, size: 11, color: { argb: INK } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: GOLD } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.border = { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER };
+            });
+
+            if (!rows || rows.length === 0) {
+                ws.mergeCells(5, 1, 5, colCount);
+                const emptyCell = ws.getCell(5, 1);
+                emptyCell.value = "No records available for this report.";
+                emptyCell.font = { italic: true, color: { argb: MUTED } };
+                emptyCell.alignment = { horizontal: 'center' };
+            } else {
+                rows.forEach((row, idx) => {
+                    const dataRow = ws.addRow(row);
+                    const isEven = idx % 2 === 0;
+                    dataRow.eachCell((cell) => {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: isEven ? 'FFFFFFFF' : ROW_ALT } };
+                        cell.font = { size: 10, color: { argb: INK } };
+                        cell.border = { bottom: BORDER };
+                        cell.alignment = { vertical: 'middle', horizontal: typeof cell.value === 'number' ? 'right' : 'left' };
+                    });
+                });
+            }
+
+            headers.forEach((h, i) => {
+                let maxLen = String(h).length;
+                (rows || []).forEach(r => {
+                    const v = r[i];
+                    const s = (v !== undefined && v !== null) ? String(v) : '';
+                    if (s.length > maxLen) maxLen = s.length;
+                });
+                ws.getColumn(i + 1).width = Math.min(Math.max(maxLen + 4, 14), 50);
+            });
+
+            const buffer = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = cleanFilename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            return;
+        } catch (err) {
+            console.warn("ExcelJS export failed, falling back:", err);
+        }
+    }
 
     if (typeof XLSX !== "undefined") {
         try {
