@@ -183,13 +183,18 @@
                             <i class="fa-solid fa-chart-line"></i>
                         </div>
                         <div>
-                            <h2 style="font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0; line-height: 1.2;">Sales Dashboard</h2>
-                            <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Track brand &amp; product performance</span>
+                            <h2 style="font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0; line-height: 1.2;">Welcome back, Khuram 👋</h2>
+                            <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Here's what's happening across your routes today</span>
                         </div>
                     </div>
 
                     <!-- Right: All controls in one tight row -->
                     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <!-- Quick Light/Dark Toggle -->
+                        <div style="background: var(--bg-card-hover); border-radius: 8px; padding: 2px; display: inline-flex; gap: 1px; border: 1px solid var(--border-color);">
+                            <button type="button" class="dash-brand-btn" onclick="selectAppTheme('light')" title="Light Theme"><i class="fa-solid fa-sun"></i></button>
+                            <button type="button" class="dash-brand-btn" onclick="selectAppTheme('dark')" title="Dark Theme"><i class="fa-solid fa-moon"></i></button>
+                        </div>
                         <!-- Date Range -->
                         <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 5px 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-secondary);">
                             <i class="fa-regular fa-calendar" style="color: var(--text-muted); font-size: 11px;"></i>
@@ -259,7 +264,44 @@
                     </div>
                 </div>
 
-                <!-- 5 KPI CARDS HORIZONTAL ROW -->
+                <!-- AT A GLANCE: fixed snapshot cards (Today/MTD, independent of the date-range selector below) -->
+                <div style="font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">At a Glance</div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px;">
+                    <div class="kpi-gradient-card kpi-grad-gold">
+                        <div class="kpi-grad-icon"><i class="fa-solid fa-sun"></i></div>
+                        <div>
+                            <span class="kpi-grad-label">Today's Sale</span>
+                            <div class="kpi-grad-value" id="kpiTodaySale">Rs. 0</div>
+                        </div>
+                    </div>
+                    <div class="kpi-gradient-card kpi-grad-green">
+                        <div class="kpi-grad-icon"><i class="fa-solid fa-calendar-days"></i></div>
+                        <div>
+                            <span class="kpi-grad-label">MTD Sale</span>
+                            <div class="kpi-grad-value" id="kpiMtdSale">Rs. 0</div>
+                        </div>
+                    </div>
+                    <div class="kpi-gradient-card kpi-grad-orange">
+                        <div class="kpi-grad-icon"><i class="fa-solid fa-truck-arrow-right"></i></div>
+                        <div>
+                            <span class="kpi-grad-label">Pending Invoices</span>
+                            <div class="kpi-grad-value" id="kpiPendingInvoices">0 Bills</div>
+                        </div>
+                    </div>
+                    <div class="kpi-gradient-card" style="background: linear-gradient(135deg, #f87171, #d91424);">
+                        <div class="kpi-grad-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div>
+                            <span class="kpi-grad-label">Low Stock SKUs</span>
+                            <div class="kpi-grad-value" id="kpiLowStockSkus">0 SKUs</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5 KPI CARDS: for the selected period below (date-range selector above still drives these) -->
+                <div class="flex-between" style="margin-bottom: 8px;">
+                    <span style="font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted);">For Selected Period</span>
+                    <span style="font-size: 11px; color: var(--text-muted);" id="selectedPeriodEcho"></span>
+                </div>
                 <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 20px;">
                     <!-- KPI 1: Total Sales Value -->
                     <div class="kpi-gradient-card kpi-grad-gold">
@@ -387,6 +429,28 @@
                     </div>
                 </div>
 
+                <!-- WEIGHT DISTRIBUTION & COLLECTION SUMMARY ROW -->
+                <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; margin-bottom: 20px;">
+                    <div class="ref-glass-card">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                            <i class="fa-solid fa-weight-hanging" style="color: var(--accent-purple); font-size: 16px;"></i>
+                            <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Weight Distributed</h3>
+                            <span style="font-size: 11px; color: var(--text-muted);">(Selected Period)</span>
+                        </div>
+                        <div style="position: relative; height: 220px; width: 100%;">
+                            <canvas id="weightDistributionChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="ref-glass-card">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                            <i class="fa-solid fa-sack-dollar" style="color: var(--brand-gold); font-size: 16px;"></i>
+                            <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Collection Summary</h3>
+                        </div>
+                        <div id="collectionSummaryContainer"></div>
+                    </div>
+                </div>
+
                 <!-- PRODUCT PERFORMANCE ANALYTICS SECTION -->
                 <div class="ref-glass-card" style="margin-bottom: 20px;">
                     <div class="flex-between" style="margin-bottom: 18px;">
@@ -461,27 +525,40 @@
                     </div>
                 </div>
 
-                <!-- Top 5 Selling SKUs Widget -->
-                <div class="panel-box" style="margin-top: 20px;">
-                    <div class="panel-header flex-between">
-                        <h3><i class="fa-solid fa-trophy" style="color: var(--brand-gold);"></i> Top 5 Best-Selling Product SKUs (by Sales Revenue & Weight)</h3>
-                        <button class="btn btn-outline btn-sm" onclick="navigateToTab('analysisReportsTab')"><i class="fa-solid fa-chart-column"></i> Full SKU Analytics</button>
+                <!-- Top 5 Selling SKUs + Recent Invoices Row -->
+                <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; margin-top: 20px;">
+                    <div class="panel-box">
+                        <div class="panel-header flex-between">
+                            <h3><i class="fa-solid fa-trophy" style="color: var(--brand-gold);"></i> Top 5 Best-Selling Product SKUs (by Sales Revenue & Weight)</h3>
+                            <button class="btn btn-outline btn-sm" onclick="navigateToTab('analysisReportsTab')"><i class="fa-solid fa-chart-column"></i> Full SKU Analytics</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Product Code</th>
+                                        <th>Product Description</th>
+                                        <th>Brand</th>
+                                        <th>Cartons Sold</th>
+                                        <th>Weight Sold (KG)</th>
+                                        <th>Total Revenue (Rs.)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboardTopSkusTable"></tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Rank</th>
-                                    <th>Product Code</th>
-                                    <th>Product Description</th>
-                                    <th>Brand</th>
-                                    <th>Cartons Sold</th>
-                                    <th>Weight Sold (KG)</th>
-                                    <th>Total Revenue (Rs.)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dashboardTopSkusTable"></tbody>
-                        </table>
+
+                    <div class="ref-glass-card">
+                        <div class="flex-between" style="margin-bottom: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-receipt" style="color: var(--accent-blue); font-size: 16px;"></i>
+                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Recent Invoices</h3>
+                            </div>
+                            <button class="btn btn-outline btn-sm" onclick="navigateToTab('invoicesTab')">View all</button>
+                        </div>
+                        <div id="recentInvoicesContainer"></div>
                     </div>
                 </div>
             </section>
