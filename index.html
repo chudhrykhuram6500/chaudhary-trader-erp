@@ -262,71 +262,61 @@
                 <!-- 5 KPI CARDS HORIZONTAL ROW -->
                 <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 20px;">
                     <!-- KPI 1: Total Sales Value -->
-                    <div class="ref-kpi-card">
-                        <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(47, 111, 224, 0.15); color: var(--accent-blue); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0;">
-                            <i class="fa-solid fa-dollar-sign"></i>
-                        </div>
+                    <div class="kpi-gradient-card kpi-grad-gold">
+                        <div class="kpi-grad-icon"><i class="fa-solid fa-dollar-sign"></i></div>
                         <div>
-                            <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Total Sales Value</span>
-                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 2px 0;" id="kpiTotalValue">Rs. 0</div>
-                            <div style="font-size: 11px; color: var(--accent-green); font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiValueGrowth">
-                                <span>↑ 12.4%</span> <span style="color: var(--text-muted); font-weight: 400;">vs Previous Period</span>
+                            <span class="kpi-grad-label">Total Sales Value</span>
+                            <div class="kpi-grad-value" id="kpiTotalValue">Rs. 0</div>
+                            <div class="kpi-grad-growth" id="kpiValueGrowth">
+                                <span>↑ 12.4%</span> <span class="kpi-grad-growth-sub">vs Previous Period</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- KPI 2: Total Cartons -->
-                    <div class="ref-kpi-card">
-                        <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(15, 158, 110, 0.15); color: var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
-                            <i class="fa-solid fa-box"></i>
-                        </div>
+                    <div class="kpi-gradient-card kpi-grad-green">
+                        <div class="kpi-grad-icon"><i class="fa-solid fa-box"></i></div>
                         <div>
-                            <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Total Cartons</span>
-                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 2px 0;" id="kpiTotalCartonsCount">0 Ctns</div>
-                            <div style="font-size: 11px; color: var(--accent-green); font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiCartonsGrowth">
-                                <span>↑ 8.7%</span> <span style="color: var(--text-muted); font-weight: 400;">vs Previous Period</span>
+                            <span class="kpi-grad-label">Total Cartons</span>
+                            <div class="kpi-grad-value" id="kpiTotalCartonsCount">0 Ctns</div>
+                            <div class="kpi-grad-growth" id="kpiCartonsGrowth">
+                                <span>↑ 8.7%</span> <span class="kpi-grad-growth-sub">vs Previous Period</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- KPI 3: Total Weight -->
-                    <div class="ref-kpi-card">
-                        <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
-                            <i class="fa-solid fa-scale-balanced"></i>
-                        </div>
+                    <div class="kpi-gradient-card kpi-grad-purple">
+                        <div class="kpi-grad-icon"><i class="fa-solid fa-scale-balanced"></i></div>
                         <div>
-                            <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Total Weight</span>
-                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 2px 0;" id="kpiTotalKG">0.00 KG</div>
-                            <div style="font-size: 11px; color: var(--accent-green); font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiWeightGrowth">
-                                <span>↑ 9.5%</span> <span style="color: var(--text-muted); font-weight: 400;">vs Previous Period</span>
+                            <span class="kpi-grad-label">Total Weight</span>
+                            <div class="kpi-grad-value" id="kpiTotalKG">0.00 KG</div>
+                            <div class="kpi-grad-growth" id="kpiWeightGrowth">
+                                <span>↑ 9.5%</span> <span class="kpi-grad-growth-sub">vs Previous Period</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- KPI 4: Billed Shops -->
-                    <div class="ref-kpi-card">
-                        <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(230, 172, 0, 0.15); color: var(--accent-gold); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
-                            <i class="fa-solid fa-store"></i>
-                        </div>
+                    <div class="kpi-gradient-card kpi-grad-orange">
+                        <div class="kpi-grad-icon"><i class="fa-solid fa-store"></i></div>
                         <div>
-                            <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Billed Shops</span>
-                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 2px 0;" id="kpiBilledShops">0 Shops</div>
-                            <div style="font-size: 11px; color: var(--accent-green); font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiShopsGrowth">
-                                <span>↑ 14.3%</span> <span style="color: var(--text-muted); font-weight: 400;">vs Previous Period</span>
+                            <span class="kpi-grad-label">Billed Shops</span>
+                            <div class="kpi-grad-value" id="kpiBilledShops">0 Shops</div>
+                            <div class="kpi-grad-growth" id="kpiShopsGrowth">
+                                <span>↑ 14.3%</span> <span class="kpi-grad-growth-sub">vs Previous Period</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- KPI 5: Total Invoices -->
-                    <div class="ref-kpi-card">
-                        <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(47, 111, 224, 0.15); color: var(--accent-blue); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
-                            <i class="fa-solid fa-file-invoice"></i>
-                        </div>
+                    <div class="kpi-gradient-card kpi-grad-blue">
+                        <div class="kpi-grad-icon"><i class="fa-solid fa-file-invoice"></i></div>
                         <div>
-                            <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Total Invoices</span>
-                            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 2px 0;" id="kpiTotalInvoices">0 Bills</div>
-                            <div style="font-size: 11px; color: var(--accent-green); font-weight: 600; display: flex; align-items: center; gap: 4px;" id="kpiInvoicesGrowth">
-                                <span>↑ 6.1%</span> <span style="color: var(--text-muted); font-weight: 400;">vs Previous Period</span>
+                            <span class="kpi-grad-label">Total Invoices</span>
+                            <div class="kpi-grad-value" id="kpiTotalInvoices">0 Bills</div>
+                            <div class="kpi-grad-growth" id="kpiInvoicesGrowth">
+                                <span>↑ 6.1%</span> <span class="kpi-grad-growth-sub">vs Previous Period</span>
                             </div>
                         </div>
                     </div>
