@@ -8698,19 +8698,19 @@ function renderBrandComparisonChart(dateList, dailyBrandSales, productTotals) {
         const fastValStr = metric === 'value' ? `Rs. ${Math.round(fastTotal).toLocaleString()}` : (metric === 'kg' ? `${fastTotal.toFixed(1)} KG` : `${fastTotal} Ctns`);
 
         cardsEl.innerHTML = `
-            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 12px 14px;">
-                <div style="font-weight: 700; color: #2563eb; font-size: 13px;">Lays Brand Total</div>
-                <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 2px 0;">
-                    ${laysValStr} <span style="font-size: 13px; color: #2563eb; font-weight: 700;">${laysPct}%</span>
+            <div style="background: rgba(47, 111, 224, 0.12); border: 1px solid rgba(47, 111, 224, 0.3); border-radius: 12px; padding: 12px 14px;">
+                <div style="font-weight: 700; color: var(--accent-blue); font-size: 13px;">Lays Brand Total</div>
+                <div style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 2px 0;">
+                    ${laysValStr} <span style="font-size: 13px; color: var(--accent-blue); font-weight: 700;">${laysPct}%</span>
                 </div>
-                <div style="font-size: 11px; color: #64748b;">vs Total Sales (${metric.toUpperCase()})</div>
+                <div style="font-size: 11px; color: var(--text-secondary);">vs Total Sales (${metric.toUpperCase()})</div>
             </div>
-            <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 12px 14px;">
+            <div style="background: rgba(234, 88, 12, 0.12); border: 1px solid rgba(234, 88, 12, 0.3); border-radius: 12px; padding: 12px 14px;">
                 <div style="font-weight: 700; color: #ea580c; font-size: 13px;">Fast Brand Total</div>
-                <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 2px 0;">
+                <div style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 2px 0;">
                     ${fastValStr} <span style="font-size: 13px; color: #ea580c; font-weight: 700;">${fastPct}%</span>
                 </div>
-                <div style="font-size: 11px; color: #64748b;">vs Total Sales (${metric.toUpperCase()})</div>
+                <div style="font-size: 11px; color: var(--text-secondary);">vs Total Sales (${metric.toUpperCase()})</div>
             </div>
         `;
     }
@@ -8775,13 +8775,13 @@ function renderProductAnalyticsSection(brandFilter, dateList, dailyProductSales,
 
         laysGrid.style.display = "block";
         laysGrid.innerHTML = `
-            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 18px; box-shadow: 0 4px 16px rgba(0,0,0,0.03);">
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 18px;">
                 <!-- Header with Metric Toggles -->
                 <div class="flex-between" style="margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 15px; font-weight: 800; color: #2563eb;">📊 LAYS BRAND — Product Performance Comparison</span>
+                        <span style="font-size: 15px; font-weight: 800; color: var(--accent-blue);">📊 LAYS BRAND — Product Performance Comparison</span>
                     </div>
-                    <div style="display: flex; background: #f1f5f9; padding: 3px; border-radius: 8px; border: 1px solid #cbd5e1; gap: 3px;">
+                    <div style="display: flex; background: var(--bg-card-hover); padding: 3px; border-radius: 8px; border: 1px solid var(--border-color); gap: 3px;">
                         <button class="prod-metric-pill ${laysMetric === 'value' ? 'active' : ''}" onclick="setProductMetricToggle('lays_brand', 'value')">Value (Rs.)</button>
                         <button class="prod-metric-pill ${laysMetric === 'kg' ? 'active' : ''}" onclick="setProductMetricToggle('lays_brand', 'kg')">KG</button>
                         <button class="prod-metric-pill ${laysMetric === 'cartons' ? 'active' : ''}" onclick="setProductMetricToggle('lays_brand', 'cartons')">Cartons</button>
@@ -8791,41 +8791,41 @@ function renderProductAnalyticsSection(brandFilter, dateList, dailyProductSales,
                 <!-- Product Summary Cards Grid -->
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px;">
                     <!-- Lays Card -->
-                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-top: 4px solid #2563eb; border-radius: 12px; padding: 12px;">
+                    <div style="background: var(--bg-card-hover); border: 1px solid var(--border-color); border-top: 4px solid #2563eb; border-radius: 12px; padding: 12px;">
                         <div class="flex-between" style="margin-bottom: 6px;">
-                            <strong style="font-size: 14px; color: #0f172a;">Lays</strong>
-                            <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #eff6ff; color: #2563eb;">(PC)</span>
+                            <strong style="font-size: 14px; color: var(--text-primary);">Lays</strong>
+                            <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(47, 111, 224, 0.15); color: var(--accent-blue);">(PC)</span>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 11px;">
-                            <div><span style="color: #64748b; font-size: 10px;">Total Value</span><br><strong style="color: #0f172a; font-size: 12px;">Rs. ${Math.round(laysTot.value).toLocaleString()}</strong></div>
-                            <div><span style="color: #64748b; font-size: 10px;">Total KG</span><br><strong style="color: #0f172a; font-size: 12px;">${laysTot.kg.toFixed(1)}</strong></div>
-                            <div><span style="color: #64748b; font-size: 10px;">Cartons</span><br><strong style="color: #0f172a; font-size: 12px;">${laysTot.cartons}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Total Value</span><br><strong style="color: var(--text-primary); font-size: 12px;">Rs. ${Math.round(laysTot.value).toLocaleString()}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Total KG</span><br><strong style="color: var(--text-primary); font-size: 12px;">${laysTot.kg.toFixed(1)}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Cartons</span><br><strong style="color: var(--text-primary); font-size: 12px;">${laysTot.cartons}</strong></div>
                         </div>
                     </div>
 
                     <!-- Kurkure Card -->
-                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-top: 4px solid #f59e0b; border-radius: 12px; padding: 12px;">
+                    <div style="background: var(--bg-card-hover); border: 1px solid var(--border-color); border-top: 4px solid #f59e0b; border-radius: 12px; padding: 12px;">
                         <div class="flex-between" style="margin-bottom: 6px;">
-                            <strong style="font-size: 14px; color: #0f172a;">Kurkure</strong>
-                            <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #fff7ed; color: #ea580c;">(NPC)</span>
+                            <strong style="font-size: 14px; color: var(--text-primary);">Kurkure</strong>
+                            <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(234, 88, 12, 0.15); color: #ea580c;">(NPC)</span>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 11px;">
-                            <div><span style="color: #64748b; font-size: 10px;">Total Value</span><br><strong style="color: #0f172a; font-size: 12px;">Rs. ${Math.round(kurkureTot.value).toLocaleString()}</strong></div>
-                            <div><span style="color: #64748b; font-size: 10px;">Total KG</span><br><strong style="color: #0f172a; font-size: 12px;">${kurkureTot.kg.toFixed(1)}</strong></div>
-                            <div><span style="color: #64748b; font-size: 10px;">Cartons</span><br><strong style="color: #0f172a; font-size: 12px;">${kurkureTot.cartons}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Total Value</span><br><strong style="color: var(--text-primary); font-size: 12px;">Rs. ${Math.round(kurkureTot.value).toLocaleString()}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Total KG</span><br><strong style="color: var(--text-primary); font-size: 12px;">${kurkureTot.kg.toFixed(1)}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Cartons</span><br><strong style="color: var(--text-primary); font-size: 12px;">${kurkureTot.cartons}</strong></div>
                         </div>
                     </div>
 
                     <!-- Cheetos Card -->
-                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-top: 4px solid #ef4444; border-radius: 12px; padding: 12px;">
+                    <div style="background: var(--bg-card-hover); border: 1px solid var(--border-color); border-top: 4px solid #ef4444; border-radius: 12px; padding: 12px;">
                         <div class="flex-between" style="margin-bottom: 6px;">
-                            <strong style="font-size: 14px; color: #0f172a;">Cheetos</strong>
-                            <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #fef2f2; color: #ef4444;">(NPC)</span>
+                            <strong style="font-size: 14px; color: var(--text-primary);">Cheetos</strong>
+                            <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(239, 68, 68, 0.15); color: #ef4444;">(NPC)</span>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 11px;">
-                            <div><span style="color: #64748b; font-size: 10px;">Total Value</span><br><strong style="color: #0f172a; font-size: 12px;">Rs. ${Math.round(cheetosTot.value).toLocaleString()}</strong></div>
-                            <div><span style="color: #64748b; font-size: 10px;">Total KG</span><br><strong style="color: #0f172a; font-size: 12px;">${cheetosTot.kg.toFixed(1)}</strong></div>
-                            <div><span style="color: #64748b; font-size: 10px;">Cartons</span><br><strong style="color: #0f172a; font-size: 12px;">${cheetosTot.cartons}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Total Value</span><br><strong style="color: var(--text-primary); font-size: 12px;">Rs. ${Math.round(cheetosTot.value).toLocaleString()}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Total KG</span><br><strong style="color: var(--text-primary); font-size: 12px;">${cheetosTot.kg.toFixed(1)}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Cartons</span><br><strong style="color: var(--text-primary); font-size: 12px;">${cheetosTot.cartons}</strong></div>
                         </div>
                     </div>
                 </div>
@@ -8846,13 +8846,13 @@ function renderProductAnalyticsSection(brandFilter, dateList, dailyProductSales,
 
         fastGrid.style.display = "block";
         fastGrid.innerHTML = `
-            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 18px; box-shadow: 0 4px 16px rgba(0,0,0,0.03);">
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 18px;">
                 <!-- Header with Metric Toggles -->
                 <div class="flex-between" style="margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 15px; font-weight: 800; color: #ea580c;">⚡ FAST BRAND — Product Performance Comparison</span>
                     </div>
-                    <div style="display: flex; background: #f1f5f9; padding: 3px; border-radius: 8px; border: 1px solid #cbd5e1; gap: 3px;">
+                    <div style="display: flex; background: var(--bg-card-hover); padding: 3px; border-radius: 8px; border: 1px solid var(--border-color); gap: 3px;">
                         <button class="prod-metric-pill ${fastMetric === 'value' ? 'active' : ''}" onclick="setProductMetricToggle('fast_brand', 'value')">Value (Rs.)</button>
                         <button class="prod-metric-pill ${fastMetric === 'kg' ? 'active' : ''}" onclick="setProductMetricToggle('fast_brand', 'kg')">KG</button>
                         <button class="prod-metric-pill ${fastMetric === 'cartons' ? 'active' : ''}" onclick="setProductMetricToggle('fast_brand', 'cartons')">Cartons</button>
@@ -8862,38 +8862,38 @@ function renderProductAnalyticsSection(brandFilter, dateList, dailyProductSales,
                 <!-- Product Summary Cards Grid -->
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px;">
                     <!-- Nimco Card -->
-                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-top: 4px solid #f97316; border-radius: 12px; padding: 12px;">
+                    <div style="background: var(--bg-card-hover); border: 1px solid var(--border-color); border-top: 4px solid #f97316; border-radius: 12px; padding: 12px;">
                         <div class="flex-between" style="margin-bottom: 6px;">
-                            <strong style="font-size: 14px; color: #0f172a;">Nimco Mix & Snacks</strong>
+                            <strong style="font-size: 14px; color: var(--text-primary);">Nimco Mix & Snacks</strong>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 11px;">
-                            <div><span style="color: #64748b; font-size: 10px;">Total Value</span><br><strong style="color: #0f172a; font-size: 12px;">Rs. ${Math.round(nimcoTot.value).toLocaleString()}</strong></div>
-                            <div><span style="color: #64748b; font-size: 10px;">Total KG</span><br><strong style="color: #0f172a; font-size: 12px;">${nimcoTot.kg.toFixed(1)}</strong></div>
-                            <div><span style="color: #64748b; font-size: 10px;">Cartons</span><br><strong style="color: #0f172a; font-size: 12px;">${nimcoTot.cartons}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Total Value</span><br><strong style="color: var(--text-primary); font-size: 12px;">Rs. ${Math.round(nimcoTot.value).toLocaleString()}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Total KG</span><br><strong style="color: var(--text-primary); font-size: 12px;">${nimcoTot.kg.toFixed(1)}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Cartons</span><br><strong style="color: var(--text-primary); font-size: 12px;">${nimcoTot.cartons}</strong></div>
                         </div>
                     </div>
 
                     <!-- Peanut Card -->
-                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-top: 4px solid #10b981; border-radius: 12px; padding: 12px;">
+                    <div style="background: var(--bg-card-hover); border: 1px solid var(--border-color); border-top: 4px solid #10b981; border-radius: 12px; padding: 12px;">
                         <div class="flex-between" style="margin-bottom: 6px;">
-                            <strong style="font-size: 14px; color: #0f172a;">Peanut & Moongphali</strong>
+                            <strong style="font-size: 14px; color: var(--text-primary);">Peanut & Moongphali</strong>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 11px;">
-                            <div><span style="color: #64748b; font-size: 10px;">Total Value</span><br><strong style="color: #0f172a; font-size: 12px;">Rs. ${Math.round(peanutTot.value).toLocaleString()}</strong></div>
-                            <div><span style="color: #64748b; font-size: 10px;">Total KG</span><br><strong style="color: #0f172a; font-size: 12px;">${peanutTot.kg.toFixed(1)}</strong></div>
-                            <div><span style="color: #64748b; font-size: 10px;">Cartons</span><br><strong style="color: #0f172a; font-size: 12px;">${peanutTot.cartons}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Total Value</span><br><strong style="color: var(--text-primary); font-size: 12px;">Rs. ${Math.round(peanutTot.value).toLocaleString()}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Total KG</span><br><strong style="color: var(--text-primary); font-size: 12px;">${peanutTot.kg.toFixed(1)}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Cartons</span><br><strong style="color: var(--text-primary); font-size: 12px;">${peanutTot.cartons}</strong></div>
                         </div>
                     </div>
 
                     <!-- Hash Card -->
-                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-top: 4px solid #8b5cf6; border-radius: 12px; padding: 12px;">
+                    <div style="background: var(--bg-card-hover); border: 1px solid var(--border-color); border-top: 4px solid #8b5cf6; border-radius: 12px; padding: 12px;">
                         <div class="flex-between" style="margin-bottom: 6px;">
-                            <strong style="font-size: 14px; color: #0f172a;">Hash Catalog & Others</strong>
+                            <strong style="font-size: 14px; color: var(--text-primary);">Hash Catalog & Others</strong>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 11px;">
-                            <div><span style="color: #64748b; font-size: 10px;">Total Value</span><br><strong style="color: #0f172a; font-size: 12px;">Rs. ${Math.round(hashTot.value).toLocaleString()}</strong></div>
-                            <div><span style="color: #64748b; font-size: 10px;">Total KG</span><br><strong style="color: #0f172a; font-size: 12px;">${hashTot.kg.toFixed(1)}</strong></div>
-                            <div><span style="color: #64748b; font-size: 10px;">Cartons</span><br><strong style="color: #0f172a; font-size: 12px;">${hashTot.cartons}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Total Value</span><br><strong style="color: var(--text-primary); font-size: 12px;">Rs. ${Math.round(hashTot.value).toLocaleString()}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Total KG</span><br><strong style="color: var(--text-primary); font-size: 12px;">${hashTot.kg.toFixed(1)}</strong></div>
+                            <div><span style="color: var(--text-secondary); font-size: 10px;">Cartons</span><br><strong style="color: var(--text-primary); font-size: 12px;">${hashTot.cartons}</strong></div>
                         </div>
                     </div>
                 </div>
@@ -9138,19 +9138,19 @@ function renderSalesmanPerformanceTable(salesmanMap, totalSalesValue) {
         const avBg = avatarColors[idx % avatarColors.length];
 
         smTbody.innerHTML += `
-            <tr style="border-bottom: 1px solid #f1f5f9;">
+            <tr style="border-bottom: 1px solid var(--border-color);">
                 <td style="padding: 10px 8px; display: flex; align-items: center; gap: 8px;">
                     <div style="width: 28px; height: 28px; border-radius: 50%; background: ${avBg}; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">${avText}</div>
-                    <strong style="color: #0f172a; font-size: 13px;">${sm}</strong>
+                    <strong style="color: var(--text-primary); font-size: 13px;">${sm}</strong>
                 </td>
-                <td style="padding: 10px 8px; text-align: center; font-size: 13px; font-weight: 600; color: #475569;">${s.bills}</td>
-                <td style="padding: 10px 8px; text-align: right; font-size: 13px; font-weight: 700; color: #0f172a;">Rs. ${Math.round(s.sales).toLocaleString()}</td>
-                <td style="padding: 10px 8px; text-align: center; font-size: 13px; font-weight: 600; color: #475569;">${s.cartons}</td>
-                <td style="padding: 10px 8px; text-align: right; font-size: 13px; font-weight: 600; color: #475569;">${s.weight.toFixed(2)}</td>
+                <td style="padding: 10px 8px; text-align: center; font-size: 13px; font-weight: 600; color: var(--text-secondary);">${s.bills}</td>
+                <td style="padding: 10px 8px; text-align: right; font-size: 13px; font-weight: 700; color: var(--text-primary);">Rs. ${Math.round(s.sales).toLocaleString()}</td>
+                <td style="padding: 10px 8px; text-align: center; font-size: 13px; font-weight: 600; color: var(--text-secondary);">${s.cartons}</td>
+                <td style="padding: 10px 8px; text-align: right; font-size: 13px; font-weight: 600; color: var(--text-secondary);">${s.weight.toFixed(2)}</td>
                 <td style="padding: 10px 8px; width: 140px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 11px; font-weight: 700; color: #10b981;">↑ ${smPct}%</span>
-                        <div style="flex: 1; height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--accent-green);">↑ ${smPct}%</span>
+                        <div style="flex: 1; height: 6px; background: var(--bg-card-hover); border-radius: 10px; overflow: hidden;">
                             <div style="height: 100%; width: ${Math.min(100, Math.max(8, smPct * 2.5))}%; background: ${avBg}; border-radius: 10px;"></div>
                         </div>
                     </div>
@@ -9198,39 +9198,39 @@ function renderKeyInsights(totalSalesValue, productTotals, dailyOverallSales, da
     };
 
     container.innerHTML = `
-        <div style="display: flex; align-items: flex-start; gap: 10px; background: #f8fafc; padding: 10px 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: #f0fdf4; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 2px;">
+        <div style="display: flex; align-items: flex-start; gap: 10px; background: var(--bg-card-hover); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(15, 158, 110, 0.15); color: var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 2px;">
                 <i class="fa-solid fa-arrow-trend-up"></i>
             </div>
-            <div style="font-size: 12px; color: #334155; line-height: 1.4;">
-                <strong style="color: #0f172a;">${laysTotal >= fastTotal ? 'Lays brand' : 'Fast brand'}</strong> is performing better with <strong>${laysTotal >= fastTotal ? laysPct : fastPct}%</strong> of total sales.
+            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">
+                <strong style="color: var(--text-primary);">${laysTotal >= fastTotal ? 'Lays brand' : 'Fast brand'}</strong> is performing better with <strong>${laysTotal >= fastTotal ? laysPct : fastPct}%</strong> of total sales.
             </div>
         </div>
 
-        <div style="display: flex; align-items: flex-start; gap: 10px; background: #f8fafc; padding: 10px 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: #fff7ed; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 2px;">
+        <div style="display: flex; align-items: flex-start; gap: 10px; background: var(--bg-card-hover); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(234, 88, 12, 0.15); color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 2px;">
                 <i class="fa-solid fa-weight-hanging"></i>
             </div>
-            <div style="font-size: 12px; color: #334155; line-height: 1.4;">
-                <strong style="color: #0f172a;">${highestWeightProduct}</strong> has highest weight contribution (<strong>${highestWeightVal.toFixed(1)} KG</strong>).
+            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">
+                <strong style="color: var(--text-primary);">${highestWeightProduct}</strong> has highest weight contribution (<strong>${highestWeightVal.toFixed(1)} KG</strong>).
             </div>
         </div>
 
-        <div style="display: flex; align-items: flex-start; gap: 10px; background: #f8fafc; padding: 10px 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 2px;">
+        <div style="display: flex; align-items: flex-start; gap: 10px; background: var(--bg-card-hover); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(47, 111, 224, 0.15); color: var(--accent-blue); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 2px;">
                 <i class="fa-solid fa-chart-line"></i>
             </div>
-            <div style="font-size: 12px; color: #334155; line-height: 1.4;">
-                Total sales reached <strong style="color: #0f172a;">Rs. ${Math.round(totalSalesValue).toLocaleString()}</strong> in selected date period.
+            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">
+                Total sales reached <strong style="color: var(--text-primary);">Rs. ${Math.round(totalSalesValue).toLocaleString()}</strong> in selected date period.
             </div>
         </div>
 
-        <div style="display: flex; align-items: flex-start; gap: 10px; background: #f8fafc; padding: 10px 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: #f5f3ff; color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 2px;">
+        <div style="display: flex; align-items: flex-start; gap: 10px; background: var(--bg-card-hover); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 2px;">
                 <i class="fa-solid fa-calendar-check"></i>
             </div>
-            <div style="font-size: 12px; color: #334155; line-height: 1.4;">
-                <strong style="color: #0f172a;">${formatPeakD(peakDate)}</strong> recorded the highest single-day sales of <strong>Rs. ${Math.round(peakSales).toLocaleString()}</strong>.
+            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">
+                <strong style="color: var(--text-primary);">${formatPeakD(peakDate)}</strong> recorded the highest single-day sales of <strong>Rs. ${Math.round(peakSales).toLocaleString()}</strong>.
             </div>
         </div>
     `;
