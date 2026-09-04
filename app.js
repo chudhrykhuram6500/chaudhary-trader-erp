@@ -7032,6 +7032,57 @@ function showLoadingThenSyncResultToast(loadingMessage, successMessage, errorMes
 }
 
 let _saveStorageTimer = null;
+/* --------------------------------------------------------------------------
+   Change tracking for the full-state save.
+
+   The server merges an incoming record verbatim ({...stored, ...incoming})
+   with no staleness check, so any record a device sends wins - even one it
+   never touched and is simply holding an old copy of. That is what made
+   confirmed work quietly undo itself across devices. These helpers let the
+   full-state save push only what this device genuinely changed, by diffing
+   against the last snapshot the server gave us.
+   -------------------------------------------------------------------------- */
+function captureServerSnapshot() {
+    const snapshot = {};
+    Object.keys(PARTIAL_SYNC_KEY_FIELDS).forEach(collection => {
+        const keyField = PARTIAL_SYNC_KEY_FIELDS[collection];
+        const records = Array.isArray(AppState[collection]) ? AppState[collection] : [];
+        const byKey = {};
+        records.forEach(rec => {
+            const key = rec && rec[keyField];
+            if (key !== undefined && key !== null) {
+                try { byKey[String(key)] = JSON.stringify(rec); } catch(e) {}
+            }
+        });
+        snapshot[collection] = byKey;
+    });
+    AppState._serverSnapshot = snapshot;
+}
+
+function collectLocallyChangedRecords() {
+    // No snapshot yet means this device has never seen server state, so it
+    // cannot know what (if anything) it changed - send nothing rather than
+    // risk overwriting newer data with a just-loaded default/cached list.
+    if (!AppState.initialServerHydrated || !AppState._serverSnapshot) return {};
+
+    const payload = {};
+    Object.keys(PARTIAL_SYNC_KEY_FIELDS).forEach(collection => {
+        const keyField = PARTIAL_SYNC_KEY_FIELDS[collection];
+        const records = Array.isArray(AppState[collection]) ? AppState[collection] : [];
+        const previous = AppState._serverSnapshot[collection] || {};
+        const changed = records.filter(rec => {
+            const key = rec && rec[keyField];
+            if (key === undefined || key === null) return false;
+            let current;
+            try { current = JSON.stringify(rec); } catch(e) { return false; }
+            const before = previous[String(key)];
+            return before === undefined || before !== current;   // new or edited
+        });
+        if (changed.length > 0) payload[collection] = changed;
+    });
+    return payload;
+}
+
 function saveStateToStorage() {
     AppState.lastLocalEditTime = Date.now();
     if (_saveStorageTimer) clearTimeout(_saveStorageTimer);
@@ -7056,24 +7107,18 @@ function saveStateToStorage() {
             fetch(updateUri, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    shops: AppState.shops,
-                    // Only send stock once this device has actually pulled the
-                    // server's current SKUs. Before that first sync lands,
-                    // AppState.skus is just this browser's cached snapshot, and
-                    // pushing it would overwrite stock another device deducted
-                    // while this tab was closed. Real stock changes don't rely on
-                    // this full push - they each send their own SKU immediately
-                    // via queuePartialCloudSave({ skus: [...] }).
-                    ...(AppState.initialServerHydrated ? { skus: AppState.skus } : {}),
-                    routes: AppState.routes,
-                    companies: AppState.companies,
-                    orders: AppState.orders,
-                    bills: AppState.bills,
-                    pickLists: AppState.pickLists,
-                    focSchemes: AppState.focSchemes,
-                    salesmen: AppState.salesmen || []
-                })
+                // Send ONLY the records this device actually changed since the
+                // last server sync - never its whole snapshot. Re-asserting
+                // untouched records is what silently undid other devices' work:
+                // the server merge takes an incoming record verbatim, so an old
+                // copy of a bill/order/shop/pick list/SKU sitting in this tab's
+                // memory would overwrite a newer one saved elsewhere (a
+                // confirmed sale's stock deduction snapping back, a confirmed
+                // invoice reverting to Pending, a deleted pick list reappearing).
+                // Before the first sync lands there is no snapshot to compare
+                // against, so nothing is sent - a fresh page has nothing of its
+                // own to save yet anyway.
+                body: JSON.stringify(collectLocallyChangedRecords())
             })
             .then(r => r.json())
             .then(res => {
@@ -16287,6 +16332,11 @@ function syncWithLocalServerStore() {
             if (Array.isArray(data.skus) && data.skus.length > 0) {
                 try { localStorage.setItem("chaudhary_skus", JSON.stringify(AppState.skus)); } catch(e) {}
             }
+
+            // Remember exactly what the server just told us, so the next
+            // full-state save can tell which records this device actually
+            // changed and send only those.
+            captureServerSnapshot();
 
             if (!AppState.initialServerHydrated) {
                 AppState.initialServerHydrated = true;
