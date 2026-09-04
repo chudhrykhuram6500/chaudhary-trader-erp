@@ -757,6 +757,71 @@
                 </div>
             </div>
 
+            <!-- MONTHLY PERFORMANCE TOTALS -->
+            <div class="glass-card">
+                <div class="flex-between" style="margin-bottom: 12px;">
+                    <h3 style="font-size: 14px; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-chart-pie" style="color: var(--brand-gold);"></i> Monthly Performance
+                    </h3>
+                    <span class="badge" style="background: var(--bg-surface-strong); border: 1px solid var(--glass-border); color: var(--brand-gold); font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 12px;" id="reportMonthLabel">This Month</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div class="month-summary-cell" style="text-align: center;">
+                        <span class="cell-label" style="display: block;">🧾 Total Bills</span>
+                        <strong style="font-size: 17px; font-weight: 900; color: var(--text-dark);" id="monthTotalOrdersVal">0</strong>
+                    </div>
+                    <div class="month-summary-cell" style="text-align: center;">
+                        <span class="cell-label" style="display: block;">📦 Cartons</span>
+                        <strong style="font-size: 17px; font-weight: 900; color: var(--text-dark);" id="monthTotalCartonsVal">0</strong>
+                    </div>
+                    <div class="month-summary-cell" style="text-align: center;">
+                        <span class="cell-label" style="display: block;">⚖️ Weight</span>
+                        <strong style="font-size: 17px; font-weight: 900; color: var(--text-dark);" id="monthTotalKgVal">0.00 KG</strong>
+                    </div>
+                    <div class="month-summary-cell" style="text-align: center;">
+                        <span class="cell-label" style="display: block;">💰 Revenue</span>
+                        <strong style="font-size: 17px; font-weight: 900; color: var(--brand-gold);" id="monthTotalRevenueVal">Rs. 0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LAST 7 DAYS SALES TREND -->
+            <div class="glass-card">
+                <div class="flex-between" style="margin-bottom: 10px;">
+                    <h3 style="font-size: 14px; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-chart-column" style="color: var(--brand-gold);"></i> Last 7 Days Trend
+                    </h3>
+                    <span style="font-size: 10px; font-weight: 700; color: var(--text-muted);" id="analyticsMonthLabel"></span>
+                </div>
+                <div style="position: relative; height: 190px; width: 100%;">
+                    <canvas id="dailySalesTrendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- BRAND SPLIT -->
+            <div class="glass-card">
+                <div class="flex-between" style="margin-bottom: 10px;">
+                    <h3 style="font-size: 14px; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-layer-group" style="color: var(--brand-gold);"></i> Lays vs Fast
+                    </h3>
+                    <span style="font-size: 10px; font-weight: 700; color: var(--text-muted);" id="brandChartMonthLabel"></span>
+                </div>
+                <div style="position: relative; height: 190px; width: 100%;">
+                    <canvas id="brandComparisonChart"></canvas>
+                </div>
+            </div>
+
+            <!-- TOP SELLING PRODUCTS -->
+            <div class="glass-card">
+                <h3 style="font-size: 14px; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 6px; margin-bottom: 10px;">
+                    <i class="fa-solid fa-trophy" style="color: var(--brand-gold);"></i> Top Selling Products
+                </h3>
+                <div id="mobileTopProductsList">
+                    <!-- Populated dynamically by renderDashboardCharts() -->
+                </div>
+            </div>
+
             <!-- ACTIVE SALESMAN PROFILE & LOGIN CARD -->
             <div class="glass-card" style="background: var(--bg-surface-strong); border: 1px solid rgba(37, 99, 235, 0.3); border-radius: 18px; padding: 18px; margin-top: 14px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.1);">
                 <div class="flex-between" style="margin-bottom: 12px;">
@@ -778,7 +843,7 @@
                     </button>
                 </div>
 
-                <div style="background: var(--bg-surface-strong); border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                <div style="background: var(--bg-surface-strong); border: 1px solid var(--glass-border); border-radius: 12px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
                     <div>
                         <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block;">MONTHLY SALES (MTD)</span>
                         <strong style="font-size: 14px; font-weight: 900; color: var(--text-dark);" id="salesmanMtdSalesText">0.00 KG</strong>
@@ -811,6 +876,16 @@
                         <i class="fa-solid fa-rotate"></i> Refresh
                     </button>
                 </div>
+
+                <!-- Filters are collapsed by default: four stacked control groups made
+                     this card very long and crowded on a phone. -->
+                <button type="button" onclick="toggleSummaryFilters()" id="summaryFiltersToggleBtn"
+                        style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.18); color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer;">
+                    <span><i class="fa-solid fa-sliders"></i> Filters &amp; Date Range</span>
+                    <i class="fa-solid fa-chevron-down" id="summaryFiltersChevron"></i>
+                </button>
+
+                <div id="summaryFiltersPanel" style="display: none; margin-top: 12px;">
 
                 <!-- COMPANY / BRAND FILTER SLIDER BAR -->
                 <div style="margin-bottom: 12px;">
@@ -866,18 +941,34 @@
                         <input type="date" id="summaryEndDate" class="input-glass" onchange="renderMobileSummaryTab()" style="padding: 6px 10px; font-size: 11px; background: var(--bg-surface-strong); color: var(--text-dark);">
                     </div>
                 </div>
+
+                </div><!-- /summaryFiltersPanel -->
+            </div>
+
+            <!-- BILL-BY-BILL DETAIL, GROUPED BY DAY -->
+            <div class="glass-card">
+                <div class="flex-between" style="margin-bottom: 10px;">
+                    <h3 style="font-size: 14px; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-receipt" style="color: var(--brand-gold);"></i> Bill Details (Day-wise)
+                    </h3>
+                    <span style="font-size: 10px; font-weight: 700; color: var(--text-muted);" id="billDetailCountLabel">0 bills</span>
+                </div>
+                <input type="text" id="billDetailSearch" class="input-glass" placeholder="🔍 Search shop or bill no..." onkeyup="renderBillWiseDetail()" style="padding: 8px 12px; font-size: 12px; margin-bottom: 10px;">
+                <div id="billWiseDetailList">
+                    <!-- Rendered by renderBillWiseDetail() -->
+                </div>
             </div>
 
             <!-- 3. LAYS BRAND SUMMARY CARD (PC & NPC SEPARATE) -->
-            <div id="sumLaysCard" class="glass-card" style="display: block; background: linear-gradient(135deg, rgba(254, 243, 199, 0.95), rgba(253, 230, 138, 0.95)); border: 1px solid rgba(245, 158, 11, 0.4); color: #78350f; margin-bottom: 14px;">
+            <div id="sumLaysCard" class="glass-card" style="display: block; background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.06)); border: 1px solid rgba(245, 158, 11, 0.4); color: var(--text-dark); margin-bottom: 14px;">
                 <div class="flex-between" style="margin-bottom: 10px; border-bottom: 1px solid rgba(245, 158, 11, 0.3); padding-bottom: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <div style="width: 32px; height: 32px; border-radius: 10px; background: #f59e0b; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;">
                             🍿
                         </div>
                         <div>
-                            <h4 style="font-size: 15px; font-weight: 900; color: #78350f; margin: 0;">LAYS BRAND SUMMARY</h4>
-                            <span style="font-size: 10px; font-weight: 700; color: #92400e;" id="sumLaysOverallLabel">Total: 0</span>
+                            <h4 style="font-size: 15px; font-weight: 900; color: var(--text-dark); margin: 0;">LAYS BRAND SUMMARY</h4>
+                            <span style="font-size: 10px; font-weight: 700; color: var(--text-dark);" id="sumLaysOverallLabel">Total: 0</span>
                         </div>
                     </div>
                     <span class="badge" style="background: #f59e0b; color: #fff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 12px;">LAYS / PEPSICO</span>
@@ -886,9 +977,9 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <!-- PC CARD -->
                     <div style="background: var(--bg-surface-strong); border-radius: 12px; padding: 12px 10px; border: 1px solid rgba(245, 158, 11, 0.4); text-align: center;">
-                        <span style="font-size: 10px; font-weight: 900; color: #b45309; display: block; margin-bottom: 4px;">🥔 PC (POTATO CHIPS - LAYS)</span>
-                        <strong style="font-size: 18px; font-weight: 900; color: #92400e; display: block;" id="sumPcPrimaryVal">0 Ctns</strong>
-                        <div style="font-size: 10px; font-weight: 700; color: #b45309; margin-top: 4px; line-height: 1.4;">
+                        <span style="font-size: 10px; font-weight: 900; color: var(--text-dark); display: block; margin-bottom: 4px;">🥔 PC (POTATO CHIPS - LAYS)</span>
+                        <strong style="font-size: 18px; font-weight: 900; color: var(--text-dark); display: block;" id="sumPcPrimaryVal">0 Ctns</strong>
+                        <div style="font-size: 10px; font-weight: 700; color: var(--text-dark); margin-top: 4px; line-height: 1.4;">
                             <div>⚖️ Weight: <strong id="sumPcKgVal">0.00 KG</strong></div>
                             <div>💰 Value: <strong id="sumPcRevVal">Rs.0</strong></div>
                         </div>
@@ -896,9 +987,9 @@
 
                     <!-- NPC CARD -->
                     <div style="background: var(--bg-surface-strong); border-radius: 12px; padding: 12px 10px; border: 1px solid rgba(234, 179, 8, 0.4); text-align: center;">
-                        <span style="font-size: 10px; font-weight: 900; color: #a16207; display: block; margin-bottom: 4px;">🍿 NPC (KURKURE & CHEETOS)</span>
-                        <strong style="font-size: 18px; font-weight: 900; color: #854d0e; display: block;" id="sumNpcPrimaryVal">0 Ctns</strong>
-                        <div style="font-size: 10px; font-weight: 700; color: #a16207; margin-top: 4px; line-height: 1.4;">
+                        <span style="font-size: 10px; font-weight: 900; color: var(--text-dark); display: block; margin-bottom: 4px;">🍿 NPC (KURKURE & CHEETOS)</span>
+                        <strong style="font-size: 18px; font-weight: 900; color: var(--text-dark); display: block;" id="sumNpcPrimaryVal">0 Ctns</strong>
+                        <div style="font-size: 10px; font-weight: 700; color: var(--text-dark); margin-top: 4px; line-height: 1.4;">
                             <div>⚖️ Weight: <strong id="sumNpcKgVal">0.00 KG</strong></div>
                             <div>💰 Value: <strong id="sumNpcRevVal">Rs.0</strong></div>
                         </div>
@@ -907,15 +998,15 @@
             </div>
 
             <!-- 4. FAST BRAND SUMMARY CARD (NIKO, HASH & PEANUT SEPARATE) -->
-            <div id="sumFastCard" class="glass-card" style="display: block; background: linear-gradient(135deg, rgba(209, 250, 229, 0.95), rgba(167, 243, 208, 0.95)); border: 1px solid rgba(16, 185, 129, 0.4); color: #064e3b; margin-bottom: 14px;">
+            <div id="sumFastCard" class="glass-card" style="display: block; background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.06)); border: 1px solid rgba(16, 185, 129, 0.4); color: var(--text-dark); margin-bottom: 14px;">
                 <div class="flex-between" style="margin-bottom: 10px; border-bottom: 1px solid rgba(16, 185, 129, 0.3); padding-bottom: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <div style="width: 32px; height: 32px; border-radius: 10px; background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;">
                             🥤
                         </div>
                         <div>
-                            <h4 style="font-size: 15px; font-weight: 900; color: #064e3b; margin: 0;">FAST BRAND SUMMARY</h4>
-                            <span style="font-size: 10px; font-weight: 700; color: #065f46;" id="sumFastOverallLabel">Total: 0</span>
+                            <h4 style="font-size: 15px; font-weight: 900; color: var(--text-dark); margin: 0;">FAST BRAND SUMMARY</h4>
+                            <span style="font-size: 10px; font-weight: 700; color: var(--text-dark);" id="sumFastOverallLabel">Total: 0</span>
                         </div>
                     </div>
                     <span class="badge" style="background: #10b981; color: #fff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 12px;">FAST FOODS</span>
@@ -924,25 +1015,25 @@
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
                     <!-- NIKO CARD -->
                     <div style="background: var(--bg-surface-strong); border-radius: 12px; padding: 10px 6px; border: 1px solid rgba(16, 185, 129, 0.3); text-align: center;">
-                        <span style="font-size: 9px; font-weight: 900; color: #047857; display: block; margin-bottom: 2px;">🥣 NIKO / NIMKO</span>
-                        <strong style="font-size: 15px; font-weight: 900; color: #065f46; display: block;" id="sumNikoPrimaryVal">0 Ctns</strong>
-                        <div style="font-size: 9px; font-weight: 700; color: #047857; margin-top: 2px;">
+                        <span style="font-size: 9px; font-weight: 900; color: var(--text-dark); display: block; margin-bottom: 2px;">🥣 NIKO / NIMKO</span>
+                        <strong style="font-size: 15px; font-weight: 900; color: var(--text-dark); display: block;" id="sumNikoPrimaryVal">0 Ctns</strong>
+                        <div style="font-size: 9px; font-weight: 700; color: var(--text-dark); margin-top: 2px;">
                             <div>💰 <strong id="sumNikoRevVal">Rs.0</strong></div>
                         </div>
                     </div>
                     <!-- HASH CARD -->
                     <div style="background: var(--bg-surface-strong); border-radius: 12px; padding: 10px 6px; border: 1px solid rgba(5, 150, 105, 0.3); text-align: center;">
-                        <span style="font-size: 9px; font-weight: 900; color: #065f46; display: block; margin-bottom: 2px;">📦 HASH SKU</span>
-                        <strong style="font-size: 15px; font-weight: 900; color: #064e3b; display: block;" id="sumHashPrimaryVal">0 Ctns</strong>
-                        <div style="font-size: 9px; font-weight: 700; color: #065f46; margin-top: 2px;">
+                        <span style="font-size: 9px; font-weight: 900; color: var(--text-dark); display: block; margin-bottom: 2px;">📦 HASH SKU</span>
+                        <strong style="font-size: 15px; font-weight: 900; color: var(--text-dark); display: block;" id="sumHashPrimaryVal">0 Ctns</strong>
+                        <div style="font-size: 9px; font-weight: 700; color: var(--text-dark); margin-top: 2px;">
                             <div>💰 <strong id="sumHashRevVal">Rs.0</strong></div>
                         </div>
                     </div>
                     <!-- PEANUT CARD -->
                     <div style="background: var(--bg-surface-strong); border-radius: 12px; padding: 10px 6px; border: 1px solid rgba(16, 185, 129, 0.3); text-align: center;">
-                        <span style="font-size: 9px; font-weight: 900; color: #047857; display: block; margin-bottom: 2px;">🥜 PEANUT</span>
-                        <strong style="font-size: 15px; font-weight: 900; color: #065f46; display: block;" id="sumPeanutPrimaryVal">0 Ctns</strong>
-                        <div style="font-size: 9px; font-weight: 700; color: #047857; margin-top: 2px;">
+                        <span style="font-size: 9px; font-weight: 900; color: var(--text-dark); display: block; margin-bottom: 2px;">🥜 PEANUT</span>
+                        <strong style="font-size: 15px; font-weight: 900; color: var(--text-dark); display: block;" id="sumPeanutPrimaryVal">0 Ctns</strong>
+                        <div style="font-size: 9px; font-weight: 700; color: var(--text-dark); margin-top: 2px;">
                             <div>💰 <strong id="sumPeanutRevVal">Rs.0</strong></div>
                         </div>
                     </div>
@@ -1295,6 +1386,17 @@
             const icon = document.getElementById("themeToggleIcon");
             if (icon) icon.className = isLight ? "fa-solid fa-moon" : "fa-solid fa-sun";
             try { localStorage.setItem("chaudhary_mobile_theme", isLight ? "light" : "dark"); } catch(e) {}
+
+            // Chart.js paints its labels/legend/grid onto a canvas, so it can't
+            // inherit the theme from CSS - without this the chart text stays dark
+            // and disappears against the black background.
+            if (typeof Chart !== "undefined") {
+                Chart.defaults.color = isLight ? "#475569" : "#a1a1aa";
+                Chart.defaults.borderColor = isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.10)";
+            }
+            if (typeof renderDashboardCharts === "function") {
+                try { renderDashboardCharts(); } catch(e) {}
+            }
         }
 
         function toggleMobileTheme() {
@@ -1305,6 +1407,111 @@
             let saved = "dark";
             try { saved = localStorage.getItem("chaudhary_mobile_theme") || "dark"; } catch(e) {}
             applyMobileTheme(saved);
+        }
+
+        function toggleSummaryFilters() {
+            const panel = document.getElementById("summaryFiltersPanel");
+            const chevron = document.getElementById("summaryFiltersChevron");
+            if (!panel) return;
+            const open = panel.style.display !== "none";
+            panel.style.display = open ? "none" : "block";
+            if (chevron) chevron.className = open ? "fa-solid fa-chevron-down" : "fa-solid fa-chevron-up";
+        }
+
+        function toggleBillDetail(orderNo) {
+            const el = document.getElementById("billItems_" + orderNo);
+            if (el) el.style.display = el.style.display === "none" ? "block" : "none";
+        }
+
+        /* Day-wise bill log: every bill this salesman punched, grouped under its
+           date, showing shop, totals and - when tapped - exactly which products
+           and quantities were on it. */
+        function renderBillWiseDetail() {
+            const container = document.getElementById("billWiseDetailList");
+            if (!container) return;
+
+            const query = (document.getElementById("billDetailSearch")?.value || "").toLowerCase().trim();
+            const myName = MobileState.salesman ? MobileState.salesman.name : null;
+
+            let orders = (MobileState.orders || []).filter(o => !myName || !o.salesman || o.salesman === myName);
+            if (query) {
+                orders = orders.filter(o =>
+                    String(o.shopName || "").toLowerCase().includes(query) ||
+                    String(o.orderNo || "").toLowerCase().includes(query)
+                );
+            }
+
+            const countLabel = document.getElementById("billDetailCountLabel");
+            if (countLabel) countLabel.innerText = `${orders.length} bill${orders.length === 1 ? "" : "s"}`;
+
+            if (orders.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:18px; font-size:12px; color:var(--text-muted);">No bills found.</div>`;
+                return;
+            }
+
+            const byDate = {};
+            orders.forEach(o => {
+                const d = o.date || o.orderDate || "Undated";
+                if (!byDate[d]) byDate[d] = [];
+                byDate[d].push(o);
+            });
+
+            const fmtDate = (ds) => {
+                if (ds === "Undated") return ds;
+                const parts = ds.split("-");
+                if (parts.length !== 3) return ds;
+                const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+                return `${parts[2]} ${months[parseInt(parts[1],10)-1]} ${parts[0]}`;
+            };
+
+            container.innerHTML = Object.keys(byDate).sort().reverse().map(date => {
+                const dayOrders = byDate[date];
+                const dayCtns = dayOrders.reduce((s, o) => s + (o.totalCartons || 0), 0);
+                const dayVal = dayOrders.reduce((s, o) => s + (o.netAmount || 0), 0);
+
+                const billsHtml = dayOrders.map(o => {
+                    const items = Array.isArray(o.items) ? o.items : [];
+                    const itemsHtml = items.length === 0
+                        ? `<div style="font-size:11px; color:var(--text-muted);">No item detail saved.</div>`
+                        : items.map(i => `
+                            <div style="display:flex; justify-content:space-between; gap:8px; padding:4px 0; border-bottom:1px solid var(--glass-border); font-size:11px;">
+                                <span style="color:var(--text-dark); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${i.desc || i.code || "Item"}</span>
+                                <span style="color:var(--text-muted); white-space:nowrap;">${i.cartons || 0} Ctn${(i.units || 0) > 0 ? " + " + i.units + " Pkt" : ""}</span>
+                                <span style="color:var(--brand-gold); font-weight:800; white-space:nowrap;">Rs. ${Math.round(i.amount || 0).toLocaleString()}</span>
+                            </div>`).join("");
+
+                    return `
+                        <div style="background:var(--bg-surface); border:1px solid var(--glass-border); border-radius:10px; padding:10px; margin-bottom:8px;">
+                            <div onclick="toggleBillDetail('${o.orderNo}')" style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; cursor:pointer;">
+                                <div style="flex:1; min-width:0;">
+                                    <div style="font-size:12px; font-weight:800; color:var(--text-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${o.shopName || "Shop"}</div>
+                                    <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">
+                                        ${o.orderNo || ""} &middot; ${items.length} item${items.length === 1 ? "" : "s"} &middot; ${o.totalCartons || 0} Ctns
+                                        ${o.synced ? '<span style="color:#22c58b; font-weight:800;"> &middot; ✓ Synced</span>' : '<span style="color:#fbbf24; font-weight:800;"> &middot; Pending</span>'}
+                                    </div>
+                                </div>
+                                <div style="text-align:right; white-space:nowrap;">
+                                    <div style="font-size:13px; font-weight:900; color:var(--brand-gold);">Rs. ${Math.round(o.netAmount || 0).toLocaleString()}</div>
+                                    <div style="font-size:9px; color:var(--text-muted);">tap for items</div>
+                                </div>
+                            </div>
+                            <div id="billItems_${o.orderNo}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px dashed var(--glass-border);">
+                                ${itemsHtml}
+                            </div>
+                        </div>`;
+                }).join("");
+
+                return `
+                    <div style="margin-bottom:14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--bg-surface-strong); border:1px solid var(--glass-border); border-radius:10px; margin-bottom:8px;">
+                            <strong style="font-size:12px; font-weight:900; color:var(--text-dark);">📅 ${fmtDate(date)}</strong>
+                            <span style="font-size:10px; font-weight:800; color:var(--text-muted);">
+                                ${dayOrders.length} bill${dayOrders.length === 1 ? "" : "s"} &middot; ${dayCtns} Ctns &middot; <span style="color:var(--brand-gold);">Rs. ${Math.round(dayVal).toLocaleString()}</span>
+                            </span>
+                        </div>
+                        ${billsHtml}
+                    </div>`;
+            }).join("");
         }
 
         let appInitialized = false;
@@ -1326,7 +1533,11 @@
                 renderMobileOrdersHistory();
                 updateSalesmanMonthlyKgDashboard();
                 renderMobileSummaryTab();
-                checkDailyMorningSyncPrompt();
+                renderBillWiseDetail();
+                // Morning sync reminder popup removed on request - it appeared on
+                // every app open until a .sync file was imported that day, which
+                // got in the way. Syncing is still available any time from the
+                // "Sync & Submit" tab.
                 initWhatsAppAutoSyncListeners();
             } catch (err) {
                 console.error("App startup initialization error:", err);
@@ -1600,6 +1811,7 @@
             try { if (typeof renderMobileDailyBookingSummary === 'function') renderMobileDailyBookingSummary(); } catch(e) { console.warn(e); }
             try { if (typeof renderDashboardCharts === 'function') renderDashboardCharts(); } catch(e) { console.warn(e); }
             try { if (typeof renderMobileSummaryTab === 'function') renderMobileSummaryTab(); } catch(e) { console.warn(e); }
+            try { if (typeof renderBillWiseDetail === 'function') renderBillWiseDetail(); } catch(e) { console.warn(e); }
         }
 
         // ===== GLOBAL FILTER VARIABLES =====
@@ -2134,6 +2346,7 @@
                                 display: true,
                                 position: 'bottom',
                                 labels: {
+                                    color: (typeof Chart !== 'undefined' ? Chart.defaults.color : '#a1a1aa'),
                                     font: { size: 10, family: 'Plus Jakarta Sans', weight: '700' },
                                     padding: 12,
                                     usePointStyle: true,
@@ -2151,9 +2364,9 @@
                         scales: {
                             y: {
                                 position: 'left',
-                                grid: { color: 'rgba(0,0,0,0.04)' },
-                                ticks: { font: { size: 9, family: 'Plus Jakarta Sans', weight: '600' }, color: '#94a3b8' },
-                                title: { display: true, text: 'Rs', font: { size: 9 }, color: '#94a3b8' }
+                                grid: { color: (typeof Chart!=='undefined'?Chart.defaults.borderColor:'rgba(0,0,0,0.04)') },
+                                ticks: { font: { size: 9, family: 'Plus Jakarta Sans', weight: '600' }, color: (typeof Chart!=='undefined'?Chart.defaults.color:'#94a3b8') },
+                                title: { display: true, text: 'Rs', font: { size: 9 }, color: (typeof Chart!=='undefined'?Chart.defaults.color:'#94a3b8') }
                             },
                             y1: {
                                 position: 'right',
@@ -2163,7 +2376,7 @@
                             },
                             x: {
                                 grid: { display: false },
-                                ticks: { font: { size: 10, family: 'Plus Jakarta Sans', weight: '700' }, color: '#64748b' }
+                                ticks: { font: { size: 10, family: 'Plus Jakarta Sans', weight: '700' }, color: (typeof Chart!=='undefined'?Chart.defaults.color:'#64748b') }
                             }
                         }
                     }
@@ -2203,6 +2416,7 @@
                             legend: {
                                 position: 'bottom',
                                 labels: {
+                                    color: (typeof Chart !== 'undefined' ? Chart.defaults.color : '#a1a1aa'),
                                     font: { size: 11, family: 'Plus Jakarta Sans', weight: '700' },
                                     padding: 14,
                                     usePointStyle: true,
@@ -3303,13 +3517,13 @@
                                 </div>
                             </div>
                             
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; background: var(--bg-surface-strong); padding: 6px 8px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; background: var(--bg-surface-strong); padding: 6px 8px; border-radius: 8px; border: 1px solid var(--glass-border);">
                                 <!-- CARTON PUNCHING -->
                                 <div>
                                     <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 3px;">Cartons (Ctn):</span>
                                     <div style="display: flex; align-items: center; gap: 4px;">
                                         <button class="btn-action-sm btn-warning-sm" style="padding: 4px 10px; font-size: 14px; font-weight: 800;" onclick="updateCartQty('${s.code}', 'cartons', -1)">-</button>
-                                        <input type="number" min="0" value="${currentCarton}" style="width: 50px; text-align: center; font-size: 14px; font-weight: 800; padding: 3px 2px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--bg-surface-strong); color: var(--text-dark);" onchange="setDirectCartQty('${s.code}', 'cartons', this.value)" onfocus="this.select()">
+                                        <input type="number" min="0" value="${currentCarton}" style="width: 50px; text-align: center; font-size: 14px; font-weight: 800; padding: 3px 2px; border: 1px solid var(--glass-border); border-radius: 6px; background: var(--bg-surface-strong); color: var(--text-dark);" onchange="setDirectCartQty('${s.code}', 'cartons', this.value)" onfocus="this.select()">
                                         <button class="btn-action-sm btn-success-sm" style="padding: 4px 10px; font-size: 14px; font-weight: 800;" onclick="updateCartQty('${s.code}', 'cartons', 1)">+</button>
                                     </div>
                                 </div>
@@ -3318,7 +3532,7 @@
                                     <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 3px;">Packets (Pkt):</span>
                                     <div style="display: flex; align-items: center; gap: 4px;">
                                         <button class="btn-action-sm btn-warning-sm" style="padding: 4px 10px; font-size: 14px; font-weight: 800;" onclick="updateCartQty('${s.code}', 'units', -1)">-</button>
-                                        <input type="number" min="0" value="${currentUnit}" style="width: 50px; text-align: center; font-size: 14px; font-weight: 800; padding: 3px 2px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--bg-surface-strong); color: var(--text-dark);" onchange="setDirectCartQty('${s.code}', 'units', this.value)" onfocus="this.select()">
+                                        <input type="number" min="0" value="${currentUnit}" style="width: 50px; text-align: center; font-size: 14px; font-weight: 800; padding: 3px 2px; border: 1px solid var(--glass-border); border-radius: 6px; background: var(--bg-surface-strong); color: var(--text-dark);" onchange="setDirectCartQty('${s.code}', 'units', this.value)" onfocus="this.select()">
                                         <button class="btn-action-sm btn-success-sm" style="padding: 4px 10px; font-size: 14px; font-weight: 800;" onclick="updateCartQty('${s.code}', 'units', 1)">+</button>
                                     </div>
                                 </div>
@@ -3630,7 +3844,7 @@
                                 </tbody>
                             </table>
 
-                            <div style="background: var(--bg-surface-strong); padding: 8px; border-radius: 8px; font-size: 11px; border: 1px solid #e2e8f0;">
+                            <div style="background: var(--bg-surface-strong); padding: 8px; border-radius: 8px; font-size: 11px; border: 1px solid var(--glass-border);">
                                 <div class="flex-between"><span>Total Cartons / Vol:</span> <strong>${totalCartons} Ctns (${totalWeightKg.toFixed(2)} KG)</strong></div>
                                 <div class="flex-between"><span>Gross Total Amount:</span> <strong>Rs. ${Math.round(grossTotal).toLocaleString()}</strong></div>
                                 ${shopDiscPct > 0 ? `<div class="flex-between" style="color: #b91c1c;"><span>Shop Discount (-${shopDiscPct}%):</span> <strong>-Rs. ${Math.round(discAmount).toLocaleString()}</strong></div>` : ''}
