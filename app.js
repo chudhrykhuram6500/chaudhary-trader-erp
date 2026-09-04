@@ -7058,7 +7058,14 @@ function saveStateToStorage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     shops: AppState.shops,
-                    skus: AppState.skus,
+                    // Only send stock once this device has actually pulled the
+                    // server's current SKUs. Before that first sync lands,
+                    // AppState.skus is just this browser's cached snapshot, and
+                    // pushing it would overwrite stock another device deducted
+                    // while this tab was closed. Real stock changes don't rely on
+                    // this full push - they each send their own SKU immediately
+                    // via queuePartialCloudSave({ skus: [...] }).
+                    ...(AppState.initialServerHydrated ? { skus: AppState.skus } : {}),
                     routes: AppState.routes,
                     companies: AppState.companies,
                     orders: AppState.orders,
@@ -9572,10 +9579,16 @@ function onPosShopSelect() {
 }
 
 function renderPosSkuPickerGrid() {
+    // NOTE: this used to seed DEFAULT_SKUS, force every SKU to 100 cartons and
+    // push that to the server whenever the list happened to be empty - i.e. a
+    // silent, unconfirmed stock reset for the whole catalogue, triggerable just
+    // by opening the POS screen before the first server sync had landed. Stock
+    // is now only ever changed deliberately (sales, returns, inventory edits, or
+    // the explicit "Reset Stock" admin action), never as a render side effect.
     if (!AppState.skus || AppState.skus.length === 0) {
-        AppState.skus = JSON.parse(JSON.stringify(DEFAULT_SKUS));
-        AppState.skus.forEach(s => { s.stockCartons = 100; s.stockUnits = 0; });
-        saveStateToStorage();
+        const grid = document.getElementById("posSkuPickerGrid");
+        if (grid) grid.innerHTML = `<div class="text-muted" style="padding:14px;">Loading products from server…</div>`;
+        return;
     }
 
     const grid = document.getElementById("posSkuPickerGrid");
@@ -16264,10 +16277,22 @@ function syncWithLocalServerStore() {
             if (Array.isArray(data.routes) && data.routes.length > 0) AppState.routes = data.routes;
             if (Array.isArray(data.companies) && data.companies.length > 0) AppState.companies = data.companies;
 
+            // Keep the local SKU cache in step with the server. Without this it is
+            // written exactly once (when first seeded from DEFAULT_SKUS) and never
+            // again, so it freezes at that snapshot's stock levels forever - and
+            // since every page load re-seeds AppState.skus from it, a full-state
+            // save would then push those frozen numbers back up and undo real
+            // sales. That is what made a confirmed 10-carton sale (156 -> 146)
+            // snap back to 156.
+            if (Array.isArray(data.skus) && data.skus.length > 0) {
+                try { localStorage.setItem("chaudhary_skus", JSON.stringify(AppState.skus)); } catch(e) {}
+            }
+
             if (!AppState.initialServerHydrated) {
                 AppState.initialServerHydrated = true;
                 renderAllViews();
             } else if (hasDataChanged) {
+                if (typeof renderStockInventoryTable === "function") renderStockInventoryTable();
                 if (typeof renderOrdersTable === "function") renderOrdersTable();
                 if (typeof renderDashboard === "function") renderDashboard();
                 if (typeof renderPickListTable === "function") renderPickListTable();
