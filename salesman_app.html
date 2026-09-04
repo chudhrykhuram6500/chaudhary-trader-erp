@@ -233,6 +233,88 @@
         select option { background-color: #17171c; color: #ffffff; }
         body.light select option { background-color: #ffffff; color: #0f172a; }
 
+        /* ---------- Loading / splash screen ---------- */
+        #mobileAppSplashOverlay {
+            position: fixed; inset: 0; z-index: 999999;
+            background: #000;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: space-between;
+            padding: 64px 28px 34px;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+            overflow: hidden;
+        }
+        /* Soft gold halo behind the logo, same family as the in-app orbs */
+        .splash-glow {
+            position: absolute; top: 22%; left: 50%;
+            width: 115vw; height: 115vw; max-width: 560px; max-height: 560px;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.20), transparent 68%);
+            filter: blur(14px);
+            animation: splashPulse 3.4s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes splashPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.85; }
+            50%      { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+        }
+
+        .splash-center {
+            position: relative; z-index: 2;
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            text-align: center;
+        }
+        .splash-logo-ring {
+            width: 132px; height: 132px; border-radius: 34px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.38);
+            box-shadow: 0 12px 40px rgba(255, 215, 0, 0.22);
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 22px;
+            animation: splashRise 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .splash-logo-img { width: 96px; height: 96px; object-fit: contain; }
+        .splash-fallback {
+            display: none; align-items: center; justify-content: center;
+            width: 96px; height: 96px; font-size: 46px; color: var(--brand-gold);
+        }
+        @keyframes splashRise {
+            from { opacity: 0; transform: translateY(16px) scale(0.94); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .splash-brand {
+            font-size: 21px; font-weight: 900; letter-spacing: 1.6px;
+            background: linear-gradient(90deg, #ffffff, #ffd700);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 6px 0;
+        }
+        .splash-tagline {
+            font-size: 10.5px; font-weight: 800; letter-spacing: 2.2px;
+            color: rgba(255, 215, 0, 0.85);
+        }
+
+        .splash-bottom { position: relative; z-index: 2; width: 100%; max-width: 320px; text-align: center; }
+        .splash-bar-track {
+            width: 100%; height: 5px; border-radius: 10px; overflow: hidden;
+            background: rgba(255, 255, 255, 0.10);
+            border: 1px solid rgba(255, 215, 0, 0.28);
+            margin-bottom: 10px;
+        }
+        .splash-bar-fill {
+            width: 10%; height: 100%; border-radius: 10px;
+            background: linear-gradient(90deg, #c78f00, #ffd700, #fff2a8);
+            transition: width 0.35s ease;
+        }
+        .splash-status { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; color: rgba(255, 255, 255, 0.75); }
+        .splash-credit {
+            margin-top: 22px; padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.10);
+            font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, 0.45);
+            letter-spacing: 0.3px;
+        }
+        .splash-credit strong { color: var(--brand-gold); font-weight: 800; }
+
         .theme-toggle-btn {
             background: var(--bg-surface-strong);
             border: 1px solid var(--glass-border);
@@ -657,13 +739,26 @@
 </head>
 <body>
 
-    <!-- FULL-SCREEN NATIVE SPLASH SCREEN OVERLAY -->
-    <div id="mobileAppSplashOverlay" style="position: fixed; inset: 0; z-index: 999999; background: #000 url('salesman_splash.jpg') center center / cover no-repeat; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 40px 24px; transition: opacity 0.6s ease, visibility 0.6s ease;">
-        <div style="width: 100%; max-width: 320px; text-align: center; margin-bottom: 20px;">
-            <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; margin-bottom: 10px; border: 1px solid rgba(255,215,0,0.4);">
-                <div id="mobileSplashBar" style="width: 10%; height: 100%; background: linear-gradient(90deg, #eab308, #f59e0b, #fbbf24); border-radius: 10px; transition: width 0.3s ease;"></div>
+    <!-- FULL-SCREEN LOADING SCREEN -->
+    <div id="mobileAppSplashOverlay">
+        <div class="splash-glow"></div>
+
+        <div class="splash-center">
+            <div class="splash-logo-ring">
+                <img src="chaudhary_logo.png" alt="Chaudhary Trader" class="splash-logo-img"
+                     onerror="this.style.display='none'; document.getElementById('splashFallbackIcon').style.display='flex';">
+                <div id="splashFallbackIcon" class="splash-fallback"><i class="fa-solid fa-truck-ramp-box"></i></div>
             </div>
-            <span id="mobileSplashStatusText" style="font-size: 11px; font-weight: 700; color: #fbbf24; text-shadow: 0 2px 4px rgba(0,0,0,0.8); letter-spacing: 0.5px;">Loading Mobile ERP System...</span>
+            <h1 class="splash-brand">CHAUDHARY TRADER</h1>
+            <span class="splash-tagline">SALESMAN ORDER BOOKING APP</span>
+        </div>
+
+        <div class="splash-bottom">
+            <div class="splash-bar-track">
+                <div id="mobileSplashBar" class="splash-bar-fill"></div>
+            </div>
+            <span id="mobileSplashStatusText" class="splash-status">Loading…</span>
+            <div class="splash-credit">Made by <strong>Chaudhry Khuram</strong></div>
         </div>
     </div>
 
@@ -1423,7 +1518,7 @@
             [/wavy.*(bbq|barbe|texas)/i,         "#a81d1d"], // Wavy Texas BBQ - dark red
             [/masti\s*shots/i,                   "#f07c19"], // Kurkure Masti Shots - orange
             [/chutney\s*chaska/i,                "#3aa338"], // Kurkure Chutney Chaska - green
-            [/(toofaani|toofani|tofani)/i,       "#a81d1d"], // Kurkure Toofani Mirch - dark red
+            [/(toofaani|toofani|tofani)/i,       "#3a3a3a"], // Kurkure Toofani Mirch - black packet
             [/red\s*chil/i,                      "#d62027"], // Kurkure Red Chilli - red
             [/ocean\s*safari/i,                  "#f2c200"], // Cheetos Ocean Safari - yellow
             [/ketchup/i,                         "#1f6fd0"], // Cheetos Ketchup - blue
