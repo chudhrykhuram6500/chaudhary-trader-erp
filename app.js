@@ -6870,6 +6870,52 @@ function resetAndRestoreAllStock(defaultCtns = 100) {
     alert(`✅ Stock Reset Successful! All ${AppState.skus.length} SKUs now have ${defaultCtns} Cartons stock available.`);
 }
 
+/* Real packet colour per flavour, so a product is recognisable at a glance in
+   any SKU list the same way it is on the shelf. Verified against actual product
+   photos; Maxx / Wavy Masala Twist / Masti Shots confirmed by the distributor.
+   Order matters - the more specific ranges (Wavy, Maxx, Masti Shots) must be
+   tested before the plain "Masala"/"Y&H" catch-alls, or e.g. "Lays Wavy Masala
+   Twist" would come out red instead of purple. */
+const PACKET_COLOURS = [
+    [/maxx.*(kimchi|spicy)/i,            "#e5197f"], // Maxx Spicy Kimchi - pink/magenta
+    [/maxx.*(signature|cheese)/i,        "#7b1fa2"], // Maxx Signature Cheese - purple
+    [/wavy.*(masala|twist)/i,            "#7b1fa2"], // Wavy Masala Twist - purple
+    [/wavy.*(y&h|yogurt|herb)/i,         "#3aa338"], // Wavy Y&H - green
+    [/wavy.*(bbq|barbe|texas)/i,         "#a81d1d"], // Wavy Texas BBQ - dark red
+    [/masti\s*shots/i,                   "#f07c19"], // Kurkure Masti Shots - orange
+    [/chutney\s*chaska/i,                "#3aa338"], // Kurkure Chutney Chaska - green
+    [/(toofaani|toofani|tofani)/i,       "#a81d1d"], // Kurkure Toofani Mirch - dark red
+    [/red\s*chil/i,                      "#d62027"], // Kurkure Red Chilli - red
+    [/ocean\s*safari/i,                  "#f2c200"], // Cheetos Ocean Safari - yellow
+    [/ketchup/i,                         "#1f6fd0"], // Cheetos Ketchup - blue
+    [/bites/i,                           "#3aa338"], // Cheetos Bites Chicken Veg - green
+    [/(crun|rfh|flamin)/i,               "#f07c19"], // Cheetos Crunchy Flamin' Hot - orange
+    [/(f\s*cheese|french\s*cheese|frenches)/i, "#f07c19"], // Lays French Cheese - orange
+    [/paprika/i,                         "#1f6fd0"], // Lays Paprika - blue
+    [/(y&h|yogurt|herb)/i,               "#3aa338"], // Lays Yogurt & Herb - green
+    [/masala/i,                          "#d62027"], // Lays Masala - red
+    [/(salt|classic)/i,                  "#f2c200"]  // Lays Classic Salted - yellow
+];
+
+function getPacketColour(desc, fallback) {
+    const text = String(desc || "");
+    for (const [pattern, colour] of PACKET_COLOURS) {
+        if (pattern.test(text)) return colour;
+    }
+    return fallback || "#94a3b8";
+}
+
+/* Translucent version of the packet colour, so a whole card/row can be tinted in
+   the product's own colour while still reading as frosted glass rather than a
+   flat solid block. */
+function getPacketTint(desc, alpha, fallback) {
+    const hex = getPacketColour(desc, fallback);
+    const m = /^#([0-9a-f]{6})$/i.exec(hex);
+    if (!m) return hex;
+    const n = parseInt(m[1], 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
 function deductStockForItems(items) {
 
     if (!items || !Array.isArray(items)) return [];
@@ -9676,6 +9722,12 @@ function renderPosSkuPickerGrid() {
 
         const card = document.createElement("div");
         card.className = "sku-card";
+        // Tint the whole card in the product's real packet colour - kept
+        // translucent so it still reads as frosted glass, not a solid block -
+        // making a SKU as recognisable in this list as it is on the shelf.
+        card.style.background = `linear-gradient(135deg, ${getPacketTint(sku.desc, 0.30)}, ${getPacketTint(sku.desc, 0.10)})`;
+        card.style.border = `1px solid ${getPacketTint(sku.desc, 0.55)}`;
+        card.style.boxShadow = `0 4px 16px ${getPacketTint(sku.desc, 0.18)}`;
         card.onclick = () => addSkuToCart(sku.code);
         card.innerHTML = `
             <div class="sku-title">${sku.desc} <span class="badge badge-info">${sku.categoryType || 'PC'}</span></div>
@@ -11093,7 +11145,7 @@ function renderSkuMasterTable() {
     filtered.forEach(sku => {
         const compObj = AppState.companies.find(c => c.id === (sku.companyId || 'lays')) || { name: 'Lays' };
         tbody.innerHTML += `
-            <tr>
+            <tr style="background: linear-gradient(135deg, ${getPacketTint(sku.desc, 0.20)}, ${getPacketTint(sku.desc, 0.06)});">
                 <td><code>${sku.code}</code></td>
                 <td><span class="badge badge-info">${sku.categoryType || 'PC'}</span></td>
                 <td>${sku.brand} <small style="display:block; color:var(--brand-gold);">${compObj.name}</small></td>
