@@ -149,19 +149,100 @@
     </script>
     
     <style>
+        /* Dark theme (default) - pure black, matching the desktop app */
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.8);
-            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
-            --primary-accent: #2563eb;
-            --primary-gradient: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            --gold-gradient: linear-gradient(135deg, #f59e0b, #d97706);
-            --green-gradient: linear-gradient(135deg, #10b981, #059669);
-            --danger-gradient: linear-gradient(135deg, #ef4444, #dc2626);
-            --text-dark: #0f172a;
-            --text-muted: #64748b;
+            --bg-main: #000000;
+            --bg-surface: rgba(255, 255, 255, 0.045);
+            --bg-surface-strong: rgba(255, 255, 255, 0.08);
+            --bg-navbar: rgba(0, 0, 0, 0.6);
+
+            --glass-bg: var(--bg-surface);
+            --glass-border: rgba(255, 255, 255, 0.09);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+
+            --brand-gold: #ffd700;
+            --brand-gold-deep: #c78f00;
+            --primary-accent: #ffd700;
+            --primary-gradient: linear-gradient(135deg, #ffd700, #c78f00);
+            --gold-gradient: linear-gradient(135deg, #ffd700, #c78f00);
+            --green-gradient: linear-gradient(135deg, #22c58b, #0f9e6e);
+            --danger-gradient: linear-gradient(135deg, #f87171, #d91424);
+            --on-accent: #1a1a1a;
+
+            --text-dark: #ffffff;
+            --text-muted: #a1a1aa;
             --radius-md: 16px;
             --radius-lg: 24px;
+        }
+
+        /* Light theme - pure white */
+        body.light {
+            --bg-main: #ffffff;
+            --bg-surface: rgba(0, 0, 0, 0.028);
+            --bg-surface-strong: rgba(0, 0, 0, 0.05);
+            --bg-navbar: rgba(255, 255, 255, 0.6);
+
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.08);
+
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        /* Floating glass-morphism orbs, same technique as the desktop app -
+           a fully flat background gives backdrop-filter nothing to blur, so the
+           glass cards would look like plain flat boxes without these. */
+        .ambient-orbs {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .ambient-orbs span {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(10px);
+        }
+        .ambient-orbs span:nth-child(1) {
+            top: -14%; left: -10%;
+            width: 62vw; height: 62vw;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.16), transparent 70%);
+            animation: orbFloat 14s ease-in-out infinite;
+        }
+        .ambient-orbs span:nth-child(2) {
+            top: 26%; right: -22%;
+            width: 66vw; height: 66vw;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.14), transparent 70%);
+            animation: orbFloat 16s ease-in-out infinite reverse;
+        }
+        .ambient-orbs span:nth-child(3) {
+            bottom: -16%; left: 18%;
+            width: 70vw; height: 70vw;
+            background: radial-gradient(circle, rgba(47, 111, 224, 0.12), transparent 70%);
+            animation: orbFloat 20s ease-in-out infinite;
+        }
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-30px, 24px) scale(1.12); }
+        }
+
+        /* A native <select>'s dropdown list renders as an OS-level surface that
+           can't composite with our translucent variables, so options need their
+           own solid colours or they come out unreadable (white on white). */
+        select option { background-color: #17171c; color: #ffffff; }
+        body.light select option { background-color: #ffffff; color: #0f172a; }
+
+        .theme-toggle-btn {
+            background: var(--bg-surface-strong);
+            border: 1px solid var(--glass-border);
+            color: var(--text-dark);
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            flex-shrink: 0;
         }
 
         * {
@@ -179,8 +260,9 @@
         }
 
         body {
-            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 50%, #f1f5f9 100%);
+            background: var(--bg-main);
             color: var(--text-dark);
+            transition: background-color 0.4s ease, color 0.4s ease;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -189,9 +271,9 @@
             text-rendering: optimizeLegibility;
         }
 
-        /* Light Liquid Glass Top Bar */
+        /* Glass Top Bar */
         .top-navbar {
-            background: rgba(255, 255, 255, 0.75);
+            background: var(--bg-navbar);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--glass-border);
@@ -233,10 +315,11 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--bg-surface-strong);
             padding: 6px 12px;
             border-radius: 20px;
-            border: 1px solid rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-dark);
             font-size: 11px;
             font-weight: 700;
         }
@@ -346,7 +429,7 @@
         .input-glass {
             width: 100%;
             padding: 12px 14px;
-            background: rgba(255, 255, 255, 0.85);
+            background: var(--bg-surface-strong);
             border: 1px solid var(--glass-border);
             border-radius: 12px;
             font-size: 14px;
@@ -362,7 +445,7 @@
             left: 0;
             right: 0;
             height: 65px;
-            background: rgba(255, 255, 255, 0.85);
+            background: var(--bg-navbar);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-top: 1px solid var(--glass-border);
@@ -410,11 +493,12 @@
 
         /* Shop & Product Cards */
         .item-card {
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--bg-surface);
+            color: var(--text-dark);
             border-radius: 12px;
             padding: 14px;
             margin-bottom: 10px;
-            border: 1px solid rgba(226, 232, 240, 0.8);
+            border: 1px solid var(--glass-border);
             transition: all 0.2s ease;
         }
 
@@ -433,9 +517,9 @@
             cursor: pointer;
         }
 
-        .btn-primary-sm { background: var(--primary-gradient); color: #fff; }
+        .btn-primary-sm { background: var(--primary-gradient); color: var(--on-accent); }
         .btn-success-sm { background: var(--green-gradient); color: #fff; }
-        .btn-warning-sm { background: var(--gold-gradient); color: #fff; }
+        .btn-warning-sm { background: var(--gold-gradient); color: var(--on-accent); }
 
         .tab-section { display: none; }
         .tab-section.active { display: block; }
@@ -458,7 +542,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.15);
         }
         .analytics-section-header .section-title {
-            font-size: 14px; font-weight: 800; color: #0f172a;
+            font-size: 14px; font-weight: 800; color: var(--text-dark);
         }
         .analytics-section-header .section-subtitle {
             font-size: 10px; font-weight: 600; color: #94a3b8;
@@ -499,7 +583,7 @@
         }
         .stat-row .stat-value {
             font-weight: 800;
-            color: #0f172a;
+            color: var(--text-dark);
         }
         .month-summary-grid {
             display: grid;
@@ -508,7 +592,7 @@
             margin-top: 12px;
         }
         .month-summary-cell {
-            background: rgba(255,255,255,0.95);
+            background: var(--bg-surface-strong);
             border-radius: 12px;
             padding: 12px 10px;
             text-align: center;
@@ -531,7 +615,7 @@
         .month-summary-cell .cell-label {
             font-size: 9px;
             font-weight: 700;
-            color: #64748b;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -559,7 +643,7 @@
             min-width: 0;
         }
         .product-details .product-name {
-            font-size: 11px; font-weight: 700; color: #0f172a;
+            font-size: 11px; font-weight: 700; color: var(--text-dark);
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .product-details .product-meta {
@@ -583,19 +667,27 @@
         </div>
     </div>
 
-    <!-- Light Liquid Glass Header -->
+    <!-- Animated glass-morphism background orbs -->
+    <div class="ambient-orbs"><span></span><span></span><span></span></div>
+
+    <!-- Glass Header -->
     <header class="top-navbar">
         <div class="brand-logo-title" style="display: flex; align-items: center; gap: 10px;">
             <img src="chaudhary_logo.png" id="appHeaderLogoImg" alt="Chaudhary Trader" style="height: 38px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" onerror="this.style.display='none'; document.getElementById('appHeaderFallbackIcon').style.display='inline-block';">
             <i class="fa-solid fa-truck-ramp-box" id="appHeaderFallbackIcon" style="display: none;"></i>
             <div class="brand-title-text">
-                <h1 style="font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: 0.5px; margin: 0;">CHAUDHARY TRADER</h1>
-                <span id="salesmanHeaderName" style="font-size: 11px; font-weight: 700; color: #2563eb;">Salesman App</span>
+                <h1 style="font-size: 15px; font-weight: 800; color: var(--text-dark); letter-spacing: 0.5px; margin: 0;">CHAUDHARY TRADER</h1>
+                <span id="salesmanHeaderName" style="font-size: 11px; font-weight: 700; color: var(--brand-gold);">Salesman App</span>
             </div>
         </div>
-        <div class="connection-status-pill">
-            <span class="status-dot offline" id="statusDot"></span>
-            <span id="statusText">Offline</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="connection-status-pill">
+                <span class="status-dot offline" id="statusDot"></span>
+                <span id="statusText">Offline</span>
+            </div>
+            <button type="button" class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleMobileTheme()" title="Switch theme">
+                <i class="fa-solid fa-sun" id="themeToggleIcon"></i>
+            </button>
         </div>
     </header>
 
@@ -639,13 +731,13 @@
             </div>
 
             <!-- DATE-BY-DATE BOOKING & SALES SUMMARY CARD -->
-            <div class="glass-card" style="background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(37, 99, 235, 0.25);">
+            <div class="glass-card" style="background: var(--bg-surface-strong); border: 1px solid rgba(37, 99, 235, 0.25);">
                 <div class="flex-between" style="margin-bottom: 10px;">
                     <div>
-                        <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                        <h3 style="font-size: 14px; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 6px;">
                             <i class="fa-solid fa-calendar-week" style="color: #2563eb;"></i> Daily Booking Summary & History
                         </h3>
-                        <span style="font-size: 10px; font-weight: 600; color: #64748b;">Date-by-Date Sales & Booking Log (Saved locally)</span>
+                        <span style="font-size: 10px; font-weight: 600; color: var(--text-muted);">Date-by-Date Sales & Booking Log (Saved locally)</span>
                     </div>
                     <select id="mobileDailyDateFilter" onchange="renderMobileDailyBookingSummary()" style="background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.2); color: #2563eb; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 10px; outline: none;">
                         <option value="7days">Last 7 Days</option>
@@ -666,15 +758,15 @@
             </div>
 
             <!-- ACTIVE SALESMAN PROFILE & LOGIN CARD -->
-            <div class="glass-card" style="background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(37, 99, 235, 0.3); border-radius: 18px; padding: 18px; margin-top: 14px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.1);">
+            <div class="glass-card" style="background: var(--bg-surface-strong); border: 1px solid rgba(37, 99, 235, 0.3); border-radius: 18px; padding: 18px; margin-top: 14px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.1);">
                 <div class="flex-between" style="margin-bottom: 12px;">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);">
                             <i class="fa-solid fa-user-check"></i>
                         </div>
                         <div>
-                            <span style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Active Salesman Profile</span>
-                            <h3 style="font-size: 17px; font-weight: 900; color: #0f172a; margin-top: 1px;" id="activeSalesmanProfileName">Arif Sanwal</h3>
+                            <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Active Salesman Profile</span>
+                            <h3 style="font-size: 17px; font-weight: 900; color: var(--text-dark); margin-top: 1px;" id="activeSalesmanProfileName">Arif Sanwal</h3>
                             <div style="font-size: 11px; font-weight: 700; color: #2563eb; display: flex; align-items: center; gap: 8px; margin-top: 2px;">
                                 <span id="activeSalesmanUsernameDisplay">👤 arif_sales</span> | 
                                 <span id="activeSalesmanRouteName">📍 SARGODHA ROAD</span>
@@ -686,13 +778,13 @@
                     </button>
                 </div>
 
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                <div style="background: var(--bg-surface-strong); border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
                     <div>
-                        <span style="font-size: 10px; font-weight: 700; color: #64748b; display: block;">MONTHLY SALES (MTD)</span>
-                        <strong style="font-size: 14px; font-weight: 900; color: #0f172a;" id="salesmanMtdSalesText">0.00 KG</strong>
+                        <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block;">MONTHLY SALES (MTD)</span>
+                        <strong style="font-size: 14px; font-weight: 900; color: var(--text-dark);" id="salesmanMtdSalesText">0.00 KG</strong>
                     </div>
                     <div style="text-align: right;">
-                        <span style="font-size: 10px; font-weight: 700; color: #64748b; display: block;">SECURITY STATUS</span>
+                        <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block;">SECURITY STATUS</span>
                         <span style="font-size: 10px; font-weight: 800; color: #166534; background: #dcfce7; padding: 2px 8px; border-radius: 8px;">🔒 4-Digit PIN Protected</span>
                     </div>
                 </div>
@@ -770,8 +862,8 @@
                         </button>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <input type="date" id="summaryStartDate" class="input-glass" onchange="renderMobileSummaryTab()" style="padding: 6px 10px; font-size: 11px; background: rgba(255,255,255,0.9); color: #0f172a;">
-                        <input type="date" id="summaryEndDate" class="input-glass" onchange="renderMobileSummaryTab()" style="padding: 6px 10px; font-size: 11px; background: rgba(255,255,255,0.9); color: #0f172a;">
+                        <input type="date" id="summaryStartDate" class="input-glass" onchange="renderMobileSummaryTab()" style="padding: 6px 10px; font-size: 11px; background: var(--bg-surface-strong); color: var(--text-dark);">
+                        <input type="date" id="summaryEndDate" class="input-glass" onchange="renderMobileSummaryTab()" style="padding: 6px 10px; font-size: 11px; background: var(--bg-surface-strong); color: var(--text-dark);">
                     </div>
                 </div>
             </div>
@@ -793,7 +885,7 @@
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <!-- PC CARD -->
-                    <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 12px 10px; border: 1px solid rgba(245, 158, 11, 0.4); text-align: center;">
+                    <div style="background: var(--bg-surface-strong); border-radius: 12px; padding: 12px 10px; border: 1px solid rgba(245, 158, 11, 0.4); text-align: center;">
                         <span style="font-size: 10px; font-weight: 900; color: #b45309; display: block; margin-bottom: 4px;">🥔 PC (POTATO CHIPS - LAYS)</span>
                         <strong style="font-size: 18px; font-weight: 900; color: #92400e; display: block;" id="sumPcPrimaryVal">0 Ctns</strong>
                         <div style="font-size: 10px; font-weight: 700; color: #b45309; margin-top: 4px; line-height: 1.4;">
@@ -803,7 +895,7 @@
                     </div>
 
                     <!-- NPC CARD -->
-                    <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 12px 10px; border: 1px solid rgba(234, 179, 8, 0.4); text-align: center;">
+                    <div style="background: var(--bg-surface-strong); border-radius: 12px; padding: 12px 10px; border: 1px solid rgba(234, 179, 8, 0.4); text-align: center;">
                         <span style="font-size: 10px; font-weight: 900; color: #a16207; display: block; margin-bottom: 4px;">🍿 NPC (KURKURE & CHEETOS)</span>
                         <strong style="font-size: 18px; font-weight: 900; color: #854d0e; display: block;" id="sumNpcPrimaryVal">0 Ctns</strong>
                         <div style="font-size: 10px; font-weight: 700; color: #a16207; margin-top: 4px; line-height: 1.4;">
@@ -831,7 +923,7 @@
 
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
                     <!-- NIKO CARD -->
-                    <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 10px 6px; border: 1px solid rgba(16, 185, 129, 0.3); text-align: center;">
+                    <div style="background: var(--bg-surface-strong); border-radius: 12px; padding: 10px 6px; border: 1px solid rgba(16, 185, 129, 0.3); text-align: center;">
                         <span style="font-size: 9px; font-weight: 900; color: #047857; display: block; margin-bottom: 2px;">🥣 NIKO / NIMKO</span>
                         <strong style="font-size: 15px; font-weight: 900; color: #065f46; display: block;" id="sumNikoPrimaryVal">0 Ctns</strong>
                         <div style="font-size: 9px; font-weight: 700; color: #047857; margin-top: 2px;">
@@ -839,7 +931,7 @@
                         </div>
                     </div>
                     <!-- HASH CARD -->
-                    <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 10px 6px; border: 1px solid rgba(5, 150, 105, 0.3); text-align: center;">
+                    <div style="background: var(--bg-surface-strong); border-radius: 12px; padding: 10px 6px; border: 1px solid rgba(5, 150, 105, 0.3); text-align: center;">
                         <span style="font-size: 9px; font-weight: 900; color: #065f46; display: block; margin-bottom: 2px;">📦 HASH SKU</span>
                         <strong style="font-size: 15px; font-weight: 900; color: #064e3b; display: block;" id="sumHashPrimaryVal">0 Ctns</strong>
                         <div style="font-size: 9px; font-weight: 700; color: #065f46; margin-top: 2px;">
@@ -847,7 +939,7 @@
                         </div>
                     </div>
                     <!-- PEANUT CARD -->
-                    <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 10px 6px; border: 1px solid rgba(16, 185, 129, 0.3); text-align: center;">
+                    <div style="background: var(--bg-surface-strong); border-radius: 12px; padding: 10px 6px; border: 1px solid rgba(16, 185, 129, 0.3); text-align: center;">
                         <span style="font-size: 9px; font-weight: 900; color: #047857; display: block; margin-bottom: 2px;">🥜 PEANUT</span>
                         <strong style="font-size: 15px; font-weight: 900; color: #065f46; display: block;" id="sumPeanutPrimaryVal">0 Ctns</strong>
                         <div style="font-size: 9px; font-weight: 700; color: #047857; margin-top: 2px;">
@@ -858,10 +950,10 @@
             </div>
 
             <!-- 5. ITEMIZED PRODUCT SALES BREAKDOWN TABLE -->
-            <div class="glass-card" style="background: #ffffff; border: 1px solid rgba(0,0,0,0.08);">
+            <div class="glass-card" style="background: var(--bg-surface-strong); border: 1px solid rgba(0,0,0,0.08);">
                 <div class="flex-between" style="margin-bottom: 10px;">
-                    <h4 style="font-size: 14px; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-list-check" style="color: #2563eb;"></i> SKU-Wise Itemized Sales List</h4>
-                    <span style="font-size: 10px; font-weight: 700; color: #64748b;" id="summaryItemsCountLabel">0 items</span>
+                    <h4 style="font-size: 14px; font-weight: 800; color: var(--text-dark);"><i class="fa-solid fa-list-check" style="color: #2563eb;"></i> SKU-Wise Itemized Sales List</h4>
+                    <span style="font-size: 10px; font-weight: 700; color: var(--text-muted);" id="summaryItemsCountLabel">0 items</span>
                 </div>
                 <div id="summaryItemizedList" style="max-height: 400px; overflow-y: auto;">
                     <!-- Rendered by renderMobileSummaryTab() -->
@@ -877,7 +969,7 @@
                     <h3 style="font-size: 15px; font-weight: 800;"><i class="fa-solid fa-shop"></i> Assigned Retail Outlets</h3>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <button class="btn-action-sm btn-primary-sm" onclick="openNewMobileShopModal()" style="font-size: 11px; padding: 6px 10px;"><i class="fa-solid fa-plus-circle"></i> ➕ Add Shop</button>
-                        <select id="visitDayFilter" class="input-glass" style="width: auto; padding: 6px 10px; font-size: 11px; font-weight: 700; color: #1e293b;" onchange="renderMobileShops()">
+                        <select id="visitDayFilter" class="input-glass" style="width: auto; padding: 6px 10px; font-size: 11px; font-weight: 700; color: var(--text-dark);" onchange="renderMobileShops()">
                             <option value="All">📅 All Days</option>
                             <option value="Monday">📅 Monday</option>
                             <option value="Tuesday">📅 Tuesday</option>
@@ -889,7 +981,7 @@
                         </select>
                     </div>
                 </div>
-                <select id="mobileShopSort" onchange="renderMobileShops()" class="form-select" style="font-size: 11px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border-color); background: white; margin-bottom: 6px;">
+                <select id="mobileShopSort" onchange="renderMobileShops()" class="form-select" style="font-size: 11px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface-strong); margin-bottom: 6px;">
             <option value="default" selected>↕️ Default Sort</option>
             <option value="name_asc">🔤 Name (A ➔ Z)</option>
             <option value="disc_desc">🏷️ Discounted Shops First (%)</option>
@@ -928,7 +1020,7 @@
                     <label><i class="fa-solid fa-boxes-stacked"></i> Stock Filter</label>
                     <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 8px;" id="mobileStockFilterPills">
                         <button type="button" class="btn-action-sm active-stock-pill" onclick="setMobileStockFilter('instock', this)" style="white-space: nowrap; font-size: 11px; padding: 6px 12px; border-radius: 20px; background: #059669; color: #fff; border: none; font-weight: 700;">📦 In Stock Only (>0)</button>
-                        <button type="button" class="btn-action-sm" onclick="setMobileStockFilter('all', this)" style="white-space: nowrap; font-size: 11px; padding: 6px 12px; border-radius: 20px; background: rgba(100, 116, 139, 0.15); color: #475569; border: 1px solid rgba(100, 116, 139, 0.3);">📋 All Products (Inc. 0 Stock)</button>
+                        <button type="button" class="btn-action-sm" onclick="setMobileStockFilter('all', this)" style="white-space: nowrap; font-size: 11px; padding: 6px 12px; border-radius: 20px; background: rgba(100, 116, 139, 0.15); color: var(--text-muted); border: 1px solid rgba(100, 116, 139, 0.3);">📋 All Products (Inc. 0 Stock)</button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -970,10 +1062,10 @@
 
     <!-- NEW ON-FIELD SHOP CREATION MODAL -->
     <div id="newMobileShopModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: center; padding: 16px;">
-        <div class="glass-card" style="background: #fff; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 20px;">
+        <div class="glass-card" style="background: var(--bg-surface-strong); width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 20px;">
             <div class="flex-between" style="margin-bottom: 14px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
-                <h3 style="font-size: 16px; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-store" style="color: #2563eb;"></i> Add New Shop On Field</h3>
-                <button onclick="closeMobileModal('newMobileShopModal')" style="background: none; border: none; font-size: 20px; font-weight: 800; color: #64748b; cursor: pointer;">&times;</button>
+                <h3 style="font-size: 16px; font-weight: 800; color: var(--text-dark);"><i class="fa-solid fa-store" style="color: #2563eb;"></i> Add New Shop On Field</h3>
+                <button onclick="closeMobileModal('newMobileShopModal')" style="background: none; border: none; font-size: 20px; font-weight: 800; color: var(--text-muted); cursor: pointer;">&times;</button>
             </div>
             <div class="form-group">
                 <label><i class="fa-solid fa-shop"></i> Shop Name *</label>
@@ -1011,7 +1103,7 @@
                 </select>
             </div>
             <div style="display: flex; gap: 10px; margin-top: 18px;">
-                <button class="btn-action-sm" style="flex:1; background: #e2e8f0; color: #334155; padding: 12px;" onclick="closeMobileModal('newMobileShopModal')">Cancel</button>
+                <button class="btn-action-sm" style="flex:1; background: var(--bg-surface-strong); color: var(--text-muted); padding: 12px;" onclick="closeMobileModal('newMobileShopModal')">Cancel</button>
                 <button class="btn-action-sm btn-primary-sm" style="flex:1; padding: 12px; font-weight: 800;" onclick="saveNewFieldShop()">
                     <i class="fa-solid fa-check"></i> Save & Punch Order
                 </button>
@@ -1021,17 +1113,17 @@
 
     <!-- PRE-SYNC MOBILE ORDER EDIT MODAL -->
     <div id="editMobileOrderModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: center; padding: 16px;">
-        <div class="glass-card" style="background: #fff; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 20px;">
+        <div class="glass-card" style="background: var(--bg-surface-strong); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 20px;">
             <div class="flex-between" style="margin-bottom: 14px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
                 <div>
-                    <h3 style="font-size: 16px; font-weight: 800; color: #0f172a;" id="editOrderTitle">Edit Order</h3>
-                    <span style="font-size: 11px; color: #64748b;" id="editOrderShopName">-</span>
+                    <h3 style="font-size: 16px; font-weight: 800; color: var(--text-dark);" id="editOrderTitle">Edit Order</h3>
+                    <span style="font-size: 11px; color: var(--text-muted);" id="editOrderShopName">-</span>
                 </div>
-                <button onclick="closeMobileModal('editMobileOrderModal')" style="background: none; border: none; font-size: 20px; font-weight: 800; color: #64748b; cursor: pointer;">&times;</button>
+                <button onclick="closeMobileModal('editMobileOrderModal')" style="background: none; border: none; font-size: 20px; font-weight: 800; color: var(--text-muted); cursor: pointer;">&times;</button>
             </div>
             <input type="hidden" id="editingOrderNo">
             <div id="editOrderItemsList"></div>
-            <div class="flex-between" style="margin-top: 14px; background: #f8fafc; padding: 12px; border-radius: 12px;">
+            <div class="flex-between" style="margin-top: 14px; background: var(--bg-surface-strong); padding: 12px; border-radius: 12px;">
                 <span>NEW NET AMOUNT:</span>
                 <strong id="editOrderNetPayableText" style="font-size: 16px; color: #059669;">Rs. 0</strong>
             </div>
@@ -1044,19 +1136,19 @@
 
     <!-- 8:00 AM MORNING SYNC PROMPT MODAL -->
     <div id="morningSyncPromptModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(10px); z-index: 99999; justify-content: center; align-items: center; padding: 16px;">
-        <div class="glass-card" style="background: #ffffff; border-radius: 20px; max-width: 380px; width: 100%; text-align: center; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border: 2px solid #3b82f6;">
+        <div class="glass-card" style="background: var(--bg-surface-strong); border-radius: 20px; max-width: 380px; width: 100%; text-align: center; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border: 2px solid #3b82f6;">
             <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #fbbf24, #d97706); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 16px; box-shadow: 0 10px 15px -3px rgba(217, 119, 6, 0.4);">
                 <i class="fa-solid fa-sun"></i>
             </div>
-            <h3 style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px;">🌅 Morning Sync Required!</h3>
-            <p id="morningSyncPromptMsg" style="font-size: 12px; color: #64748b; line-height: 1.5; margin-bottom: 20px;">
+            <h3 style="font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 8px;">🌅 Morning Sync Required!</h3>
+            <p id="morningSyncPromptMsg" style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
                 Daily Morning Sync Required. Please import today's Master Sync File (.sync) from Office PC to update fresh stock & beat list.
             </p>
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 <button class="btn-sync-liquid" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 14px; font-size: 13px;" onclick="triggerImportReturnSyncFile()">
                     <i class="fa-solid fa-file-import"></i> 📦 IMPORT MASTER SYNC FILE (.sync)
                 </button>
-                <button class="btn-action-sm" style="background: #f1f5f9; color: #64748b; padding: 10px; border-radius: 10px; margin-top: 4px; font-size: 11px;" onclick="closeMobileModal('morningSyncPromptModal')">
+                <button class="btn-action-sm" style="background: var(--bg-surface-strong); border: 1px solid var(--glass-border); color: var(--text-muted); padding: 10px; border-radius: 10px; margin-top: 4px; font-size: 11px;" onclick="closeMobileModal('morningSyncPromptModal')">
                     Dismiss Reminder
                 </button>
             </div>
@@ -1067,15 +1159,15 @@
     <section id="syncTab" class="tab-section">
         <div class="glass-card flex-between" style="margin-bottom: 14px;">
             <div>
-                <h2 style="font-size: 18px; font-weight: 900; color: #0f172a;"><i class="fa-solid fa-rotate" style="color: #2563eb;"></i> 4G LIVE SYNC & SUBMIT CENTER</h2>
-                <p style="font-size: 11px; color: #64748b;">Direct Live 4G Order Submission & Master Data Sync with https://chaudharytraders.online</p>
+                <h2 style="font-size: 18px; font-weight: 900; color: var(--text-dark);"><i class="fa-solid fa-rotate" style="color: #2563eb;"></i> 4G LIVE SYNC & SUBMIT CENTER</h2>
+                <p style="font-size: 11px; color: var(--text-muted);">Direct Live 4G Order Submission & Master Data Sync with https://chaudharytraders.online</p>
             </div>
             <span class="status-dot online"></span>
         </div>
 
         <!-- 4G Live Actions Box -->
         <div class="glass-card sync-hero-box" style="padding: 22px; text-align: center;">
-            <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px;"><i class="fa-solid fa-cloud-arrow-up" style="color: #059669;"></i> 4G LIVE SYNC ENGINE</h3>
+            <h3 style="font-size: 16px; font-weight: 800; color: var(--text-dark); margin-bottom: 6px;"><i class="fa-solid fa-cloud-arrow-up" style="color: #059669;"></i> 4G LIVE SYNC ENGINE</h3>
             <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">Instant Live Sync over 4G SIM & Wi-Fi</p>
             
             <div style="display: flex; flex-direction: column; gap: 14px;">
@@ -1089,7 +1181,7 @@
             </div>
 
             <div style="margin-top: 22px; border-top: 1px dashed #cbd5e1; padding-top: 16px;">
-                <h4 style="font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 10px;"><i class="fa-solid fa-file-shield"></i> Offline Emergency Backup (.sync)</h4>
+                <h4 style="font-size: 12px; font-weight: 800; color: var(--text-muted); margin-bottom: 10px;"><i class="fa-solid fa-file-shield"></i> Offline Emergency Backup (.sync)</h4>
                 <div style="display: flex; gap: 10px;">
                     <button class="btn-sync-liquid" style="flex: 1; background: linear-gradient(135deg, #475569, #334155); padding: 12px; font-size: 12px;" onclick="exportEmergencySyncFile()">
                         <i class="fa-solid fa-file-export"></i> Export .sync
@@ -1121,33 +1213,33 @@
     </section>
 
     <!-- SALESMAN LOGIN / ACCOUNT SWITCH MODAL -->
-    <div id="salesmanLoginModal" style="display: none; position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a, #1e293b); backdrop-filter: blur(12px); z-index: 999999; justify-content: center; align-items: center; padding: 16px;">
-        <div class="glass-card" style="background: #ffffff; width: 100%; max-width: 420px; border-radius: 24px; padding: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 2px solid #3b82f6;">
+    <div id="salesmanLoginModal" style="display: none; position: fixed; inset: 0; background: var(--bg-main); z-index: 999999; justify-content: center; align-items: center; padding: 16px;">
+        <div class="glass-card" style="background: var(--bg-surface-strong); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); width: 100%; max-width: 420px; border-radius: 24px; padding: 28px; box-shadow: var(--glass-shadow); border: 1px solid var(--glass-border);">
             <div style="text-align: center; margin-bottom: 20px;">
-                <div style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 12px; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.4);">
+                <div style="width: 64px; height: 64px; border-radius: 20px; background: var(--gold-gradient); color: var(--on-accent); display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 12px; box-shadow: 0 10px 20px rgba(255, 215, 0, 0.28);">
                     <i class="fa-solid fa-user-shield"></i>
                 </div>
-                <h2 style="font-size: 20px; font-weight: 900; color: #0f172a; margin-bottom: 2px;">CHAUDHARY TRADER</h2>
-                <span style="font-size: 11px; font-weight: 800; color: #2563eb; letter-spacing: 0.5px;">SALESMAN SECURITY AUTHENTICATION</span>
+                <h2 style="font-size: 20px; font-weight: 900; color: var(--text-dark); margin-bottom: 2px;">CHAUDHARY TRADER</h2>
+                <span style="font-size: 11px; font-weight: 800; color: var(--brand-gold); letter-spacing: 0.5px;">SALESMAN SECURITY AUTHENTICATION</span>
             </div>
 
             <div class="form-group" style="margin-bottom: 16px;">
-                <label style="font-size: 12px; font-weight: 800; color: #334155; margin-bottom: 6px; display: block;"><i class="fa-solid fa-user"></i> Select Salesman Account:</label>
-                <select id="loginSalesmanSelect" class="input-glass" style="width: 100%; padding: 14px; font-size: 15px; font-weight: 800; border-radius: 12px; border: 1.5px solid #cbd5e1; background: #f8fafc; color: #0f172a;">
+                <label style="font-size: 12px; font-weight: 800; color: var(--text-muted); margin-bottom: 6px; display: block;"><i class="fa-solid fa-user"></i> Select Salesman Account:</label>
+                <select id="loginSalesmanSelect" class="input-glass" style="width: 100%; padding: 14px; font-size: 15px; font-weight: 800; border-radius: 12px;">
                     <option value="sales_real_1" selected>👤 Arif Sanwal (arif_sales)</option>
                     <option value="sales_real_2">👤 chaudhary (chaudhary_sales)</option>
                 </select>
             </div>
 
             <div class="form-group" style="margin-bottom: 22px;">
-                <label style="font-size: 12px; font-weight: 800; color: #334155; margin-bottom: 6px; display: block;"><i class="fa-solid fa-key"></i> Enter 4-Digit Security PIN:</label>
-                <input type="password" id="loginSalesmanPinInput" class="input-glass" placeholder="••••" maxlength="4" style="width: 100%; padding: 16px; font-size: 22px; font-weight: 900; letter-spacing: 8px; text-align: center; border-radius: 12px; border: 2px solid #2563eb; background: #f0f9ff; color: #0f172a;">
+                <label style="font-size: 12px; font-weight: 800; color: var(--text-muted); margin-bottom: 6px; display: block;"><i class="fa-solid fa-key"></i> Enter 4-Digit Security PIN:</label>
+                <input type="password" id="loginSalesmanPinInput" class="input-glass" placeholder="••••" maxlength="4" style="width: 100%; padding: 16px; font-size: 22px; font-weight: 900; letter-spacing: 8px; text-align: center; border-radius: 12px; border: 2px solid var(--brand-gold);">
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <button id="loginCancelBtn" class="btn-action-sm" style="display: none; flex: 1; background: #e2e8f0; color: #334155; padding: 14px; font-weight: 800; border-radius: 12px;" onclick="closeMobileModal('salesmanLoginModal')">Cancel</button>
-                <button class="btn-action-sm btn-primary-sm" style="flex: 2; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; padding: 16px; font-size: 15px; font-weight: 900; border-radius: 12px; box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);" onclick="performSalesmanLogin()">
-                    <i class="fa-solid fa-lock-open"></i> UNLOCK & ENTER APP
+                <button id="loginCancelBtn" class="btn-action-sm" style="display: none; flex: 1; background: var(--bg-surface-strong); color: var(--text-dark); border: 1px solid var(--glass-border); padding: 14px; font-weight: 800; border-radius: 12px;" onclick="closeMobileModal('salesmanLoginModal')">Cancel</button>
+                <button class="btn-action-sm btn-primary-sm" style="flex: 2; padding: 16px; font-size: 15px; font-weight: 900; border-radius: 12px; box-shadow: 0 6px 16px rgba(255, 215, 0, 0.3);" onclick="performSalesmanLogin()">
+                    <i class="fa-solid fa-lock-open"></i> UNLOCK &amp; ENTER APP
                 </button>
             </div>
         </div>
@@ -1194,8 +1286,30 @@
             lastSyncTime: "Never"
         };
 
+        /* Dark (default) / Light theme, mirroring the desktop app. The choice is
+           kept per device in localStorage so a salesman's phone stays on
+           whichever one they picked, including offline. */
+        function applyMobileTheme(theme) {
+            const isLight = theme === "light";
+            document.body.classList.toggle("light", isLight);
+            const icon = document.getElementById("themeToggleIcon");
+            if (icon) icon.className = isLight ? "fa-solid fa-moon" : "fa-solid fa-sun";
+            try { localStorage.setItem("chaudhary_mobile_theme", isLight ? "light" : "dark"); } catch(e) {}
+        }
+
+        function toggleMobileTheme() {
+            applyMobileTheme(document.body.classList.contains("light") ? "dark" : "light");
+        }
+
+        function initMobileTheme() {
+            let saved = "dark";
+            try { saved = localStorage.getItem("chaudhary_mobile_theme") || "dark"; } catch(e) {}
+            applyMobileTheme(saved);
+        }
+
         let appInitialized = false;
         function initApp() {
+            initMobileTheme();
             if (appInitialized) return;
             appInitialized = true;
             try {
@@ -1741,10 +1855,10 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 11px;">
                         <div style="flex: 1; padding-right: 8px;">
                             <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-                                <strong style="color: #0f172a; font-size: 12px;">${item.desc}</strong>
+                                <strong style="color: var(--text-dark); font-size: 12px;">${item.desc}</strong>
                                 <span style="font-size: 9px; font-weight: 800; color: ${badgeColor}; background: ${badgeBg}; padding: 1px 6px; border-radius: 6px;">${item.subCat}</span>
                             </div>
-                            <div style="font-size: 10px; color: #64748b;">Code: ${item.code} • 📦 ${item.ctns} Ctns • ⚖️ ${item.kg.toFixed(2)} KG</div>
+                            <div style="font-size: 10px; color: var(--text-muted);">Code: ${item.code} • 📦 ${item.ctns} Ctns • ⚖️ ${item.kg.toFixed(2)} KG</div>
                         </div>
                         <div style="text-align: right;">
                             <strong style="color: #2563eb; font-size: 13px; display: block;">${formatValue(item.ctns, item.kg, item.rev)}</strong>
@@ -2190,7 +2304,7 @@
             if (!container) return;
 
             if (monthOrders.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 16px; color: #64748b; font-size: 11px;">No orders yet this month</div>';
+                container.innerHTML = '<div style="text-align: center; padding: 16px; color: var(--text-muted); font-size: 11px;">No orders yet this month</div>';
                 return;
             }
 
@@ -2397,8 +2511,8 @@
                     shopItemsHtml += `
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 11px;">
                             <div>
-                                <strong style="color: #0f172a;">${o.shopName}</strong> ${statusBadge}
-                                <div style="font-size: 10px; color: #64748b;">${o.orderNo} | 📦 ${ctns} Ctns | ⚖️ ${orderKg.toFixed(2)} KG</div>
+                                <strong style="color: var(--text-dark);">${o.shopName}</strong> ${statusBadge}
+                                <div style="font-size: 10px; color: var(--text-muted);">${o.orderNo} | 📦 ${ctns} Ctns | ⚖️ ${orderKg.toFixed(2)} KG</div>
                             </div>
                             <strong style="color: #2563eb; font-size: 12px;">Rs. ${(o.netAmount || 0).toLocaleString()}</strong>
                         </div>
@@ -2417,20 +2531,20 @@
                         </div>
                         
                         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; margin-bottom: 10px;">
-                            <div style="background: rgba(255,255,255,0.9); padding: 8px 4px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.06);">
-                                <span style="font-size: 9px; font-weight: 800; color: #64748b; display: block;">BOOKINGS</span>
-                                <strong style="font-size: 13px; color: #0f172a;">${data.ordersCount}</strong>
+                            <div style="background: var(--bg-surface-strong); padding: 8px 4px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.06);">
+                                <span style="font-size: 9px; font-weight: 800; color: var(--text-muted); display: block;">BOOKINGS</span>
+                                <strong style="font-size: 13px; color: var(--text-dark);">${data.ordersCount}</strong>
                             </div>
-                            <div style="background: rgba(255,255,255,0.9); padding: 8px 4px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.06);">
-                                <span style="font-size: 9px; font-weight: 800; color: #64748b; display: block;">CARTONS</span>
+                            <div style="background: var(--bg-surface-strong); padding: 8px 4px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.06);">
+                                <span style="font-size: 9px; font-weight: 800; color: var(--text-muted); display: block;">CARTONS</span>
                                 <strong style="font-size: 13px; color: #2563eb;">${data.totalCtns} Ctns</strong>
                             </div>
-                            <div style="background: rgba(255,255,255,0.9); padding: 8px 4px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.06);">
-                                <span style="font-size: 9px; font-weight: 800; color: #64748b; display: block;">WEIGHT</span>
+                            <div style="background: var(--bg-surface-strong); padding: 8px 4px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.06);">
+                                <span style="font-size: 9px; font-weight: 800; color: var(--text-muted); display: block;">WEIGHT</span>
                                 <strong style="font-size: 13px; color: #0284c7;">${data.totalKg.toFixed(1)} KG</strong>
                             </div>
-                            <div style="background: rgba(255,255,255,0.9); padding: 8px 4px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.06);">
-                                <span style="font-size: 9px; font-weight: 800; color: #64748b; display: block;">REVENUE</span>
+                            <div style="background: var(--bg-surface-strong); padding: 8px 4px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.06);">
+                                <span style="font-size: 9px; font-weight: 800; color: var(--text-muted); display: block;">REVENUE</span>
                                 <strong style="font-size: 13px; color: #059669;">Rs. ${Math.round(data.totalRevenue).toLocaleString()}</strong>
                             </div>
                         </div>
@@ -2450,7 +2564,7 @@
                         </button>
 
                         <!-- Expanded Shops List -->
-                        <div id="dateDetail_${dStr}" style="display: none; margin-top: 10px; background: #ffffff; border-radius: 8px; padding: 8px; border: 1px solid rgba(0,0,0,0.06);">
+                        <div id="dateDetail_${dStr}" style="display: none; margin-top: 10px; background: var(--bg-surface-strong); border-radius: 8px; padding: 8px; border: 1px solid rgba(0,0,0,0.06);">
                             ${shopItemsHtml}
                         </div>
                     </div>
@@ -3159,7 +3273,7 @@
             const activeSections = sections.filter(sec => sec.skus.length > 0);
 
             if (activeSections.length === 0) {
-                listEl.innerHTML = `<div class="glass-card" style="text-align: center; padding: 20px; color: #64748b; font-weight: 700;">No products match current filter.</div>`;
+                listEl.innerHTML = `<div class="glass-card" style="text-align: center; padding: 20px; color: var(--text-muted); font-weight: 700;">No products match current filter.</div>`;
                 return;
             }
 
@@ -3177,11 +3291,11 @@
                     const displayRate = isNoTax ? baseTp : grossRate;
 
                     itemsHtml += `
-                        <div class="item-card" style="margin-bottom: 8px; border-left: 4px solid ${sec.color}; background: #ffffff;">
+                        <div class="item-card" style="margin-bottom: 8px; border-left: 4px solid ${sec.color}; background: var(--bg-surface-strong);">
                             <div class="flex-between">
                                 <div>
-                                    <h4 style="font-size: 13px; font-weight: 800; color: #0f172a; margin: 0;">${s.desc}</h4>
-                                    <span style="font-size: 10px; font-weight: 700; color: #64748b;">Price Point: Rs. ${s.pricePoint || 20} | Pack: ${s.pack} Pkts</span>
+                                    <h4 style="font-size: 13px; font-weight: 800; color: var(--text-dark); margin: 0;">${s.desc}</h4>
+                                    <span style="font-size: 10px; font-weight: 700; color: var(--text-muted);">Price Point: Rs. ${s.pricePoint || 20} | Pack: ${s.pack} Pkts</span>
                                 </div>
                                 <div style="text-align: right;">
                                     <span style="font-size: 13px; font-weight: 900; color: #059669; display: block;">Rs. ${Math.round(displayRate).toLocaleString()}/Ctn</span>
@@ -3189,22 +3303,22 @@
                                 </div>
                             </div>
                             
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; background: #f8fafc; padding: 6px 8px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; background: var(--bg-surface-strong); padding: 6px 8px; border-radius: 8px; border: 1px solid #e2e8f0;">
                                 <!-- CARTON PUNCHING -->
                                 <div>
-                                    <span style="font-size: 10px; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Cartons (Ctn):</span>
+                                    <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 3px;">Cartons (Ctn):</span>
                                     <div style="display: flex; align-items: center; gap: 4px;">
                                         <button class="btn-action-sm btn-warning-sm" style="padding: 4px 10px; font-size: 14px; font-weight: 800;" onclick="updateCartQty('${s.code}', 'cartons', -1)">-</button>
-                                        <input type="number" min="0" value="${currentCarton}" style="width: 50px; text-align: center; font-size: 14px; font-weight: 800; padding: 3px 2px; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff; color: #0f172a;" onchange="setDirectCartQty('${s.code}', 'cartons', this.value)" onfocus="this.select()">
+                                        <input type="number" min="0" value="${currentCarton}" style="width: 50px; text-align: center; font-size: 14px; font-weight: 800; padding: 3px 2px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--bg-surface-strong); color: var(--text-dark);" onchange="setDirectCartQty('${s.code}', 'cartons', this.value)" onfocus="this.select()">
                                         <button class="btn-action-sm btn-success-sm" style="padding: 4px 10px; font-size: 14px; font-weight: 800;" onclick="updateCartQty('${s.code}', 'cartons', 1)">+</button>
                                     </div>
                                 </div>
                                 <!-- PACKET PUNCHING -->
                                 <div>
-                                    <span style="font-size: 10px; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Packets (Pkt):</span>
+                                    <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 3px;">Packets (Pkt):</span>
                                     <div style="display: flex; align-items: center; gap: 4px;">
                                         <button class="btn-action-sm btn-warning-sm" style="padding: 4px 10px; font-size: 14px; font-weight: 800;" onclick="updateCartQty('${s.code}', 'units', -1)">-</button>
-                                        <input type="number" min="0" value="${currentUnit}" style="width: 50px; text-align: center; font-size: 14px; font-weight: 800; padding: 3px 2px; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff; color: #0f172a;" onchange="setDirectCartQty('${s.code}', 'units', this.value)" onfocus="this.select()">
+                                        <input type="number" min="0" value="${currentUnit}" style="width: 50px; text-align: center; font-size: 14px; font-weight: 800; padding: 3px 2px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--bg-surface-strong); color: var(--text-dark);" onchange="setDirectCartQty('${s.code}', 'units', this.value)" onfocus="this.select()">
                                         <button class="btn-action-sm btn-success-sm" style="padding: 4px 10px; font-size: 14px; font-weight: 800;" onclick="updateCartQty('${s.code}', 'units', 1)">+</button>
                                     </div>
                                 </div>
@@ -3217,7 +3331,7 @@
                     <div style="margin-bottom: 14px;">
                         <div style="background: ${sec.bg}; border: 1px solid ${sec.border}; padding: 8px 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                             <strong style="font-size: 13px; font-weight: 900; color: ${sec.color};">${sec.name}</strong>
-                            <span style="font-size: 10px; font-weight: 800; background: #ffffff; color: ${sec.color}; padding: 2px 8px; border-radius: 12px; border: 1px solid ${sec.border};">${sec.skus.length} Product(s)</span>
+                            <span style="font-size: 10px; font-weight: 800; background: var(--bg-surface-strong); color: ${sec.color}; padding: 2px 8px; border-radius: 12px; border: 1px solid ${sec.border};">${sec.skus.length} Product(s)</span>
                         </div>
                         ${itemsHtml}
                     </div>
@@ -3478,7 +3592,7 @@
                 } else {
                     let itemsTableHtml = cartItemsBreakdown.map((item, idx) => `
                         <tr style="border-bottom: 1px solid rgba(0,0,0,0.06);">
-                            <td style="padding: 6px 4px; font-size: 11px; font-weight: 700; color: #0f172a;">${idx + 1}. ${item.desc}</td>
+                            <td style="padding: 6px 4px; font-size: 11px; font-weight: 700; color: var(--text-dark);">${idx + 1}. ${item.desc}</td>
                             <td style="padding: 6px 4px; font-size: 11px; text-align: center; font-weight: 800; color: #2563eb;">${item.cartons} Ctns ${item.units > 0 ? `+${item.units}P` : ''}</td>
                             <td style="padding: 6px 4px; font-size: 11px; text-align: right; font-weight: 700;">Rs. ${Math.round(item.lineAmt).toLocaleString()}</td>
                         </tr>
@@ -3497,7 +3611,7 @@
                     }
 
                     previewEl.innerHTML = `
-                        <div class="glass-card" style="margin-top: 12px; background: rgba(255, 255, 255, 0.95); border: 1.5px solid #3b82f6; border-radius: 12px; padding: 12px;">
+                        <div class="glass-card" style="margin-top: 12px; background: var(--bg-surface-strong); border: 1.5px solid #3b82f6; border-radius: 12px; padding: 12px;">
                             <div class="flex-between" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 8px;">
                                 <strong style="font-size: 12px; color: #1e3a8a;"><i class="fa-solid fa-list-check"></i> ORDER SKU CONFIRMATION PREVIEW</strong>
                                 <span style="font-size: 10px; background: #dbeafe; color: #1e40af; font-weight: 800; padding: 2px 8px; border-radius: 8px;">${cartItemsBreakdown.length} SKU(s) Selected</span>
@@ -3505,7 +3619,7 @@
                             
                             <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
                                 <thead>
-                                    <tr style="background: rgba(0,0,0,0.03); font-size: 10px; color: #64748b; text-align: left;">
+                                    <tr style="background: rgba(0,0,0,0.03); font-size: 10px; color: var(--text-muted); text-align: left;">
                                         <th style="padding: 4px;">SKU Description</th>
                                         <th style="padding: 4px; text-align: center;">Qty</th>
                                         <th style="padding: 4px; text-align: right;">Amount</th>
@@ -3516,7 +3630,7 @@
                                 </tbody>
                             </table>
 
-                            <div style="background: #f8fafc; padding: 8px; border-radius: 8px; font-size: 11px; border: 1px solid #e2e8f0;">
+                            <div style="background: var(--bg-surface-strong); padding: 8px; border-radius: 8px; font-size: 11px; border: 1px solid #e2e8f0;">
                                 <div class="flex-between"><span>Total Cartons / Vol:</span> <strong>${totalCartons} Ctns (${totalWeightKg.toFixed(2)} KG)</strong></div>
                                 <div class="flex-between"><span>Gross Total Amount:</span> <strong>Rs. ${Math.round(grossTotal).toLocaleString()}</strong></div>
                                 ${shopDiscPct > 0 ? `<div class="flex-between" style="color: #b91c1c;"><span>Shop Discount (-${shopDiscPct}%):</span> <strong>-Rs. ${Math.round(discAmount).toLocaleString()}</strong></div>` : ''}
@@ -3665,12 +3779,12 @@
                 container.innerHTML += `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
                         <div>
-                            <strong style="font-size: 12px; color: #0f172a;">${sku.desc}</strong>
-                            <div style="font-size: 10px; color: #64748b;">Rs. ${sku.tpRate}/Ctn</div>
+                            <strong style="font-size: 12px; color: var(--text-dark);">${sku.desc}</strong>
+                            <div style="font-size: 10px; color: var(--text-muted);">Rs. ${sku.tpRate}/Ctn</div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <input type="number" min="0" data-code="${sku.code}" class="edit-item-ctn-input input-glass" value="${currentCtns}" style="width: 70px; text-align: center; padding: 4px;" onchange="updateEditOrderCalculation()">
-                            <span style="font-size: 11px; font-weight: 700; color: #64748b;">Ctns</span>
+                            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">Ctns</span>
                         </div>
                     </div>
                 `;
@@ -3870,13 +3984,13 @@
             div.id = "syncCodeModal";
             div.style.cssText = "position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:99999; display:none; align-items:center; justify-content:center; padding:16px;";
             div.innerHTML = `
-                <div style="background:#fff; border-radius:18px; width:100%; max-width:420px; padding:22px; box-shadow:0 25px 30px -5px rgba(0,0,0,0.4); text-align:center;">
+                <div style="background: var(--bg-surface-strong); border-radius:18px; width:100%; max-width:420px; padding:22px; box-shadow:0 25px 30px -5px rgba(0,0,0,0.4); text-align:center;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                        <h3 style="font-size:16px; font-weight:800; color:#0f172a; margin:0;"><i class="fa-solid fa-file-export" style="color:#059669;"></i> Export Sync File (.sync)</h3>
-                        <button onclick="document.getElementById('syncCodeModal').style.display='none'" style="border:none; background:none; font-size:24px; cursor:pointer; color:#64748b;">&times;</button>
+                        <h3 style="font-size:16px; font-weight:800; color: var(--text-dark); margin:0;"><i class="fa-solid fa-file-export" style="color:#059669;"></i> Export Sync File (.sync)</h3>
+                        <button onclick="document.getElementById('syncCodeModal').style.display='none'" style="border:none; background:none; font-size:24px; cursor:pointer; color: var(--text-muted);">&times;</button>
                     </div>
                     
-                    <p style="font-size:12px; color:#475569; margin-bottom:14px; text-align:left;">
+                    <p style="font-size:12px; color: var(--text-muted); margin-bottom:14px; text-align:left;">
                         <strong>🎉 Orders Sync Package Ready!</strong><br>
                         Niche <strong>SHARE FILE</strong> button dabayein to direct <code>.sync</code> File WhatsApp / Bluetooth / Files me share ho jaye gi:
                     </p>
@@ -3891,8 +4005,8 @@
                         </button>
                     </div>
 
-                    <details style="font-size:11px; color:#64748b; margin-top:8px; text-align:left;">
-                        <summary style="cursor:pointer; font-weight:700; color:#475569; padding:4px 0;">Backup Options (Emergency Only)</summary>
+                    <details style="font-size:11px; color: var(--text-muted); margin-top:8px; text-align:left;">
+                        <summary style="cursor:pointer; font-weight:700; color: var(--text-muted); padding:4px 0;">Backup Options (Emergency Only)</summary>
                         <div style="margin-top:6px; display:flex; flex-direction:column; gap:6px;">
                             <button onclick="shareSyncCodeWhatsAppText()" class="btn-action-sm" style="background:#25d366; color:#fff; font-size:11px; padding:8px; border-radius:8px; border:none;">
                                 <i class="fa-brands fa-whatsapp"></i> Send WhatsApp Text Message
@@ -3900,7 +4014,7 @@
                             <button onclick="copySyncCodeToClipboard()" class="btn-action-sm" style="background:#475569; color:#fff; font-size:11px; padding:8px; border-radius:8px; border:none;">
                                 <i class="fa-solid fa-copy"></i> Copy Emergency Code
                             </button>
-                            <textarea id="syncCodeTextarea" readonly style="width:100%; height:60px; font-size:9px; font-family:monospace; padding:6px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; resize:none; margin-top:4px;"></textarea>
+                            <textarea id="syncCodeTextarea" readonly style="width:100%; height:60px; font-size:9px; font-family:monospace; padding:6px; border-radius:6px; border:1px solid #cbd5e1; background: var(--bg-surface-strong); resize:none; margin-top:4px;"></textarea>
                         </div>
                     </details>
                 </div>
