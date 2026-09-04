@@ -6884,7 +6884,7 @@ const PACKET_COLOURS = [
     [/wavy.*(bbq|barbe|texas)/i,         "#a81d1d"], // Wavy Texas BBQ - dark red
     [/masti\s*shots/i,                   "#f07c19"], // Kurkure Masti Shots - orange
     [/chutney\s*chaska/i,                "#3aa338"], // Kurkure Chutney Chaska - green
-    [/(toofaani|toofani|tofani)/i,       "#a81d1d"], // Kurkure Toofani Mirch - dark red
+    [/(toofaani|toofani|tofani)/i,       "#3a3a3a"], // Kurkure Toofani Mirch - black packet
     [/red\s*chil/i,                      "#d62027"], // Kurkure Red Chilli - red
     [/ocean\s*safari/i,                  "#f2c200"], // Cheetos Ocean Safari - yellow
     [/ketchup/i,                         "#1f6fd0"], // Cheetos Ketchup - blue
