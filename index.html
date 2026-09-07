@@ -153,15 +153,6 @@
                 <button class="nav-item" data-tab="reportsCenterTab" title="Reports Center">
                     <i class="fa-solid fa-folder-open"></i><span>Reports Center</span>
                 </button>
-                <button class="nav-item" data-tab="salesReportsTab" title="Sales Reports">
-                    <i class="fa-solid fa-file-invoice-dollar"></i><span>Sales Reports</span>
-                </button>
-                <button class="nav-item" data-tab="financialReportsTab" title="Financial Reports">
-                    <i class="fa-solid fa-sack-dollar"></i><span>Financial Reports</span>
-                </button>
-                <button class="nav-item" data-tab="analysisReportsTab" title="Analysis Reports">
-                    <i class="fa-solid fa-chart-column"></i><span>Analysis</span>
-                </button>
 
                 <div class="nav-section-label">System</div>
                 <button class="nav-item" data-tab="dataSyncTab" title="Data Sync Center">
@@ -539,7 +530,7 @@
                     <div class="panel-box">
                         <div class="panel-header flex-between">
                             <h3><i class="fa-solid fa-trophy" style="color: var(--brand-gold);"></i> Top 5 Best-Selling Product SKUs (by Sales Revenue & Weight)</h3>
-                            <button class="btn btn-outline btn-sm" onclick="navigateToTab('analysisReportsTab')"><i class="fa-solid fa-chart-column"></i> Full SKU Analytics</button>
+                            <button class="btn btn-outline btn-sm" onclick="navigateToTab('reportsCenterTab')"><i class="fa-solid fa-chart-column"></i> Full SKU Analytics</button>
                         </div>
                         <div class="table-responsive">
                             <table class="data-table">
@@ -1503,167 +1494,12 @@
                 </div>
             </section>
 
-            <section id="salesReportsTab" class="tab-page">
-                <div class="page-title-bar flex-between">
-                    <div>
-                        <span class="section-eyebrow">REPORT CENTER</span>
-                        <h2><i class="fa-solid fa-file-invoice-dollar"></i> Sales Reports</h2>
-                        <p class="page-subtitle">Analyze sales, products, customers, routes and salesman performance from one workspace.</p>
-                    </div>
-                    <div class="flex-gap">
-                        <button class="btn btn-success" onclick="openReportExportModal('sales')"><i class="fa-solid fa-file-excel"></i> Export Report (Excel)</button>
-                    </div>
-                </div>
-
-                <div class="reports-nav-pills report-category-grid">
-                    <button class="report-pill active" onclick="setSalesReportSubTab('pcSale', this)"><i class="fa-solid fa-cookie-bite"></i> PC Sale Report</button>
-                    <button class="report-pill" onclick="setSalesReportSubTab('npcSale', this)"><i class="fa-solid fa-bowl-food"></i> NPC Sale Report</button>
-                    <button class="report-pill" onclick="setSalesReportSubTab('hashSale', this)"><i class="fa-solid fa-boxes-packing"></i> Hash Sale Report</button>
-                    <button class="report-pill" onclick="setSalesReportSubTab('filerSale', this)"><i class="fa-solid fa-building-circle-check"></i> Filer Sale (0.5%)</button>
-                    <button class="report-pill" onclick="setSalesReportSubTab('nonFilerSale', this)"><i class="fa-solid fa-store-slash"></i> Non-Filer Sale (2.5%)</button>
-                    <button class="report-pill" onclick="setSalesReportSubTab('combinedSale', this)"><i class="fa-solid fa-layer-group"></i> Combined Ledger</button>
-                    <button class="report-pill" onclick="setSalesReportSubTab('productWise', this)"><i class="fa-solid fa-box"></i> Product-wise Sale</button>
-                    <button class="report-pill" onclick="setSalesReportSubTab('shopWise', this)"><i class="fa-solid fa-shop"></i> Shop-wise Sale</button>
-                    <button class="report-pill" onclick="setSalesReportSubTab('routeWise', this)"><i class="fa-solid fa-route"></i> Route-wise Sale</button>
-                    <button class="report-pill" onclick="setSalesReportSubTab('salesmanWise', this)"><i class="fa-solid fa-user-tie"></i> Salesman-wise Sale</button>
-                    <button class="report-pill" onclick="setSalesReportSubTab('periodWise', this)"><i class="fa-solid fa-calendar-check"></i> Daily/Monthly Sale</button>
-                </div>
-
-                <div class="panel-box">
-                    <div class="panel-header flex-between">
-                        <h3 id="salesReportTitle">PC Sale Report (Potato Chips)</h3>
-                        <div class="global-date-filter" style="margin: 0; gap: 8px;">
-                            <div class="filter-label"><i class="fa-solid fa-building"></i> Company:</div>
-                            <select id="salesReportCompanyFilter" onchange="handleReportCompanyChange('sales', this.value)">
-                                <option value="all" selected>🏢 All Companies (Combined)</option>
-                            </select>
-                            <div class="filter-label" style="margin-left: 6px;"><i class="fa-solid fa-calendar-days"></i> Report Duration:</div>
-                            <select id="salesReportPeriodPreset" onchange="handleReportPeriodChange('sales')">
-                                <option value="all" selected>All Time (Full Ledger)</option>
-                                <option value="today">Today</option>
-                                <option value="yesterday">Yesterday</option>
-                                <option value="7days">Last 7 Days</option>
-                                <option value="10days">Last 10 Days</option>
-                                <option value="thisMonth">This Month</option>
-                                <option value="custom">Custom Date Range...</option>
-                            </select>
-                            <div id="salesReportCustomDates" class="custom-date-group hidden">
-                                <input type="date" id="salesReportStartDate" onchange="renderSalesReports()">
-                                <span>to</span>
-                                <input type="date" id="salesReportEndDate" onchange="renderSalesReports()">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead id="salesReportTableHead"></thead>
-                            <tbody id="salesReportTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
 
 
             <!-- TAB 8: FINANCIAL REPORTS -->
-            <section id="financialReportsTab" class="tab-page">
-                <div class="page-title-bar flex-between">
-                    <h2><i class="fa-solid fa-sack-dollar"></i> Financial & Ledger Reports</h2>
-                    <button class="btn btn-success" onclick="openReportExportModal('financial')"><i class="fa-solid fa-file-excel"></i> Export Financial Report (Excel)</button>
-                </div>
-
-                <div class="reports-nav-pills">
-                    <button class="report-pill active" onclick="setFinancialReportSubTab('totalSale', this)"><i class="fa-solid fa-chart-line"></i> Total Sales Summary</button>
-                    <button class="report-pill" onclick="setFinancialReportSubTab('cashSale', this)"><i class="fa-solid fa-money-bill-wave"></i> Cash Sales Ledger</button>
-                    <button class="report-pill" onclick="setFinancialReportSubTab('creditSale', this)"><i class="fa-solid fa-hand-holding-dollar"></i> Credit Sales (Udhaar)</button>
-                    <button class="report-pill" onclick="setFinancialReportSubTab('discountReport', this)"><i class="fa-solid fa-percent"></i> Shop Discount Ledger</button>
-                    <button class="report-pill" onclick="setFinancialReportSubTab('returns', this)"><i class="fa-solid fa-rotate-left"></i> Sales Returns & Damage</button>
-                    <button class="report-pill" onclick="setFinancialReportSubTab('outstanding', this)"><i class="fa-solid fa-scale-unbalanced"></i> Outstanding Balances</button>
-                </div>
-
-                <div class="panel-box">
-                    <div class="panel-header flex-between">
-                        <h3 id="financialReportTitle">Financial Sales Overview</h3>
-                        <div class="global-date-filter" style="margin: 0; gap: 8px;">
-                            <div class="filter-label"><i class="fa-solid fa-building"></i> Company:</div>
-                            <select id="financialReportCompanyFilter" onchange="handleReportCompanyChange('financial', this.value)">
-                                <option value="all" selected>🏢 All Companies (Combined)</option>
-                            </select>
-                            <div class="filter-label" style="margin-left: 6px;"><i class="fa-solid fa-calendar-days"></i> Report Duration:</div>
-                            <select id="financialReportPeriodPreset" onchange="handleReportPeriodChange('financial')">
-                                <option value="all" selected>All Time (Full Ledger)</option>
-                                <option value="today">Today</option>
-                                <option value="yesterday">Yesterday</option>
-                                <option value="7days">Last 7 Days</option>
-                                <option value="10days">Last 10 Days</option>
-                                <option value="thisMonth">This Month</option>
-                                <option value="custom">Custom Date Range...</option>
-                            </select>
-                            <div id="financialReportCustomDates" class="custom-date-group hidden">
-                                <input type="date" id="financialReportStartDate" onchange="renderFinancialReports()">
-                                <span>to</span>
-                                <input type="date" id="financialReportEndDate" onchange="renderFinancialReports()">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead id="financialReportTableHead"></thead>
-                            <tbody id="financialReportTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
 
 
             <!-- TAB 9: ANALYSIS REPORTS -->
-            <section id="analysisReportsTab" class="tab-page">
-                <div class="page-title-bar flex-between">
-                    <h2><i class="fa-solid fa-chart-column"></i> Business Intelligence & Analysis Reports</h2>
-                    <button class="btn btn-success" onclick="openReportExportModal('analysis')"><i class="fa-solid fa-file-excel"></i> Export Analysis (Excel)</button>
-                </div>
-
-                <div class="reports-nav-pills">
-                    <button class="report-pill active" onclick="setAnalysisReportSubTab('topSelling', this)"><i class="fa-solid fa-trophy"></i> Top Selling Products</button>
-                    <button class="report-pill" onclick="setAnalysisReportSubTab('slowMoving', this)"><i class="fa-solid fa-turtle"></i> Slow Moving Products</button>
-                    <button class="report-pill" onclick="setAnalysisReportSubTab('noSaleShops', this)"><i class="fa-solid fa-shop-slash"></i> No Sale Shops</button>
-                    <button class="report-pill" onclick="setAnalysisReportSubTab('zeroStock', this)"><i class="fa-solid fa-box-tissue"></i> Zero Stock Products</button>
-                    <button class="report-pill" onclick="setAnalysisReportSubTab('productPerf', this)"><i class="fa-solid fa-chart-pie"></i> Product Performance</button>
-                    <button class="report-pill" onclick="setAnalysisReportSubTab('routePerf', this)"><i class="fa-solid fa-map-location-dot"></i> Route Performance</button>
-                </div>
-
-                <div class="panel-box">
-                    <div class="panel-header flex-between">
-                        <h3 id="analysisReportTitle">Top Selling Products</h3>
-                        <div class="global-date-filter" style="margin: 0; gap: 8px;">
-                            <div class="filter-label"><i class="fa-solid fa-building"></i> Company:</div>
-                            <select id="analysisReportCompanyFilter" onchange="handleReportCompanyChange('analysis', this.value)">
-                                <option value="all" selected>🏢 All Companies (Combined)</option>
-                            </select>
-                            <div class="filter-label" style="margin-left: 6px;"><i class="fa-solid fa-calendar-days"></i> Report Duration:</div>
-                            <select id="analysisReportPeriodPreset" onchange="handleReportPeriodChange('analysis')">
-                                <option value="all" selected>All Time (Full Ledger)</option>
-                                <option value="today">Today</option>
-                                <option value="yesterday">Yesterday</option>
-                                <option value="7days">Last 7 Days</option>
-                                <option value="10days">Last 10 Days</option>
-                                <option value="thisMonth">This Month</option>
-                                <option value="custom">Custom Date Range...</option>
-                            </select>
-                            <div id="analysisReportCustomDates" class="custom-date-group hidden">
-                                <input type="date" id="analysisReportStartDate" onchange="renderAnalysisReports()">
-                                <span>to</span>
-                                <input type="date" id="analysisReportEndDate" onchange="renderAnalysisReports()">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead id="analysisReportTableHead"></thead>
-                            <tbody id="analysisReportTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
 
 
             <!-- TAB 11: DATA SYNC CENTER (100% OFFLINE ENCRYPTED SYNC FILE BRIDGE) -->
@@ -1983,46 +1819,6 @@
         </div>
     </div>
 
-    <!-- DYNAMIC REPORT EXPORT DATE PROMPT MODAL -->
-    <div id="reportExportDateModal" class="modal-backdrop">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3 id="exportModalHeaderTitle"><i class="fa-solid fa-calendar-check"></i> Report Duration Selection</h3>
-                <button class="modal-close" onclick="closeModal('reportExportDateModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p style="color: var(--brand-gold); margin-bottom: 14px; font-weight: 600;">
-                    System Query: Kitne dino ki report export karni hai? Choose report period:
-                </p>
-                <div class="form-group">
-                    <label>Select Report Period:</label>
-                    <select id="modalExportPresetSelect" onchange="handleModalExportPresetChange()">
-                        <option value="all">All Time (Poori Record / Full Ledger)</option>
-                        <option value="today">Aaj (Today)</option>
-                        <option value="yesterday">Kal (Yesterday)</option>
-                        <option value="7days">Pichlay 7 Din (Last 7 Days)</option>
-                        <option value="10days" selected>Pichlay 10 Din (Last 10 Days)</option>
-                        <option value="thisMonth">Is Mahiney (This Month)</option>
-                        <option value="custom">Custom Date Range...</option>
-                    </select>
-                </div>
-                <div id="modalExportCustomDateGroup" class="form-row-grid hidden">
-                    <div class="form-group">
-                        <label>Start Date:</label>
-                        <input type="date" id="modalExportStartDate">
-                    </div>
-                    <div class="form-group">
-                        <label>End Date:</label>
-                        <input type="date" id="modalExportEndDate">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('reportExportDateModal')">Cancel</button>
-                <button class="btn btn-success" onclick="confirmReportExportFromModal()"><i class="fa-solid fa-file-excel"></i> Download Excel Report</button>
-            </div>
-        </div>
-    </div>
 
     <!-- ADD / EDIT ROUTE & 7 SUB-ROUTES MODAL -->
     <div id="routeModal" class="modal-backdrop">
