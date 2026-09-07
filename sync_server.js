@@ -6236,6 +6236,7 @@ let _supabaseTableEnsured = false;
 
 let _cachedAppState = null;
 let _supabaseInitTried = false;
+let _hydrationPromise = null;
 
 async function syncWithSupabaseCloudOnce(state) {
     if (!_supabaseTableEnsured) {
@@ -6281,6 +6282,15 @@ async function syncWithSupabaseCloudOnce(state) {
 // Retries once on transient failure; throws if both attempts fail so the
 // caller can avoid telling the client "saved" when it wasn't.
 async function syncWithSupabaseCloud(state) {
+    // A process that has not successfully READ Supabase must never WRITE to
+    // it. On a cold start this process holds the JSON cache that shipped with
+    // the deploy - an old snapshot - and pushing that up silently destroys
+    // every record saved since that snapshot was taken. Refuse instead: the
+    // caller reports the failure, the client keeps its copy and retries.
+    if (state && state.__hydratedFromCloud !== true) {
+        throw new Error('Refusing to write to Supabase: this server has not yet loaded the current data from it. Nothing was overwritten.');
+    }
+
     if (!state) return;
     try {
         await syncWithSupabaseCloudOnce(state);
@@ -6318,38 +6328,63 @@ function getAppStateFromStore() {
     }
 
     _cachedAppState = state;
+    ensureHydrated();          // kicked off here, awaited by anything that writes
+    return _cachedAppState;
+}
 
-    // Asynchronously hydrate from Supabase Cloud PostgreSQL if available
-    if (!_supabaseInitTried) {
-        _supabaseInitTried = true;
-        const hydrationStartedAt = Date.now();
-        (async () => {
-            try {
-                const res = await supabasePool.query("SELECT data FROM erp_master_store WHERE id = 'master_state';");
-                if (res && res.rows && res.rows.length > 0 && res.rows[0].data) {
-                    // Guard: skip if a local write has already landed since this hydration query started,
-                    // so a slow cold-start hydration can't clobber a newer local change (e.g. a stock deduction).
-                    if (!_cachedAppState.__lastLocalWriteAt || _cachedAppState.__lastLocalWriteAt < hydrationStartedAt) {
-                        const cloudData = res.rows[0].data;
-                        // Covers every collection the server persists, not just
-                        // bills/shops/orders/skus - routes/companies/salesmen/
-                        // pickLists/focSchemes were previously left on whatever
-                        // the local JSON file (or hardcoded defaults, if that
-                        // file didn't survive a restart) happened to have.
-                        ['bills', 'shops', 'orders', 'skus', 'routes', 'companies', 'salesmen', 'pickLists', 'focSchemes'].forEach(collection => {
-                            if (Array.isArray(cloudData[collection]) && cloudData[collection].length > 0) {
-                                _cachedAppState[collection] = cloudData[collection];
-                            }
-                        });
-                        console.log('✓ Hydrated state from Supabase Cloud PostgreSQL!');
-                    } else {
-                        console.log('↷ Skipped Supabase hydration: a newer local write already landed.');
+const PERSISTED_COLLECTIONS = ['bills', 'shops', 'orders', 'skus', 'routes',
+                               'companies', 'salesmen', 'pickLists', 'focSchemes'];
+
+/* Loads the authoritative state from Supabase exactly once per process, and
+   hands back the same promise to every later caller.
+
+   This used to run fire-and-forget, and skipped itself entirely if any write
+   landed while the query was in flight. On a busy system a write almost always
+   did - browsers poll every few seconds - so the server kept serving the stale
+   JSON snapshot that shipped with the deploy and then wrote it back to
+   Supabase. That is how months of bills could be replaced by a snapshot from
+   the day the file was last committed. Hydration now always completes, and
+   writers wait for it. */
+function ensureHydrated() {
+    if (_hydrationPromise) return _hydrationPromise;
+
+    _hydrationPromise = (async () => {
+        try {
+            const res = await supabasePool.query("SELECT data FROM erp_master_store WHERE id = 'master_state';");
+            if (res && res.rows && res.rows.length > 0 && res.rows[0].data) {
+                const cloudData = res.rows[0].data;
+                PERSISTED_COLLECTIONS.forEach(collection => {
+                    if (Array.isArray(cloudData[collection]) && cloudData[collection].length > 0) {
+                        _cachedAppState[collection] = cloudData[collection];
                     }
-                }
-            } catch(e) {}
-        })();
-    }
+                });
+                _cachedAppState.__hydratedFromCloud = true;
+                console.log('✓ Loaded current state from Supabase (' +
+                    (_cachedAppState.bills || []).length + ' bills, ' +
+                    (_cachedAppState.orders || []).length + ' orders).');
+            } else {
+                // An empty cloud is a legitimate answer for a brand new install:
+                // there is nothing to overwrite, so writing is safe.
+                _cachedAppState.__hydratedFromCloud = true;
+                console.log('… Supabase has no saved state yet - starting from the local cache.');
+            }
+        } catch (e) {
+            _cachedAppState.__hydratedFromCloud = false;
+            console.error('✗ Could not load state from Supabase: ' + (e.message || e.name || String(e)) + ' [' + (e.code || 'no code') + ']' +
+                          ' - saving is disabled until it can be reached, so nothing gets overwritten.');
+        }
+        return _cachedAppState;
+    })();
 
+    return _hydrationPromise;
+}
+
+/* Use this anywhere a request is about to CHANGE the data: it guarantees the
+   state being modified is the real one, not the snapshot that shipped with the
+   deploy. */
+async function getAppStateForWriting() {
+    getAppStateFromStore();
+    await ensureHydrated();
     return _cachedAppState;
 }
 
@@ -6359,6 +6394,12 @@ function getAppStateFromStore() {
 // a fast local cache, but it lives on Render's disk, which is not guaranteed
 // to survive a restart, so it cannot be treated as the confirmation itself.
 async function saveAppStateToStore(state) {
+    // Checked before the local cache file is touched too: a save that cannot
+    // reach the durable store must leave no trace anywhere, or the next
+    // restart would seed from a half-applied file.
+    if (state && state.__hydratedFromCloud !== true) {
+        throw new Error('Not saved: this server has not loaded the current data from Supabase yet, so writing could overwrite newer records. Nothing was changed.');
+    }
     state.__lastLocalWriteAt = Date.now();
     _cachedAppState = state;
     try {
@@ -6379,7 +6420,7 @@ function createAutoBackup(state) {
     return backupFileName;
 }
 
-function handleHttpRequest(req, res) {
+async function handleHttpRequest(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', '*');
@@ -6469,6 +6510,96 @@ function handleHttpRequest(req, res) {
                       &status=&company=&route=&shop=&search=
                       &limit=&offset=&sort=newest|oldest
        -> { success, total, items, limit, offset } */
+    // Read-only diagnostics. Compares what Supabase actually holds against what
+    // this process is serving from its cache, and reports the write-guard stamp,
+    // so a "data stopped updating" report can be diagnosed without guessing.
+    // Touches nothing.
+    if (pathname === '/api/diagnostics' && req.method === 'GET') {
+        const summarise = (s) => {
+            if (!s) return null;
+            const newest = (arr, fields) => {
+                const ds = (arr || []).map(r => {
+                    for (const f of fields) if (r[f]) return String(r[f]).slice(0, 10);
+                    return '';
+                }).filter(Boolean).sort();
+                return ds.length ? ds[ds.length - 1] : null;
+            };
+            return {
+                bills: (s.bills || []).length,
+                orders: (s.orders || []).length,
+                pickLists: (s.pickLists || []).length,
+                shops: (s.shops || []).length,
+                skus: (s.skus || []).length,
+                newestBill: newest(s.bills, ['confirmedDate', 'date', 'billDate', 'createdDate']),
+                newestOrder: newest(s.orders, ['date', 'deliveryDate', 'createdDate']),
+                newestPickList: newest(s.pickLists, ['createdDate', 'finalDeliveryDate']),
+                lastLocalWriteAt: s.__lastLocalWriteAt || null,
+                lastLocalWriteAtIso: s.__lastLocalWriteAt ? new Date(Number(s.__lastLocalWriteAt)).toISOString() : null
+            };
+        };
+
+        const out = {
+            success: true,
+            serverNow: new Date().toISOString(),
+            serverNowMs: Date.now(),
+            // false means this server has NOT read Supabase, so it refuses to
+            // write - the safe state, not a healthy one.
+            savingEnabled: !!(_cachedAppState && _cachedAppState.__hydratedFromCloud === true),
+            serving: summarise(_cachedAppState),
+            supabase: null,
+            localJsonFile: null,
+            writeGuard: null
+        };
+
+        try {
+            const r = await supabasePool.query(
+                "SELECT data, updated_at FROM erp_master_store WHERE id = 'master_state';");
+            if (r && r.rows && r.rows.length > 0) {
+                out.supabase = summarise(r.rows[0].data);
+                out.supabase.rowUpdatedAt = r.rows[0].updated_at;
+
+                // The upsert only writes when the incoming stamp is NEWER than the
+                // stored one. A stored stamp ahead of the server clock would make
+                // every further write a silent no-op - exactly what a "data frozen
+                // on a given day" report looks like.
+                const stored = Number((r.rows[0].data || {}).__lastLocalWriteAt || 0);
+                out.writeGuard = {
+                    storedStamp: stored || null,
+                    storedStampIso: stored ? new Date(stored).toISOString() : null,
+                    storedStampIsInFuture: stored > Date.now(),
+                    wouldBlockFurtherWrites: stored > Date.now(),
+                    minutesAhead: stored > Date.now() ? Math.round((stored - Date.now()) / 60000) : 0
+                };
+            } else {
+                out.supabase = { error: 'no master_state row found' };
+            }
+        } catch (e) {
+            out.supabase = { error: e.message || String(e), name: e.name, code: e.code, detail: e.detail, address: e.address, port: e.port };
+        }
+
+        try {
+            if (fs.existsSync(dbManager.jsonFallbackPath)) {
+                const raw = JSON.parse(fs.readFileSync(dbManager.jsonFallbackPath, 'utf8'));
+                out.localJsonFile = summarise(raw);
+                out.localJsonFile.fileModified = fs.statSync(dbManager.jsonFallbackPath).mtime;
+            } else {
+                out.localJsonFile = { error: 'fallback file does not exist' };
+            }
+        } catch (e) {
+            out.localJsonFile = { error: e.message };
+        }
+
+        try {
+            const backupDir = path.join(BASE_DIR, 'Backups');
+            out.backups = fs.existsSync(backupDir)
+                ? fs.readdirSync(backupDir).sort().slice(-10)
+                : [];
+        } catch (e) { out.backups = { error: e.message }; }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(out, null, 2));
+        return;
+    }
     if (pathname === '/api/query' && req.method === 'GET') {
         try {
             const q = parsedUrl.query || {};
@@ -6576,7 +6707,7 @@ function handleHttpRequest(req, res) {
         req.on('end', async () => {
             try {
                 const payload = JSON.parse(body);
-                const state = getAppStateFromStore();
+                const state = await getAppStateForWriting();
                 if (Array.isArray(payload.shops)) {
                     if (!Array.isArray(state.shops)) state.shops = [];
                     payload.shops.forEach(pShop => {
@@ -6682,7 +6813,7 @@ function handleHttpRequest(req, res) {
     if (pathname === '/api/sync/morning-download' && req.method === 'GET') {
         const salesmanId = parsedUrl.query.salesmanId || "sales_01";
         const deviceId = parsedUrl.query.deviceId || "Mobile_Device";
-        const state = getAppStateFromStore();
+        const state = await getAppStateForWriting();
 
         const salesman = (state.salesmen || []).find(s => s.id === salesmanId) || { id: salesmanId, name: "Ijaz", routeId: "r_jhang" };
         const assignedRoute = (state.routes || []).find(r => r.id === salesman.routeId || r.salesman.toLowerCase() === salesman.name.toLowerCase()) || state.routes[0];
@@ -6804,7 +6935,7 @@ function handleHttpRequest(req, res) {
                 const incomingOrders = payload.orders || [];
                 const incomingStockTxs = payload.stockTransactions || [];
 
-                const state = getAppStateFromStore();
+                const state = await getAppStateForWriting();
                 const backupFile = createAutoBackup(state);
 
                 let newOrdersAdded = 0;
@@ -6930,7 +7061,7 @@ function handleHttpRequest(req, res) {
                 const syncFileString = reqObj.fileContent;
                 const unpacked = SyncEngine.unpackSyncPayload(syncFileString);
 
-                const state = getAppStateFromStore();
+                const state = await getAppStateForWriting();
                 const backupFile = createAutoBackup(state);
 
                 const salesmanId = unpacked.header.salesmanId;
@@ -7007,7 +7138,15 @@ function handleHttpRequest(req, res) {
 
 PORTS.forEach(port => {
     try {
-        const srv = http.createServer(handleHttpRequest);
+        const srv = http.createServer((req, res) => {
+            handleHttpRequest(req, res).catch(err => {
+                console.error('Request failed:', err && err.message);
+                try {
+                    if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: err && err.message }));
+                } catch (e) {}
+            });
+        });
         srv.listen(port, '0.0.0.0', () => {
             console.log(`🚀 SYNC SERVER RUNNING ON PORT ${port}`);
         });

@@ -14,3 +14,9 @@ Updates/
 # OS files
 Thumbs.db
 .DS_Store
+
+# The runtime data cache. This must NEVER be committed: a deploy would then
+# ship an old snapshot of the business data, and a server starting from it can
+# overwrite everything saved since. Supabase is the durable store.
+Database/ERP_fallback.json
+Backups/
