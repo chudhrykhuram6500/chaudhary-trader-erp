@@ -6459,6 +6459,98 @@ function handleHttpRequest(req, res) {
         return;
     }
 
+    /* Server-side query: returns ONLY the records that match the requested
+       filters, with a page of results and a total count - instead of shipping
+       the entire bills/orders/pickLists history to the browser and filtering it
+       there. Keeps the app fast as the data grows.
+
+       GET /api/query?type=bills|orders|pickLists
+                      &from=YYYY-MM-DD&to=YYYY-MM-DD
+                      &status=&company=&route=&shop=&search=
+                      &limit=&offset=&sort=newest|oldest
+       -> { success, total, items, limit, offset } */
+    if (pathname === '/api/query' && req.method === 'GET') {
+        try {
+            const q = parsedUrl.query || {};
+            const state = getAppStateFromStore();
+            const type = String(q.type || 'bills');
+
+            const source = type === 'orders' ? (state.orders || [])
+                         : type === 'pickLists' ? (state.pickLists || [])
+                         : (state.bills || []);
+
+            const from = q.from ? String(q.from) : null;
+            const to = q.to ? String(q.to) : null;
+            const search = q.search ? String(q.search).toLowerCase().trim() : '';
+            const wantStatus = q.status && q.status !== 'all' ? String(q.status) : null;
+            const wantCompany = q.company && q.company !== 'all' ? String(q.company).toLowerCase() : null;
+            const wantRoute = q.route && q.route !== 'all' ? String(q.route) : null;
+            const wantShop = q.shop && q.shop !== 'all' ? String(q.shop) : null;
+
+            // A sale belongs to the day its delivery was confirmed; records saved
+            // before confirmedDate existed fall back to their own date.
+            const dateOf = (r) => String(
+                r.confirmedDate || r.billDate || r.date || r.finalDeliveryDate ||
+                r.createdDate || r.orderDate || ''
+            ).slice(0, 10);
+
+            const statusOf = (r) => {
+                if (type === 'orders') {
+                    const s = r.status || 'Draft';
+                    if (r.isVoid || s === 'Cancelled' || s === 'Voided') return 'Cancelled';
+                    if (s === 'Processed' || s === 'Confirmed') return 'Processed';
+                    return 'Draft';
+                }
+                if (type === 'pickLists') return r.status || 'Picked';
+                if (r.isVoid || r.deliveryStatus === 'Cancelled' || r.deliveryStatus === 'Returned') return 'Cancelled';
+                if (r.deliveryStatus === 'Confirmed' || r.deliveryStatus === 'Delivered' || r.isManuallyConfirmed) return 'Confirmed';
+                return 'Open';
+            };
+
+            const matched = source.filter(r => {
+                const d = dateOf(r);
+                if (from && d && d < from) return false;
+                if (to && d && d > to) return false;
+                if (wantStatus && statusOf(r) !== wantStatus) return false;
+
+                if (wantCompany) {
+                    const c = String(r.companyId || 'lays').toLowerCase();
+                    const norm = wantCompany === 'fast' ? 'hash' : wantCompany;
+                    if ((c === 'fast' ? 'hash' : c) !== norm) return false;
+                }
+                if (wantRoute && r.routeId !== wantRoute && r.routeName !== wantRoute) return false;
+                if (wantShop && r.shopId !== wantShop && r.shopName !== wantShop) return false;
+
+                if (search) {
+                    const hay = [r.billNo, r.orderNo, r.pickListNo, r.shopName, r.routeName, r.customerName]
+                        .filter(Boolean).join(' ').toLowerCase();
+                    if (!hay.includes(search)) return false;
+                }
+                return true;
+            });
+
+            const sort = String(q.sort || 'newest');
+            matched.sort((a, b) => sort === 'oldest'
+                ? dateOf(a).localeCompare(dateOf(b))
+                : dateOf(b).localeCompare(dateOf(a)));
+
+            const total = matched.length;
+            const offset = Math.max(0, parseInt(q.offset, 10) || 0);
+            // limit=0 means "all matching" - used by reports, which need the whole
+            // filtered set to aggregate, just not the whole database.
+            const rawLimit = q.limit === undefined ? 50 : parseInt(q.limit, 10);
+            const limit = (rawLimit === 0 || isNaN(rawLimit)) ? total : Math.min(rawLimit, 5000);
+            const items = matched.slice(offset, offset + limit);
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, type, total, limit, offset, items }));
+        } catch (e) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: e.message }));
+        }
+        return;
+    }
+
     if (pathname === '/api/sync/latest-state') {
         const state = getAppStateFromStore();
         res.writeHead(200, { 'Content-Type': 'application/json' });
