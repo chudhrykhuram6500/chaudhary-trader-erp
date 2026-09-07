@@ -1195,3 +1195,13 @@ body.light .data-table tbody tr:hover td { background: rgba(37,99,235,.06); }
     font-weight: 700;
     color: var(--brand-gold);
 }
+
+/* Reports Center: detail reports can be 17 columns wide, so let the result
+   table keep its natural column widths and scroll sideways instead of
+   squeezing every heading into two lines. */
+#reportsCenterTab .table-responsive { max-height: 62vh; overflow: auto; }
+#reportsCenterTab .data-table { min-width: max-content; }
+#reportsCenterTab #rcResultHead th,
+#reportsCenterTab #rcResultBody td { white-space: nowrap; }
+#reportsCenterTab #rcResultHead th { position: sticky; top: 0; z-index: 2; }
+#reportsCenterTab #reportsCenterList { max-height: 68vh; overflow-y: auto; }
