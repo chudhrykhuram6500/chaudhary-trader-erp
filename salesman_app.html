@@ -1266,8 +1266,15 @@
                 <input type="text" id="newShopPhone" class="input-glass" placeholder="e.g. 03001234567">
             </div>
             <div class="form-group">
-                <label><i class="fa-solid fa-calendar-day"></i> Scheduled Visit Beat Day</label>
+                <label><i class="fa-solid fa-route"></i> Route / Beat *</label>
+                <select id="newShopRoute" class="input-glass">
+                    <option value="">- Select route -</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label><i class="fa-solid fa-calendar-day"></i> Scheduled Visit Beat Day *</label>
                 <select id="newShopVisitDay" class="input-glass">
+                    <option value="">- Select beat day -</option>
                     <option value="Monday">Monday</option>
                     <option value="Tuesday">Tuesday</option>
                     <option value="Wednesday">Wednesday</option>
@@ -3413,8 +3420,13 @@
             document.getElementById("newShopName").value = "";
             document.getElementById("newShopOwner").value = "";
             document.getElementById("newShopPhone").value = "";
-            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            document.getElementById("newShopVisitDay").value = days[new Date().getDay()];
+            // The route and the beat day are the salesman choice - the app must not
+            // guess them from whatever day the shop happens to be created on.
+            const routeSel = document.getElementById("newShopRoute");
+            routeSel.innerHTML = `<option value="">- Select route -</option>` +
+                (MobileState.routes || []).map(r => `<option value="${r.id}">${r.name || r.id}</option>`).join("");
+            routeSel.value = (MobileState.salesman && MobileState.salesman.routeId) ? MobileState.salesman.routeId : "";
+            document.getElementById("newShopVisitDay").value = "";
             document.getElementById("newShopDiscount").value = "0.0";
             document.getElementById("newShopTaxMode").value = "nonfiler";
             document.getElementById("newMobileShopModal").style.display = "flex";
@@ -3429,10 +3441,13 @@
             const owner = document.getElementById("newShopOwner").value.trim();
             const phone = document.getElementById("newShopPhone").value.trim();
             const visitDay = document.getElementById("newShopVisitDay").value;
+            const routeId = document.getElementById("newShopRoute").value;
             const discount = parseFloat(document.getElementById("newShopDiscount").value) || 0.0;
             const taxMode = document.getElementById("newShopTaxMode").value;
 
             if (!name) return alert("Please enter Shop Name!");
+            if (!routeId) return alert("Please select the Route / Beat this shop belongs to.");
+            if (!visitDay) return alert("Please select the Visit Beat Day for this shop.");
 
             const newId = `SHOP-MOB-${Date.now()}`;
             const newShop = {
@@ -3443,7 +3458,8 @@
                 visitDay: visitDay,
                 defaultDiscountPct: discount,
                 taxMode: taxMode,
-                routeId: (MobileState.salesman && MobileState.salesman.routeId) ? MobileState.salesman.routeId : "r_sargodha_road",
+                routeId: routeId,
+                routeName: ((MobileState.routes || []).find(r => r.id === routeId) || {}).name || "",
                 isNewOnField: true
             };
 
