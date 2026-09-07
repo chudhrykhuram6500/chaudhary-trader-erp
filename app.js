@@ -7354,38 +7354,46 @@ function navigateToTab(targetTab) {
     renderActiveTabOnly(targetTab);
 }
 
+/* Renders ONLY the screen that is actually open.
+
+   This existed already but every id it compared against was wrong - it checked
+   for "tabOrders"/"tabStock"/"tabSalesReport" while the real section ids are
+   "ordersTab"/"inventoryTab"/"salesReportsTab". Nothing ever matched, so it
+   silently fell through to the dashboard for every tab. That is why the whole
+   app had to keep calling renderAllViews() (all 16 screens, including the three
+   report modules) after every single action, and why saving a bill or a shop
+   froze the UI for seconds. */
+const TAB_RENDERERS = {
+    dashboardTab:        () => renderDashboard(),
+    ordersTab:           () => renderOrdersTable(),
+    pickListTab:         () => renderPickListTable(),
+    invoicesTab:         () => renderInvoicesTable(),
+    billsHistoryTab:     () => renderBillsHistoryTable(),
+    inventoryTab:        () => renderStockInventoryTable(),
+    outletsTab:          () => renderRoutesAndShops(),
+    skuMasterTab:        () => renderSkuMasterTable(),
+    focManagementTab:    () => renderFocManagementTab(),
+    salesReportsTab:     () => renderSalesReports(),
+    financialReportsTab: () => renderFinancialReports(),
+    analysisReportsTab:  () => renderAnalysisReports(),
+    dataSyncTab:         () => renderDataSyncTab(),
+    billingTab:          () => renderPosOptions(),
+    settingsTab:         () => renderCompanyMasterTable()
+};
+
 function renderActiveTabOnly(tabId = AppState.activeTab) {
     updateAllCompanyDropdowns();
-    if (!tabId || tabId === "tabDashboard" || tabId === "dashboard") {
-        renderDashboard();
-    } else if (tabId === "tabOrders") {
-        if (typeof renderOrdersTable === "function") renderOrdersTable();
-    } else if (tabId === "tabPickLists") {
-        if (typeof renderPickListTable === "function") renderPickListTable();
-    } else if (tabId === "tabInvoices") {
-        if (typeof renderInvoicesTable === "function") renderInvoicesTable();
-    } else if (tabId === "tabBillsHistory") {
-        if (typeof renderBillsHistoryTable === "function") renderBillsHistoryTable();
-    } else if (tabId === "tabStock") {
-        if (typeof renderStockInventoryTable === "function") renderStockInventoryTable();
-    } else if (tabId === "tabRoutes" || tabId === "tabShops") {
-        if (typeof renderRoutesAndShops === "function") renderRoutesAndShops();
-    } else if (tabId === "tabSkus") {
-        if (typeof renderSkuMasterTable === "function") renderSkuMasterTable();
-    } else if (tabId === "tabFoc") {
-        if (typeof renderFocManagementTab === "function") renderFocManagementTab();
-    } else if (tabId === "tabCompanies") {
-        if (typeof renderCompanyMasterTable === "function") renderCompanyMasterTable();
-    } else if (tabId === "tabSalesReport") {
-        if (typeof renderSalesReports === "function") renderSalesReports();
-    } else if (tabId === "tabFinancialReport") {
-        if (typeof renderFinancialReports === "function") renderFinancialReports();
-    } else if (tabId === "tabAnalysisReport") {
-        if (typeof renderAnalysisReports === "function") renderAnalysisReports();
-    } else if (tabId === "tabDataSync") {
-        if (typeof renderDataSyncTab === "function") renderDataSyncTab();
-    } else {
-        renderDashboard();
+
+    // Fall back to whatever section is actually marked active in the DOM, so a
+    // stale/absent AppState.activeTab can't send us to the wrong screen.
+    const activeId = tabId || (document.querySelector(".tab-page.active") || {}).id || "dashboardTab";
+    const render = TAB_RENDERERS[activeId];
+
+    try {
+        if (typeof render === "function") render();
+        else renderDashboard();
+    } catch (err) {
+        console.error("Tab render failed for", activeId, err);
     }
 }
 
@@ -7577,7 +7585,10 @@ function getConfirmedDeliveredBillsForDashboard() {
     AppState.selectedCompanyId = comp;
 
     return AppState.bills.filter(b => {
-        const rawDateStr = b.billDate || b.date || b.createdDate || b.orderDate || "";
+        // A sale belongs to the day its delivery was CONFIRMED, not the day the
+        // order was punched. Older bills saved before confirmedDate existed fall
+        // back to their bill date, so past reports keep the figures they had.
+        const rawDateStr = b.confirmedDate || b.billDate || b.date || b.createdDate || b.orderDate || "";
         const bDate = normalizeDateToISO(rawDateStr);
         const matchesDate = (!start || !bDate || bDate >= start) && (!end || !bDate || bDate <= end);
 
@@ -7610,7 +7621,10 @@ function getConfirmedDeliveredBillsForReport(reportType) {
     if (AppState.reportFilters[reportType]) AppState.reportFilters[reportType].companyId = comp;
 
     return AppState.bills.filter(b => {
-        const rawDateStr = b.billDate || b.date || b.createdDate || b.orderDate || "";
+        // A sale belongs to the day its delivery was CONFIRMED, not the day the
+        // order was punched. Older bills saved before confirmedDate existed fall
+        // back to their bill date, so past reports keep the figures they had.
+        const rawDateStr = b.confirmedDate || b.billDate || b.date || b.createdDate || b.orderDate || "";
         const bDate = normalizeDateToISO(rawDateStr);
         const matchesDate = (!start || !bDate || bDate >= start) && (!end || !bDate || bDate <= end);
 
@@ -7629,23 +7643,13 @@ function getConfirmedDeliveredBillsForReport(reportType) {
     });
 }
 
+/* Kept under the same name so all ~50 existing call sites work unchanged, but it
+   no longer rebuilds all 16 screens. Only the screen actually on display is
+   rendered; every other tab rebuilds itself the moment it is opened
+   (navigateToTab -> renderActiveTabOnly), so the extra work was invisible to
+   the user and cost seconds of frozen UI after every save. */
 function renderAllViews() {
-    updateAllCompanyDropdowns();
-    if (typeof renderDashboard === "function") renderDashboard();
-    if (typeof renderOrdersTable === "function") renderOrdersTable();
-    if (typeof renderPickListTable === "function") renderPickListTable();
-    if (typeof renderInvoicesTable === "function") renderInvoicesTable();
-    if (typeof renderPosOptions === "function") renderPosOptions();
-    if (typeof renderBillsHistoryTable === "function") renderBillsHistoryTable();
-    if (typeof renderStockInventoryTable === "function") renderStockInventoryTable();
-    if (typeof renderRoutesAndShops === "function") renderRoutesAndShops();
-    if (typeof renderSkuMasterTable === "function") renderSkuMasterTable();
-    if (typeof renderFocManagementTab === "function") renderFocManagementTab();
-    if (typeof renderCompanyMasterTable === "function") renderCompanyMasterTable();
-    if (typeof renderSalesReports === "function") renderSalesReports();
-    if (typeof renderFinancialReports === "function") renderFinancialReports();
-    if (typeof renderAnalysisReports === "function") renderAnalysisReports();
-    if (typeof renderDataSyncTab === "function") renderDataSyncTab();
+    renderActiveTabOnly(AppState.activeTab);
 }
 
 /* ==========================================================================
@@ -14481,6 +14485,7 @@ function batchConfirmSelectedOrders() {
             if (bill) {
                 bill.deliveryStatus = "Confirmed";
                 bill.salesRecorded = true;
+                if (!bill.confirmedDate) bill.confirmedDate = new Date().toISOString().split("T")[0];
                 affectedBills.push(bill);
             }
         });
@@ -15404,6 +15409,7 @@ function batchConfirmSelectedInvoices() {
             bill.deliveryStatus = "Confirmed";
             bill.isManuallyConfirmed = true;
             bill.salesRecorded = true;
+            if (!bill.confirmedDate) bill.confirmedDate = new Date().toISOString().split("T")[0];
             if (bill.orderNo) {
                 const order = AppState.orders.find(o => o.orderNo === bill.orderNo);
                 if (order) {
@@ -15888,6 +15894,7 @@ function saveDeliveryConfirmationWithAdjustments() {
     bill.deliveryStatus = "Confirmed";
     bill.isManuallyConfirmed = true;
     bill.salesRecorded = true;
+    if (!bill.confirmedDate) bill.confirmedDate = new Date().toISOString().split("T")[0];
 
     let affectedOrder = null;
     if (bill.orderNo) {
@@ -15919,6 +15926,7 @@ function confirmInvoiceOrder(billNo) {
         bill.deliveryStatus = "Confirmed";
         bill.isManuallyConfirmed = true;
         bill.salesRecorded = true;
+        if (!bill.confirmedDate) bill.confirmedDate = new Date().toISOString().split("T")[0];
 
         const affectedOrders = [];
         if (bill.orderNo) {
@@ -16394,13 +16402,10 @@ function syncWithLocalServerStore() {
                 AppState.initialServerHydrated = true;
                 renderAllViews();
             } else if (hasDataChanged) {
-                if (typeof renderStockInventoryTable === "function") renderStockInventoryTable();
-                if (typeof renderOrdersTable === "function") renderOrdersTable();
-                if (typeof renderDashboard === "function") renderDashboard();
-                if (typeof renderPickListTable === "function") renderPickListTable();
-                if (typeof renderInvoicesTable === "function") renderInvoicesTable();
-                if (typeof renderSalesReports === "function") renderSalesReports();
-                if (typeof renderDataSyncTab === "function") renderDataSyncTab();
+                // Only refresh the screen being looked at. This runs on a 4-second
+                // poll, so rebuilding six screens (dashboard charts, reports, every
+                // table) each time was a constant, invisible drag on the whole app.
+                renderActiveTabOnly(AppState.activeTab);
             }
         })
         .catch(() => {});
