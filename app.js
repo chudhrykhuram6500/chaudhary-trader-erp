@@ -7363,97 +7363,72 @@ function navigateToTab(targetTab) {
    filtered here - which is what made the old report tabs slow.
    ========================================================================== */
 
-const REPORT_DEFINITIONS = [
-    {
-        id: "billRegister",
-        name: "Bill Register",
-        desc: "Every bill in the period, line by line",
-        columns: ["Bill No", "Date", "Shop", "Route", "Company", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
-        build: (bills) => bills.map(b => {
-            const t = billTotals(b);
-            return [b.billNo || "-", saleDateOf(b), b.shopName || "-", b.routeName || "-",
-                    companyLabel(b), t.cartons, +t.kg.toFixed(2), Math.round(t.value)];
-        })
-    },
-    {
-        id: "dateWise",
-        name: "Day-wise Sales",
-        desc: "Totals grouped by date",
-        columns: ["Date", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
-        build: (bills) => groupRows(bills, b => saleDateOf(b)).sort((a, b) => String(a[0]).localeCompare(String(b[0])))
-    },
-    {
-        id: "shopWise",
-        name: "Shop-wise Sales",
-        desc: "Which outlet bought how much",
-        columns: ["Shop", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
-        build: (bills) => groupRows(bills, b => b.shopName || "Unknown Shop").sort((a, b) => b[4] - a[4])
-    },
-    {
-        id: "routeWise",
-        name: "Route-wise Sales",
-        desc: "Performance by beat / route",
-        columns: ["Route", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
-        build: (bills) => groupRows(bills, b => b.routeName || "Unassigned").sort((a, b) => b[4] - a[4])
-    },
-    {
-        id: "salesmanWise",
-        name: "Salesman-wise Sales",
-        desc: "Performance by salesman",
-        columns: ["Salesman", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
-        build: (bills) => groupRows(bills, b => b.salesman || "Unassigned").sort((a, b) => b[4] - a[4])
-    },
-    {
-        id: "companyWise",
-        name: "Company / Brand Sales",
-        desc: "Lays vs Fast split",
-        columns: ["Company", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
-        build: (bills) => groupRows(bills, b => companyLabel(b)).sort((a, b) => b[4] - a[4])
-    },
-    {
-        id: "skuWise",
-        name: "Product / SKU-wise Sales",
-        desc: "Which products sold, by quantity and value",
-        columns: ["SKU Code", "Product", "Cartons", "Packets", "Weight (KG)", "Net Amount (Rs.)"],
-        build: (bills) => {
-            const map = {};
-            bills.forEach(b => (b.items || []).forEach(i => {
-                const key = i.code || i.desc || "SKU";
-                if (!map[key]) map[key] = { code: i.code || "-", desc: i.desc || i.code || "-", ctn: 0, pkt: 0, kg: 0, val: 0 };
-                const m = itemMetrics(i);
-                map[key].ctn += m.cartons; map[key].pkt += m.units; map[key].kg += m.kg; map[key].val += m.value;
-            }));
-            return Object.values(map)
-                .map(r => [r.code, r.desc, r.ctn, r.pkt, +r.kg.toFixed(2), Math.round(r.val)])
-                .sort((a, b) => b[5] - a[5]);
-        }
-    },
-    {
-        id: "paymentWise",
-        name: "Cash vs Credit",
-        desc: "Collection split by payment type",
-        columns: ["Payment Type", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
-        build: (bills) => groupRows(bills, b => (b.paymentStatus === "Credit" ? "Credit" : "Cash")).sort((a, b) => b[4] - a[4])
-    }
-];
+/* ---- Field helpers: one place that knows how a bill/item is shaped ------- */
 
 function itemMetrics(i) {
     const sku = (AppState.skus || []).find(s => s.code === i.code || (i.desc && s.desc && s.desc.toLowerCase() === String(i.desc).toLowerCase()));
-    const pack = i.pack || (sku ? sku.pack : 12) || 12;
-    const grams = i.grams || (sku ? sku.grams : 72) || 72;
+    const pack    = i.pack   || (sku ? sku.pack   : 12) || 12;
+    const grams   = i.grams  || (sku ? sku.grams  : 72) || 72;
     const cartons = i.cartons || 0;
-    const units = i.units || 0;
-    const packets = i.totalPackets || ((cartons * pack) + units);
-    const kg = (i.weightKg && i.weightKg > 0) ? i.weightKg : ((grams * packets) / 1000);
-    return { cartons, units, kg, value: computeBillItemAmount(i) };
+    const units   = i.units   || 0;
+    const packets = (i.totalPackets !== undefined && i.totalPackets !== null) ? i.totalPackets : ((cartons * pack) + units);
+    const kg      = (i.weightKg !== undefined && i.weightKg !== null && i.weightKg > 0) ? i.weightKg : ((grams * packets) / 1000);
+    const basic   = (i.basicAmount !== undefined && i.basicAmount !== null) ? i.basicAmount : 0;
+    const disc    = i.discAmount || 0;
+    const net     = (i.amount !== undefined && i.amount !== null) ? i.amount : basic - disc;
+    return { pack, cartons, units, packets, kg, basic, disc, net, tp: i.tpRate || 0, value: net };
+}
+
+function itemBrand(i) {
+    const d = String(i.desc || "").toUpperCase();
+    if (String(i.companyId || "").toLowerCase() === "hash" || String(i.code || "").toUpperCase().startsWith("HASH")) return "Hash";
+    if (d.includes("WAVY"))    return "Lays Wavy";
+    if (d.includes("MAXX"))    return "Lays MAXX";
+    if (d.includes("LAYS"))    return "Lays";
+    if (d.includes("KURKURE")) return "Kurkure";
+    if (d.includes("CHEETOS")) return "Cheetos";
+    if (d.includes("OATS"))    return "Quaker Oats";
+    return "Other";
+}
+
+// The flavour/variant as punched on the bill line (Masala, Salt, Y&H, ...)
+function itemFlavour(i) {
+    return i.brand || i.flavour || "-";
+}
+
+// PC = Potato Chips, NPC = Non-Potato Chips, Hash = Hash Foods catalog
+function itemCategory(i) {
+    const cat  = String(i.categoryType || "").toUpperCase();
+    if (cat === "PC" || cat === "NPC" || cat === "HASH") return cat === "HASH" ? "Hash" : cat;
+    const code = String(i.code || "").toUpperCase();
+    const d    = String(i.desc || "").toUpperCase();
+    if (String(i.companyId || "").toLowerCase() === "hash" || code.startsWith("HASH")) return "Hash";
+    if (d.includes("LAYS") || d.includes("MAXX") || d.includes("WAVY")) return "PC";
+    return "NPC";
+}
+
+function categoryName(cat) {
+    return cat === "Hash" ? "Hash Catalog" : (cat === "PC" ? "Potato Chips" : "Non-Potato Chips");
 }
 
 function billTotals(b) {
-    return (b.items || []).reduce((acc, i) => {
+    const sum = (b.items || []).reduce((a, i) => {
         const m = itemMetrics(i);
-        acc.cartons += m.cartons; acc.kg += m.kg; acc.value += m.value;
-        return acc;
-    }, { cartons: 0, kg: 0, value: 0 });
+        a.cartons += m.cartons; a.units += m.units; a.packets += m.packets;
+        a.kg += m.kg; a.basic += m.basic; a.disc += m.disc; a.net += m.net;
+        return a;
+    }, { cartons: 0, units: 0, packets: 0, kg: 0, basic: 0, disc: 0, net: 0 });
+
+    return {
+        cartons: (b.totalCartons !== undefined ? b.totalCartons : sum.cartons),
+        units:   (b.totalUnits   !== undefined ? b.totalUnits   : sum.units),
+        packets: sum.packets,
+        kg:      (b.totalWeightKg  || sum.kg),
+        basic:   (b.totalBasic     || sum.basic),
+        disc:    (b.totalDisc      || sum.disc),
+        tax:     (b.totalAdwh      || 0),
+        value:   (b.netAmount !== undefined && b.netAmount !== null ? b.netAmount : sum.net)
+    };
 }
 
 function saleDateOf(b) {
@@ -7465,16 +7440,432 @@ function companyLabel(b) {
     return (c === "hash" || c === "fast") ? "Fast / Hash" : "Lays / PepsiCo";
 }
 
-function groupRows(bills, keyFn) {
-    const map = {};
-    bills.forEach(b => {
-        const key = keyFn(b) || "-";
-        if (!map[key]) map[key] = { bills: 0, cartons: 0, kg: 0, value: 0 };
-        const t = billTotals(b);
-        map[key].bills += 1; map[key].cartons += t.cartons; map[key].kg += t.kg; map[key].value += t.value;
-    });
-    return Object.keys(map).map(k => [k, map[k].bills, map[k].cartons, +map[k].kg.toFixed(2), Math.round(map[k].value)]);
+function taxModeLabel(b) {
+    const t = String(b.taxMode || "").toLowerCase();
+    if (t === "filer")    return "Filer (0.5%)";
+    if (t === "nonfiler") return "Non-Filer (2.5%)";
+    return "Not set";
 }
+
+function paymentLabel(b) {
+    return (b.paymentStatus === "Credit" || b.paymentStatus === "Udhaar") ? "Credit" : "Cash";
+}
+
+/* Every bill line as one flat row - the base for all itemised reports. */
+function flattenItems(bills) {
+    const out = [];
+    bills.forEach(b => (b.items || []).forEach(i => {
+        out.push({ b, i, m: itemMetrics(i), brand: itemBrand(i), flavour: itemFlavour(i), cat: itemCategory(i) });
+    }));
+    return out;
+}
+
+function groupBy(rows, keyFn, valFn) {
+    const map = {};
+    rows.forEach(r => {
+        const k = keyFn(r) || "-";
+        if (!map[k]) map[k] = { key: k, count: 0, cartons: 0, units: 0, packets: 0, kg: 0, basic: 0, disc: 0, tax: 0, value: 0 };
+        valFn(map[k], r);
+        map[k].count += 1;
+    });
+    return Object.values(map);
+}
+
+function billGroup(bills, keyFn) {
+    return groupBy(bills, keyFn, (acc, b) => {
+        const t = billTotals(b);
+        acc.cartons += t.cartons; acc.units += t.units; acc.packets += t.packets;
+        acc.kg += t.kg; acc.basic += t.basic; acc.disc += t.disc; acc.tax += t.tax; acc.value += t.value;
+    });
+}
+
+function itemGroup(rows, keyFn) {
+    return groupBy(rows, keyFn, (acc, r) => {
+        acc.cartons += r.m.cartons; acc.units += r.m.units; acc.packets += r.m.packets;
+        acc.kg += r.m.kg; acc.basic += r.m.basic; acc.disc += r.m.disc; acc.value += r.m.net;
+    });
+}
+
+const r2 = (n) => +(n || 0).toFixed(2);
+const r0 = (n) => Math.round(n || 0);
+
+/* Standard column sets so every report shows the same level of detail. */
+const SUMMARY_COLS = ["Bills", "Cartons", "Loose Pkts", "Weight (KG)", "Gross Basic (Rs.)", "Discount (Rs.)", "Net Amount (Rs.)"];
+const summaryVals  = (g) => [g.count, g.cartons, g.units, r2(g.kg), r0(g.basic), r0(g.disc), r0(g.value)];
+
+const ITEM_SUMMARY_COLS = ["Cartons", "Loose Pkts", "Total Packets", "Weight (KG)", "Gross Basic (Rs.)", "Discount (Rs.)", "Net Amount (Rs.)"];
+const itemSummaryVals   = (g) => [g.cartons, g.units, g.packets, r2(g.kg), r0(g.basic), r0(g.disc), r0(g.value)];
+
+const BILL_DETAIL_COLS = ["Bill No", "Date", "Shop", "Route", "Salesman", "Company", "Tax Mode", "Payment",
+                          "Cartons", "Loose Pkts", "Weight (KG)", "Gross Basic (Rs.)", "Discount (Rs.)", "ADWH Tax (Rs.)", "Net Amount (Rs.)"];
+const billDetailVals = (b) => {
+    const t = billTotals(b);
+    return [b.billNo || "-", saleDateOf(b), b.shopName || "-", b.routeName || "-", b.salesman || "-",
+            companyLabel(b), taxModeLabel(b), paymentLabel(b),
+            t.cartons, t.units, r2(t.kg), r0(t.basic), r0(t.disc), r0(t.tax), r0(t.value)];
+};
+
+const LINE_DETAIL_COLS = ["Bill No", "Date", "Shop", "Route", "Company", "Brand", "Flavour", "Category", "SKU Code", "Product",
+                          "Cartons", "Loose Pkts", "Total Packets", "Weight (KG)", "TP Rate (Rs.)", "Gross Basic (Rs.)", "Discount (Rs.)", "Line Net (Rs.)"];
+const lineDetailVals = (r) => [
+    r.b.billNo || "-", saleDateOf(r.b), r.b.shopName || "-", r.b.routeName || "-", companyLabel(r.b),
+    r.brand, itemFlavour(r.i), categoryName(r.cat), r.i.code || "-", r.i.desc || "-",
+    r.m.cartons, r.m.units, r.m.packets, r2(r.m.kg), r2(r.m.tp), r0(r.m.basic), r0(r.m.disc), r0(r.m.net)
+];
+
+/* ---- The report catalogue ------------------------------------------------
+   Sections mirror the old Sales / Financial / Analysis tabs, so everything
+   that used to be spread across three screens now lives in one place.
+   -------------------------------------------------------------------------- */
+
+const REPORT_DEFINITIONS = [
+
+    /* ============================ SALES ============================ */
+    {
+        section: "Sales Reports", id: "pcSale", name: "PC Sale Report",
+        desc: "Potato Chips only - Lays / MAXX / Wavy, line by line",
+        columns: LINE_DETAIL_COLS,
+        build: (bills) => flattenItems(bills).filter(r => r.cat === "PC").map(lineDetailVals)
+    },
+    {
+        section: "Sales Reports", id: "npcSale", name: "NPC Sale Report",
+        desc: "Non-Potato Chips only - Kurkure / Cheetos / Oats",
+        columns: LINE_DETAIL_COLS,
+        build: (bills) => flattenItems(bills).filter(r => r.cat === "NPC").map(lineDetailVals)
+    },
+    {
+        section: "Sales Reports", id: "hashSale", name: "Hash Sale Report",
+        desc: "Hash Foods and Beverages catalog only",
+        columns: LINE_DETAIL_COLS,
+        build: (bills) => flattenItems(bills).filter(r => r.cat === "Hash").map(lineDetailVals)
+    },
+    {
+        section: "Sales Reports", id: "filerSale", name: "Filer Sale (0.5% ADWH)",
+        desc: "Bills of filer outlets only, with tax",
+        columns: BILL_DETAIL_COLS,
+        build: (bills) => bills.filter(b => String(b.taxMode).toLowerCase() === "filer").map(billDetailVals)
+    },
+    {
+        section: "Sales Reports", id: "nonFilerSale", name: "Non-Filer Sale (2.5% ADWH)",
+        desc: "Bills of non-filer outlets only, with tax",
+        columns: BILL_DETAIL_COLS,
+        build: (bills) => bills.filter(b => String(b.taxMode).toLowerCase() === "nonfiler").map(billDetailVals)
+    },
+    {
+        section: "Sales Reports", id: "combinedSale", name: "Combined Master Ledger",
+        desc: "Every bill in the period with full totals",
+        columns: BILL_DETAIL_COLS,
+        build: (bills) => bills.map(billDetailVals)
+    },
+    {
+        section: "Sales Reports", id: "billItemDetail", name: "Bill-wise Item Detail",
+        desc: "Every bill line: which bill, which product, how much",
+        columns: LINE_DETAIL_COLS,
+        build: (bills) => flattenItems(bills).map(lineDetailVals)
+    },
+    {
+        section: "Sales Reports", id: "productWise", name: "Product / SKU-wise Sale",
+        desc: "Per SKU with brand, category and pack size",
+        columns: ["SKU Code", "Product", "Brand", "Flavour", "Category", "Pack"].concat(ITEM_SUMMARY_COLS),
+        build: (bills) => {
+            const rows = flattenItems(bills);
+            const meta = {};
+            rows.forEach(r => { meta[r.i.code || r.i.desc || "SKU"] = r; });
+            return itemGroup(rows, r => (r.i.code || r.i.desc || "SKU")).map(x => {
+                const r = meta[x.key];
+                return [r.i.code || "-", r.i.desc || "-", r.brand, itemFlavour(r.i), categoryName(r.cat), r.m.pack].concat(itemSummaryVals(x));
+            }).sort((a, b) => b[b.length - 1] - a[a.length - 1]);
+        }
+    },
+    {
+        section: "Sales Reports", id: "brandWise", name: "Brand-wise Sale",
+        desc: "Lays / Wavy / MAXX / Kurkure / Cheetos / Hash split",
+        columns: ["Brand", "Category"].concat(ITEM_SUMMARY_COLS),
+        build: (bills) => {
+            const rows = flattenItems(bills);
+            const cat = {};
+            rows.forEach(r => { cat[r.brand] = categoryName(r.cat); });
+            return itemGroup(rows, r => r.brand)
+                .map(x => [x.key, cat[x.key] || "-"].concat(itemSummaryVals(x)))
+                .sort((a, b) => b[b.length - 1] - a[a.length - 1]);
+        }
+    },
+    {
+        section: "Sales Reports", id: "flavourWise", name: "Flavour / Variant-wise Sale",
+        desc: "Masala, Salt, Y&H, Wavy BBQ, Cheetos Bites and the rest",
+        columns: ["Flavour / Variant", "Brand", "Category"].concat(ITEM_SUMMARY_COLS),
+        build: (bills) => {
+            const rows = flattenItems(bills);
+            const meta = {};
+            rows.forEach(r => { meta[r.flavour] = r; });
+            return itemGroup(rows, r => r.flavour)
+                .map(x => [x.key, (meta[x.key] || {}).brand || "-", categoryName((meta[x.key] || {}).cat)].concat(itemSummaryVals(x)))
+                .sort((a, b) => b[b.length - 1] - a[a.length - 1]);
+        }
+    },
+    {
+        section: "Sales Reports", id: "categoryWise", name: "Category-wise Sale (PC / NPC / Hash)",
+        desc: "Potato Chips vs Non-Potato Chips vs Hash",
+        columns: ["Category"].concat(ITEM_SUMMARY_COLS),
+        build: (bills) => itemGroup(flattenItems(bills), r => categoryName(r.cat))
+            .map(x => [x.key].concat(itemSummaryVals(x))).sort((a, b) => b[b.length - 1] - a[a.length - 1])
+    },
+    {
+        section: "Sales Reports", id: "companyWise", name: "Company-wise Sale",
+        desc: "Lays / PepsiCo vs Fast / Hash",
+        columns: ["Company"].concat(SUMMARY_COLS),
+        build: (bills) => billGroup(bills, b => companyLabel(b))
+            .map(g => [g.key].concat(summaryVals(g))).sort((a, b) => b[b.length - 1] - a[a.length - 1])
+    },
+    {
+        section: "Sales Reports", id: "shopWise", name: "Shop-wise Sale",
+        desc: "Per outlet, with route and salesman",
+        columns: ["Shop", "Route", "Salesman"].concat(SUMMARY_COLS),
+        build: (bills) => {
+            const meta = {};
+            bills.forEach(b => { meta[b.shopName || "Unknown Shop"] = b; });
+            return billGroup(bills, b => b.shopName || "Unknown Shop")
+                .map(x => [x.key, (meta[x.key] || {}).routeName || "-", (meta[x.key] || {}).salesman || "-"].concat(summaryVals(x)))
+                .sort((a, b) => b[b.length - 1] - a[a.length - 1]);
+        }
+    },
+    {
+        section: "Sales Reports", id: "routeWise", name: "Route-wise Sale",
+        desc: "Per beat / route, with shop count",
+        columns: ["Route", "Shops Billed"].concat(SUMMARY_COLS),
+        build: (bills) => {
+            const shops = {};
+            bills.forEach(b => {
+                const k = b.routeName || "Unassigned";
+                (shops[k] = shops[k] || new Set()).add(b.shopName);
+            });
+            return billGroup(bills, b => b.routeName || "Unassigned")
+                .map(g => [g.key, (shops[g.key] || new Set()).size].concat(summaryVals(g)))
+                .sort((a, b) => b[b.length - 1] - a[a.length - 1]);
+        }
+    },
+    {
+        section: "Sales Reports", id: "salesmanWise", name: "Salesman-wise Sale",
+        desc: "Per salesman, with shops covered",
+        columns: ["Salesman", "Shops Billed"].concat(SUMMARY_COLS),
+        build: (bills) => {
+            const shops = {};
+            bills.forEach(b => {
+                const k = b.salesman || "Unassigned";
+                (shops[k] = shops[k] || new Set()).add(b.shopName);
+            });
+            return billGroup(bills, b => b.salesman || "Unassigned")
+                .map(g => [g.key, (shops[g.key] || new Set()).size].concat(summaryVals(g)))
+                .sort((a, b) => b[b.length - 1] - a[a.length - 1]);
+        }
+    },
+    {
+        section: "Sales Reports", id: "dateWise", name: "Day-wise Sale",
+        desc: "Totals for each day in the period",
+        columns: ["Date"].concat(SUMMARY_COLS),
+        build: (bills) => billGroup(bills, b => saleDateOf(b))
+            .map(g => [g.key].concat(summaryVals(g))).sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+    },
+    {
+        section: "Sales Reports", id: "monthWise", name: "Month-wise Sale",
+        desc: "Totals for each month in the period",
+        columns: ["Month"].concat(SUMMARY_COLS),
+        build: (bills) => billGroup(bills, b => saleDateOf(b).slice(0, 7))
+            .map(g => [g.key].concat(summaryVals(g))).sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+    },
+
+    /* ========================== FINANCIAL ========================== */
+    {
+        section: "Financial Reports", id: "totalSale", name: "Total Sales Summary",
+        desc: "Day-wise gross, discount, tax and net revenue",
+        columns: ["Date", "Bills", "Cartons", "Loose Pkts", "Weight (KG)", "Gross Basic (Rs.)", "Discount (Rs.)", "ADWH Tax (Rs.)", "Net Revenue (Rs.)"],
+        build: (bills) => billGroup(bills, b => saleDateOf(b))
+            .map(g => [g.key, g.count, g.cartons, g.units, r2(g.kg), r0(g.basic), r0(g.disc), r0(g.tax), r0(g.value)])
+            .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+    },
+    {
+        section: "Financial Reports", id: "cashSale", name: "Cash Sales Ledger",
+        desc: "Cash bills only, bill by bill",
+        columns: BILL_DETAIL_COLS,
+        build: (bills) => bills.filter(b => paymentLabel(b) === "Cash").map(billDetailVals)
+    },
+    {
+        section: "Financial Reports", id: "creditSale", name: "Credit Sales (Udhaar)",
+        desc: "Credit bills only, bill by bill",
+        columns: BILL_DETAIL_COLS,
+        build: (bills) => bills.filter(b => paymentLabel(b) === "Credit").map(billDetailVals)
+    },
+    {
+        section: "Financial Reports", id: "paymentWise", name: "Cash vs Credit Summary",
+        desc: "Collection split by payment type",
+        columns: ["Payment Type"].concat(SUMMARY_COLS),
+        build: (bills) => billGroup(bills, b => paymentLabel(b))
+            .map(g => [g.key].concat(summaryVals(g))).sort((a, b) => b[b.length - 1] - a[a.length - 1])
+    },
+    {
+        section: "Financial Reports", id: "discountReport", name: "Shop Discount Ledger",
+        desc: "Discount given to each outlet, and as a % of sale",
+        columns: ["Shop", "Route", "Bills", "Gross Basic (Rs.)", "Discount (Rs.)", "Discount %", "Net Amount (Rs.)"],
+        build: (bills) => {
+            const meta = {};
+            bills.forEach(b => { meta[b.shopName || "Unknown Shop"] = b; });
+            return billGroup(bills, b => b.shopName || "Unknown Shop")
+                .map(x => [x.key, (meta[x.key] || {}).routeName || "-", x.count, r0(x.basic), r0(x.disc),
+                           r2(x.basic > 0 ? (x.disc / x.basic) * 100 : 0), r0(x.value)])
+                .sort((a, b) => b[4] - a[4]);
+        }
+    },
+    {
+        section: "Financial Reports", id: "taxReport", name: "ADWH Tax Report (Filer / Non-Filer)",
+        desc: "Tax collected by filer status",
+        columns: ["Tax Mode"].concat(SUMMARY_COLS).concat(["ADWH Tax (Rs.)"]),
+        build: (bills) => billGroup(bills, b => taxModeLabel(b))
+            .map(g => [g.key].concat(summaryVals(g)).concat([r0(g.tax)]))
+            .sort((a, b) => b[b.length - 2] - a[a.length - 2])
+    },
+    {
+        section: "Financial Reports", id: "returns", name: "Sales Returns and Cancelled Bills",
+        desc: "Bills that were returned, cancelled or voided",
+        allStatuses: true,
+        columns: ["Bill No", "Date", "Shop", "Route", "Company", "Status", "Cartons", "Weight (KG)", "Amount (Rs.)"],
+        build: (bills) => bills.filter(b => b.isVoid || b.deliveryStatus === "Cancelled" || b.deliveryStatus === "Returned")
+            .map(b => {
+                const t = billTotals(b);
+                return [b.billNo || "-", saleDateOf(b), b.shopName || "-", b.routeName || "-", companyLabel(b),
+                        b.isVoid ? "Voided" : (b.deliveryStatus || "Cancelled"), t.cartons, r2(t.kg), r0(t.value)];
+            })
+    },
+    {
+        section: "Financial Reports", id: "outstanding", name: "Outstanding Balances (Credit)",
+        desc: "Unpaid credit amount per outlet",
+        columns: ["Shop", "Route", "Credit Bills", "Outstanding (Rs.)", "Last Bill Date"],
+        build: (bills) => {
+            const credit = bills.filter(b => paymentLabel(b) === "Credit");
+            const last = {};
+            credit.forEach(b => {
+                const k = b.shopName || "Unknown Shop";
+                const d = saleDateOf(b);
+                if (!last[k] || d > last[k].d) last[k] = { d: d, route: b.routeName || "-" };
+            });
+            return billGroup(credit, b => b.shopName || "Unknown Shop")
+                .map(x => [x.key, (last[x.key] || {}).route || "-", x.count, r0(x.value), (last[x.key] || {}).d || "-"])
+                .sort((a, b) => b[3] - a[3]);
+        }
+    },
+
+    /* =========================== ANALYSIS =========================== */
+    {
+        section: "Analysis", id: "topSelling", name: "Top Selling Products",
+        desc: "Ranked by net revenue",
+        columns: ["Rank", "SKU Code", "Product", "Brand", "Category"].concat(ITEM_SUMMARY_COLS),
+        build: (bills) => {
+            const rows = flattenItems(bills);
+            const meta = {};
+            rows.forEach(r => { meta[r.i.code || r.i.desc || "SKU"] = r; });
+            return itemGroup(rows, r => (r.i.code || r.i.desc || "SKU"))
+                .sort((a, b) => b.value - a.value)
+                .map((x, idx) => {
+                    const r = meta[x.key];
+                    return [idx + 1, r.i.code || "-", r.i.desc || "-", r.brand, categoryName(r.cat)].concat(itemSummaryVals(x));
+                });
+        }
+    },
+    {
+        section: "Analysis", id: "slowMoving", name: "Slow Moving Products",
+        desc: "Lowest selling SKUs first",
+        columns: ["Rank", "SKU Code", "Product", "Brand", "Category"].concat(ITEM_SUMMARY_COLS),
+        build: (bills) => {
+            const rows = flattenItems(bills);
+            const meta = {};
+            rows.forEach(r => { meta[r.i.code || r.i.desc || "SKU"] = r; });
+            return itemGroup(rows, r => (r.i.code || r.i.desc || "SKU"))
+                .sort((a, b) => a.value - b.value)
+                .map((x, idx) => {
+                    const r = meta[x.key];
+                    return [idx + 1, r.i.code || "-", r.i.desc || "-", r.brand, categoryName(r.cat)].concat(itemSummaryVals(x));
+                });
+        }
+    },
+    {
+        section: "Analysis", id: "notSoldSkus", name: "Products With No Sale",
+        desc: "SKUs in the master that sold nothing in this period",
+        columns: ["SKU Code", "Product", "Brand", "Pack", "Available Cartons", "Available Pkts"],
+        build: (bills) => {
+            const sold = new Set();
+            flattenItems(bills).forEach(r => sold.add(String(r.i.code || r.i.desc || "")));
+            return (AppState.skus || []).filter(s => !sold.has(String(s.code)))
+                .map(s => [s.code || "-", s.desc || "-", itemBrand(s), s.pack || 12,
+                           s.stockCartons || 0, s.stockUnits || 0]);
+        }
+    },
+    {
+        section: "Analysis", id: "noSaleShops", name: "No Sale Shops",
+        desc: "Outlets with zero delivered bills in the period",
+        columns: ["Shop", "Route", "Owner", "Phone", "Beat Day", "Status"],
+        build: (bills) => {
+            const billed = new Set(bills.map(b => String(b.shopName || "").toLowerCase()));
+            return (AppState.shops || []).filter(s => !billed.has(String(s.name || "").toLowerCase()))
+                .map(s => [s.name || "-", s.routeName || s.route || "-", s.owner || s.ownerName || "-",
+                           s.phone || s.contact || "-", s.visitDay || s.beatDay || "-", s.status || "Active"]);
+        }
+    },
+    {
+        section: "Analysis", id: "zeroStock", name: "Zero Stock Products", noBills: true,
+        desc: "Out-of-stock alert from the SKU master",
+        columns: ["SKU Code", "Product", "Brand", "Pack", "Available Cartons", "Available Pkts", "Status"],
+        build: () => (AppState.skus || [])
+            .filter(s => (s.stockCartons || 0) <= 0 && (s.stockUnits || 0) <= 0)
+            .map(s => [s.code || "-", s.desc || "-", itemBrand(s), s.pack || 12, s.stockCartons || 0, s.stockUnits || 0, "Out of Stock"])
+    },
+    {
+        section: "Analysis", id: "productPerf", name: "Product Performance",
+        desc: "Share of total revenue per SKU",
+        columns: ["SKU Code", "Product", "Brand", "Category", "Cartons", "Weight (KG)", "Net Amount (Rs.)", "Share of Sales %"],
+        build: (bills) => {
+            const rows = flattenItems(bills);
+            const meta = {};
+            rows.forEach(r => { meta[r.i.code || r.i.desc || "SKU"] = r; });
+            const g = itemGroup(rows, r => (r.i.code || r.i.desc || "SKU"));
+            const total = g.reduce((s, x) => s + x.value, 0) || 1;
+            return g.sort((a, b) => b.value - a.value).map(x => {
+                const r = meta[x.key];
+                return [r.i.code || "-", r.i.desc || "-", r.brand, categoryName(r.cat),
+                        x.cartons, r2(x.kg), r0(x.value), r2((x.value / total) * 100)];
+            });
+        }
+    },
+    {
+        section: "Analysis", id: "routePerf", name: "Route Performance",
+        desc: "Route share of sales and average bill value",
+        columns: ["Route", "Shops Billed", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)", "Avg Bill (Rs.)", "Share of Sales %"],
+        build: (bills) => {
+            const shops = {};
+            bills.forEach(b => {
+                const k = b.routeName || "Unassigned";
+                (shops[k] = shops[k] || new Set()).add(b.shopName);
+            });
+            const g = billGroup(bills, b => b.routeName || "Unassigned");
+            const total = g.reduce((s, x) => s + x.value, 0) || 1;
+            return g.sort((a, b) => b.value - a.value).map(x =>
+                [x.key, (shops[x.key] || new Set()).size, x.count, x.cartons, r2(x.kg), r0(x.value),
+                 r0(x.value / (x.count || 1)), r2((x.value / total) * 100)]);
+        }
+    },
+    {
+        section: "Analysis", id: "shopPerf", name: "Shop Performance",
+        desc: "Outlet share of sales and average bill value",
+        columns: ["Shop", "Route", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)", "Avg Bill (Rs.)", "Share of Sales %"],
+        build: (bills) => {
+            const meta = {};
+            bills.forEach(b => { meta[b.shopName || "Unknown Shop"] = b; });
+            const g = billGroup(bills, b => b.shopName || "Unknown Shop");
+            const total = g.reduce((s, x) => s + x.value, 0) || 1;
+            return g.sort((a, b) => b.value - a.value).map(x =>
+                [x.key, (meta[x.key] || {}).routeName || "-", x.count, x.cartons, r2(x.kg), r0(x.value),
+                 r0(x.value / (x.count || 1)), r2((x.value / total) * 100)]);
+        }
+    }
+];
 
 let _rcSelectedReport = REPORT_DEFINITIONS[0].id;
 let _rcLastResult = null;   // { columns, rows, meta }
@@ -7485,13 +7876,38 @@ function renderReportsCenter() {
     const list = document.getElementById("reportsCenterList");
     if (!list) return;
 
-    list.innerHTML = REPORT_DEFINITIONS.map(r => `
-        <button type="button" class="report-pill${r.id === _rcSelectedReport ? " active" : ""}"
-                onclick="selectReportsCenterReport('${r.id}')"
-                style="text-align:left; cursor:pointer; display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
-            <span style="font-size:13px; font-weight:800;">${r.name}</span>
-            <span style="font-size:10.5px; font-weight:600; opacity:.75;">${r.desc}</span>
-        </button>`).join("");
+    // Group the catalogue by section so the old Sales / Financial / Analysis
+    // tabs are still recognisable, just in one place.
+    const sections = [];
+    REPORT_DEFINITIONS.forEach(r => {
+        let sec = sections.find(s => s.name === r.section);
+        if (!sec) sections.push(sec = { name: r.section, reports: [] });
+        sec.reports.push(r);
+    });
+
+    const q = (document.getElementById("rcReportSearch")?.value || "").toLowerCase().trim();
+
+    list.innerHTML = sections.map(sec => {
+        const shown = sec.reports.filter(r => !q || r.name.toLowerCase().includes(q) || r.desc.toLowerCase().includes(q));
+        if (shown.length === 0) return "";
+        return `
+        <div style="margin-bottom:14px;">
+            <div style="font-size:10.5px; font-weight:900; letter-spacing:.09em; text-transform:uppercase;
+                        color:var(--brand-gold); padding:0 4px 6px 4px;">${sec.name} <span style="opacity:.55;">(${shown.length})</span></div>
+            ${shown.map(r => `
+            <button type="button" class="report-pill${r.id === _rcSelectedReport ? " active" : ""}"
+                    onclick="selectReportsCenterReport('${r.id}')"
+                    style="width:100%; text-align:left; cursor:pointer; display:flex; flex-direction:column;
+                           align-items:flex-start; gap:2px; margin-bottom:6px;">
+                <span style="font-size:12.5px; font-weight:800;">${r.name}</span>
+                <span style="font-size:10.5px; font-weight:600; opacity:.75;">${r.desc}</span>
+            </button>`).join("")}
+        </div>`;
+    }).join("");
+
+    if (!list.innerHTML.trim()) {
+        list.innerHTML = `<div style="padding:18px; text-align:center; color:var(--text-muted); font-size:12px;">No report matches "${q}".</div>`;
+    }
 
     const routeSel = document.getElementById("rcRoute");
     if (routeSel && routeSel.options.length <= 1) {
@@ -7505,10 +7921,14 @@ function renderReportsCenter() {
     const def = REPORT_DEFINITIONS.find(r => r.id === _rcSelectedReport) || REPORT_DEFINITIONS[0];
     const nameEl = document.getElementById("rcSelectedReportName");
     const descEl = document.getElementById("rcSelectedReportDesc");
-    if (nameEl) nameEl.innerText = def.name;
+    if (nameEl) nameEl.innerText = `${def.section} · ${def.name}`;
     if (descEl) descEl.innerText = def.desc;
 
     if (!document.getElementById("rcFromDate").value) onReportsCenterPresetChange();
+}
+
+function filterReportsCenterList() {
+    renderReportsCenter();
 }
 
 function selectReportsCenterReport(id) {
@@ -7552,17 +7972,30 @@ async function runSelectedReport() {
     const statusEl = document.getElementById("rcStatusText");
     const bodyEl = document.getElementById("rcResultBody");
     statusEl.innerText = "Fetching…";
-    bodyEl.innerHTML = `<tr><td style="text-align:center; padding:26px; color:var(--text-muted);">Fetching data from server…</td></tr>`;
+    bodyEl.innerHTML = `<tr><td style="text-align:center; padding:26px; color:var(--text-muted);">Fetching data from the database…</td></tr>`;
+
+    const from = document.getElementById("rcFromDate").value;
+    const to = document.getElementById("rcToDate").value;
+
+    // Reports built purely from the SKU master need no bill fetch at all.
+    if (def.noBills) {
+        const rows = def.build([]);
+        _rcLastResult = { columns: def.columns, rows, meta: `${def.name} — ${rows.length} record(s)` };
+        _rcPage = 1;
+        renderReportsCenterResult();
+        document.getElementById("rcExportBtn").disabled = rows.length === 0;
+        statusEl.innerText = `✅ ${rows.length} record(s)`;
+        return;
+    }
 
     const params = new URLSearchParams({
         type: "bills",
         limit: "0",                                  // all matching rows, still only the filtered set
-        status: document.getElementById("rcStatus").value,
+        // The returns/cancelled report needs the bills the other reports exclude.
+        status: def.allStatuses ? "all" : document.getElementById("rcStatus").value,
         company: document.getElementById("rcCompany").value,
         route: document.getElementById("rcRoute").value
     });
-    const from = document.getElementById("rcFromDate").value;
-    const to = document.getElementById("rcToDate").value;
     if (from) params.set("from", from);
     if (to) params.set("to", to);
 
@@ -7573,15 +8006,16 @@ async function runSelectedReport() {
         if (!data.success) throw new Error(data.error || "Query failed");
 
         const rows = def.build(data.items || []);
+        const period = from || to ? ` (${from || "start"} to ${to || "today"})` : "";
         _rcLastResult = {
             columns: def.columns,
             rows,
-            meta: `${def.name} — ${data.total} bill(s)${from ? " from " + from : ""}${to ? " to " + to : ""}`
+            meta: `${def.section} · ${def.name}${period} — ${rows.length} row(s) from ${data.total} bill(s)`
         };
         _rcPage = 1;
         renderReportsCenterResult();
         document.getElementById("rcExportBtn").disabled = rows.length === 0;
-        statusEl.innerText = `✅ ${data.total} bill(s) matched`;
+        statusEl.innerText = `✅ ${data.total} bill(s) matched · ${rows.length} row(s)`;
     } catch (err) {
         statusEl.innerText = "⚠️ " + err.message;
         bodyEl.innerHTML = `<tr><td style="text-align:center; padding:26px; color:#ef4444;">Could not fetch the report: ${err.message}</td></tr>`;
