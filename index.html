@@ -150,6 +150,9 @@
                 </button>
 
                 <div class="nav-section-label">Reports</div>
+                <button class="nav-item" data-tab="reportsCenterTab" title="Reports Center">
+                    <i class="fa-solid fa-folder-open"></i><span>Reports Center</span>
+                </button>
                 <button class="nav-item" data-tab="salesReportsTab" title="Sales Reports">
                     <i class="fa-solid fa-file-invoice-dollar"></i><span>Sales Reports</span>
                 </button>
@@ -645,6 +648,7 @@
                 <!-- Orders Table -->
                 <div class="panel-box">
                     <div class="table-responsive">
+                        <div id="ordersScopeBanner" class="view-scope-banner" style="margin:0 0 10px 0;"></div>
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -720,6 +724,7 @@
 
                 <div class="panel-box">
                     <div class="table-responsive">
+                        <div id="pickListScopeBanner" class="view-scope-banner" style="margin:0 0 10px 0;"></div>
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -818,6 +823,7 @@
 
                 <div class="panel-box">
                     <div class="table-responsive">
+                        <div id="invoicesScopeBanner" class="view-scope-banner" style="margin:0 0 10px 0;"></div>
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -1392,6 +1398,108 @@
 
 
             <!-- TAB 7: SALES REPORTS CENTER -->
+            <!-- REPORTS CENTER: pick a report, set parameters, submit.
+                 Nothing is fetched or rendered until Run Report is pressed, and the
+                 server returns only the records matching the chosen parameters. -->
+            <section id="reportsCenterTab" class="tab-page">
+                <div class="page-title-bar">
+                    <span class="section-eyebrow">REPORTING</span>
+                    <h2><i class="fa-solid fa-folder-open" style="color: var(--brand-gold);"></i> Reports Center</h2>
+                    <p class="page-subtitle">Choose a report, set the parameters, then run it. Only the data you ask for is fetched from the database.</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start;" id="reportsCenterLayout">
+                    <!-- LEFT: report list -->
+                    <div class="panel-box">
+                        <div class="panel-header"><h3><i class="fa-solid fa-list-check"></i> Select Report</h3></div>
+                        <div id="reportsCenterList" style="display: flex; flex-direction: column; gap: 6px;">
+                            <!-- Populated by renderReportsCenter() -->
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: parameters + results -->
+                    <div>
+                        <div class="panel-box" style="margin-bottom: 16px;">
+                            <div class="panel-header flex-between">
+                                <h3><i class="fa-solid fa-sliders"></i> <span id="rcSelectedReportName">Parameters</span></h3>
+                                <span style="font-size: 11px; color: var(--text-muted);" id="rcSelectedReportDesc"></span>
+                            </div>
+
+                            <div class="search-filter-grid" style="margin-bottom: 14px;">
+                                <div class="form-group">
+                                    <label><i class="fa-regular fa-calendar"></i> Period</label>
+                                    <select id="rcPeriodPreset" onchange="onReportsCenterPresetChange()">
+                                        <option value="today">Today</option>
+                                        <option value="yesterday">Yesterday</option>
+                                        <option value="7days" selected>Last 7 Days</option>
+                                        <option value="30days">Last 30 Days</option>
+                                        <option value="thisMonth">This Month</option>
+                                        <option value="lastMonth">Last Month</option>
+                                        <option value="custom">Custom Range</option>
+                                        <option value="all">All Time</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>From</label>
+                                    <input type="date" id="rcFromDate">
+                                </div>
+                                <div class="form-group">
+                                    <label>To</label>
+                                    <input type="date" id="rcToDate">
+                                </div>
+                                <div class="form-group">
+                                    <label>Company / Brand</label>
+                                    <select id="rcCompany">
+                                        <option value="all" selected>All Companies</option>
+                                        <option value="lays">Lays / PepsiCo</option>
+                                        <option value="fast">Fast / Hash</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Route</label>
+                                    <select id="rcRoute"><option value="all" selected>All Routes</option></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Sale Status</label>
+                                    <select id="rcStatus">
+                                        <option value="Confirmed" selected>Confirmed Sales Only</option>
+                                        <option value="all">All (incl. Open &amp; Cancelled)</option>
+                                        <option value="Open">Open / Pending Only</option>
+                                        <option value="Cancelled">Cancelled Only</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="flex-gap">
+                                <button class="btn btn-warning" onclick="runSelectedReport()">
+                                    <i class="fa-solid fa-play"></i> Run Report
+                                </button>
+                                <button class="btn btn-outline" onclick="exportReportsCenterExcel()" id="rcExportBtn" disabled>
+                                    <i class="fa-solid fa-file-excel"></i> Download Excel
+                                </button>
+                                <span id="rcStatusText" style="font-size: 12px; color: var(--text-muted); align-self: center;"></span>
+                            </div>
+                        </div>
+
+                        <div class="panel-box">
+                            <div class="panel-header flex-between">
+                                <h3><i class="fa-solid fa-table"></i> Result</h3>
+                                <span id="rcResultMeta" style="font-size: 11px; color: var(--text-muted);"></span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead id="rcResultHead"></thead>
+                                    <tbody id="rcResultBody">
+                                        <tr><td style="text-align:center; padding:26px; color:var(--text-muted);">Select a report and press <strong>Run Report</strong>.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="rcPagination" class="pagination-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <section id="salesReportsTab" class="tab-page">
                 <div class="page-title-bar flex-between">
                     <div>

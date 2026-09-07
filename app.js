@@ -7354,6 +7354,296 @@ function navigateToTab(targetTab) {
     renderActiveTabOnly(targetTab);
 }
 
+/* ==========================================================================
+   REPORTS CENTER
+
+   One module for every report. Nothing loads until "Run Report" is pressed,
+   and the server is asked only for the records matching the chosen parameters
+   (/api/query) instead of the whole history being shipped to the browser and
+   filtered here - which is what made the old report tabs slow.
+   ========================================================================== */
+
+const REPORT_DEFINITIONS = [
+    {
+        id: "billRegister",
+        name: "Bill Register",
+        desc: "Every bill in the period, line by line",
+        columns: ["Bill No", "Date", "Shop", "Route", "Company", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
+        build: (bills) => bills.map(b => {
+            const t = billTotals(b);
+            return [b.billNo || "-", saleDateOf(b), b.shopName || "-", b.routeName || "-",
+                    companyLabel(b), t.cartons, +t.kg.toFixed(2), Math.round(t.value)];
+        })
+    },
+    {
+        id: "dateWise",
+        name: "Day-wise Sales",
+        desc: "Totals grouped by date",
+        columns: ["Date", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
+        build: (bills) => groupRows(bills, b => saleDateOf(b)).sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+    },
+    {
+        id: "shopWise",
+        name: "Shop-wise Sales",
+        desc: "Which outlet bought how much",
+        columns: ["Shop", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
+        build: (bills) => groupRows(bills, b => b.shopName || "Unknown Shop").sort((a, b) => b[4] - a[4])
+    },
+    {
+        id: "routeWise",
+        name: "Route-wise Sales",
+        desc: "Performance by beat / route",
+        columns: ["Route", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
+        build: (bills) => groupRows(bills, b => b.routeName || "Unassigned").sort((a, b) => b[4] - a[4])
+    },
+    {
+        id: "salesmanWise",
+        name: "Salesman-wise Sales",
+        desc: "Performance by salesman",
+        columns: ["Salesman", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
+        build: (bills) => groupRows(bills, b => b.salesman || "Unassigned").sort((a, b) => b[4] - a[4])
+    },
+    {
+        id: "companyWise",
+        name: "Company / Brand Sales",
+        desc: "Lays vs Fast split",
+        columns: ["Company", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
+        build: (bills) => groupRows(bills, b => companyLabel(b)).sort((a, b) => b[4] - a[4])
+    },
+    {
+        id: "skuWise",
+        name: "Product / SKU-wise Sales",
+        desc: "Which products sold, by quantity and value",
+        columns: ["SKU Code", "Product", "Cartons", "Packets", "Weight (KG)", "Net Amount (Rs.)"],
+        build: (bills) => {
+            const map = {};
+            bills.forEach(b => (b.items || []).forEach(i => {
+                const key = i.code || i.desc || "SKU";
+                if (!map[key]) map[key] = { code: i.code || "-", desc: i.desc || i.code || "-", ctn: 0, pkt: 0, kg: 0, val: 0 };
+                const m = itemMetrics(i);
+                map[key].ctn += m.cartons; map[key].pkt += m.units; map[key].kg += m.kg; map[key].val += m.value;
+            }));
+            return Object.values(map)
+                .map(r => [r.code, r.desc, r.ctn, r.pkt, +r.kg.toFixed(2), Math.round(r.val)])
+                .sort((a, b) => b[5] - a[5]);
+        }
+    },
+    {
+        id: "paymentWise",
+        name: "Cash vs Credit",
+        desc: "Collection split by payment type",
+        columns: ["Payment Type", "Bills", "Cartons", "Weight (KG)", "Net Amount (Rs.)"],
+        build: (bills) => groupRows(bills, b => (b.paymentStatus === "Credit" ? "Credit" : "Cash")).sort((a, b) => b[4] - a[4])
+    }
+];
+
+function itemMetrics(i) {
+    const sku = (AppState.skus || []).find(s => s.code === i.code || (i.desc && s.desc && s.desc.toLowerCase() === String(i.desc).toLowerCase()));
+    const pack = i.pack || (sku ? sku.pack : 12) || 12;
+    const grams = i.grams || (sku ? sku.grams : 72) || 72;
+    const cartons = i.cartons || 0;
+    const units = i.units || 0;
+    const packets = i.totalPackets || ((cartons * pack) + units);
+    const kg = (i.weightKg && i.weightKg > 0) ? i.weightKg : ((grams * packets) / 1000);
+    return { cartons, units, kg, value: computeBillItemAmount(i) };
+}
+
+function billTotals(b) {
+    return (b.items || []).reduce((acc, i) => {
+        const m = itemMetrics(i);
+        acc.cartons += m.cartons; acc.kg += m.kg; acc.value += m.value;
+        return acc;
+    }, { cartons: 0, kg: 0, value: 0 });
+}
+
+function saleDateOf(b) {
+    return String(b.confirmedDate || b.billDate || b.date || b.createdDate || b.orderDate || "").slice(0, 10);
+}
+
+function companyLabel(b) {
+    const c = String(b.companyId || "lays").toLowerCase();
+    return (c === "hash" || c === "fast") ? "Fast / Hash" : "Lays / PepsiCo";
+}
+
+function groupRows(bills, keyFn) {
+    const map = {};
+    bills.forEach(b => {
+        const key = keyFn(b) || "-";
+        if (!map[key]) map[key] = { bills: 0, cartons: 0, kg: 0, value: 0 };
+        const t = billTotals(b);
+        map[key].bills += 1; map[key].cartons += t.cartons; map[key].kg += t.kg; map[key].value += t.value;
+    });
+    return Object.keys(map).map(k => [k, map[k].bills, map[k].cartons, +map[k].kg.toFixed(2), Math.round(map[k].value)]);
+}
+
+let _rcSelectedReport = REPORT_DEFINITIONS[0].id;
+let _rcLastResult = null;   // { columns, rows, meta }
+let _rcPage = 1;
+const RC_PAGE_SIZE = 50;
+
+function renderReportsCenter() {
+    const list = document.getElementById("reportsCenterList");
+    if (!list) return;
+
+    list.innerHTML = REPORT_DEFINITIONS.map(r => `
+        <button type="button" class="report-pill${r.id === _rcSelectedReport ? " active" : ""}"
+                onclick="selectReportsCenterReport('${r.id}')"
+                style="text-align:left; cursor:pointer; display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
+            <span style="font-size:13px; font-weight:800;">${r.name}</span>
+            <span style="font-size:10.5px; font-weight:600; opacity:.75;">${r.desc}</span>
+        </button>`).join("");
+
+    const routeSel = document.getElementById("rcRoute");
+    if (routeSel && routeSel.options.length <= 1) {
+        (AppState.routes || []).forEach(r => {
+            const o = document.createElement("option");
+            o.value = r.name || r.id; o.textContent = r.name || r.id;
+            routeSel.appendChild(o);
+        });
+    }
+
+    const def = REPORT_DEFINITIONS.find(r => r.id === _rcSelectedReport) || REPORT_DEFINITIONS[0];
+    const nameEl = document.getElementById("rcSelectedReportName");
+    const descEl = document.getElementById("rcSelectedReportDesc");
+    if (nameEl) nameEl.innerText = def.name;
+    if (descEl) descEl.innerText = def.desc;
+
+    if (!document.getElementById("rcFromDate").value) onReportsCenterPresetChange();
+}
+
+function selectReportsCenterReport(id) {
+    _rcSelectedReport = id;
+    _rcLastResult = null;
+    _rcPage = 1;
+    document.getElementById("rcExportBtn").disabled = true;
+    document.getElementById("rcResultHead").innerHTML = "";
+    document.getElementById("rcResultBody").innerHTML =
+        `<tr><td style="text-align:center; padding:26px; color:var(--text-muted);">Set the parameters and press <strong>Run Report</strong>.</td></tr>`;
+    document.getElementById("rcResultMeta").innerText = "";
+    document.getElementById("rcPagination").innerHTML = "";
+    renderReportsCenter();
+}
+
+function onReportsCenterPresetChange() {
+    const preset = document.getElementById("rcPeriodPreset").value;
+    const fromEl = document.getElementById("rcFromDate");
+    const toEl = document.getElementById("rcToDate");
+    const iso = (d) => d.toISOString().split("T")[0];
+    const today = new Date();
+    let from = null, to = iso(today);
+
+    if (preset === "today") from = iso(today);
+    else if (preset === "yesterday") { const d = new Date(); d.setDate(d.getDate() - 1); from = to = iso(d); }
+    else if (preset === "7days") { const d = new Date(); d.setDate(d.getDate() - 6); from = iso(d); }
+    else if (preset === "30days") { const d = new Date(); d.setDate(d.getDate() - 29); from = iso(d); }
+    else if (preset === "thisMonth") from = iso(new Date(today.getFullYear(), today.getMonth(), 1));
+    else if (preset === "lastMonth") {
+        from = iso(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+        to = iso(new Date(today.getFullYear(), today.getMonth(), 0));
+    } else if (preset === "all") { from = ""; to = ""; }
+
+    if (preset !== "custom") { fromEl.value = from || ""; toEl.value = to || ""; }
+}
+
+async function runSelectedReport() {
+    const def = REPORT_DEFINITIONS.find(r => r.id === _rcSelectedReport);
+    if (!def) return;
+
+    const statusEl = document.getElementById("rcStatusText");
+    const bodyEl = document.getElementById("rcResultBody");
+    statusEl.innerText = "Fetching…";
+    bodyEl.innerHTML = `<tr><td style="text-align:center; padding:26px; color:var(--text-muted);">Fetching data from server…</td></tr>`;
+
+    const params = new URLSearchParams({
+        type: "bills",
+        limit: "0",                                  // all matching rows, still only the filtered set
+        status: document.getElementById("rcStatus").value,
+        company: document.getElementById("rcCompany").value,
+        route: document.getElementById("rcRoute").value
+    });
+    const from = document.getElementById("rcFromDate").value;
+    const to = document.getElementById("rcToDate").value;
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+
+    try {
+        const base = (window.location.origin || "").startsWith("http") ? window.location.origin : "https://chaudharytraders.online";
+        const resp = await fetch(`${base}/api/query?${params.toString()}`);
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.error || "Query failed");
+
+        const rows = def.build(data.items || []);
+        _rcLastResult = {
+            columns: def.columns,
+            rows,
+            meta: `${def.name} — ${data.total} bill(s)${from ? " from " + from : ""}${to ? " to " + to : ""}`
+        };
+        _rcPage = 1;
+        renderReportsCenterResult();
+        document.getElementById("rcExportBtn").disabled = rows.length === 0;
+        statusEl.innerText = `✅ ${data.total} bill(s) matched`;
+    } catch (err) {
+        statusEl.innerText = "⚠️ " + err.message;
+        bodyEl.innerHTML = `<tr><td style="text-align:center; padding:26px; color:#ef4444;">Could not fetch the report: ${err.message}</td></tr>`;
+    }
+}
+
+function renderReportsCenterResult() {
+    if (!_rcLastResult) return;
+    const { columns, rows, meta } = _rcLastResult;
+
+    document.getElementById("rcResultHead").innerHTML =
+        `<tr>${columns.map(c => `<th>${c}</th>`).join("")}</tr>`;
+    document.getElementById("rcResultMeta").innerText = meta;
+
+    const body = document.getElementById("rcResultBody");
+    if (rows.length === 0) {
+        body.innerHTML = `<tr><td colspan="${columns.length}" style="text-align:center; padding:26px; color:var(--text-muted);">No records found for these parameters.</td></tr>`;
+        document.getElementById("rcPagination").innerHTML = "";
+        return;
+    }
+
+    const totalPages = Math.max(1, Math.ceil(rows.length / RC_PAGE_SIZE));
+    if (_rcPage > totalPages) _rcPage = totalPages;
+    const start = (_rcPage - 1) * RC_PAGE_SIZE;
+    const pageRows = rows.slice(start, start + RC_PAGE_SIZE);
+
+    body.innerHTML = pageRows.map(r => `<tr>${r.map((cell, idx) => {
+        const num = typeof cell === "number";
+        const isMoney = num && idx === r.length - 1;
+        return `<td style="text-align:${num ? "right" : "left"};${isMoney ? " font-weight:800; color:var(--accent-green);" : ""}">${num ? cell.toLocaleString() : cell}</td>`;
+    }).join("")}</tr>`).join("");
+
+    // Totals row for the numeric columns
+    const totals = columns.map((_, i) => rows.every(r => typeof r[i] === "number" || i === 0)
+        ? (i === 0 ? "TOTAL" : rows.reduce((s, r) => s + (typeof r[i] === "number" ? r[i] : 0), 0))
+        : "");
+    if (totals.some(t => typeof t === "number")) {
+        body.innerHTML += `<tr style="border-top:2px solid var(--brand-gold); font-weight:900;">${
+            totals.map((t, i) => `<td style="text-align:${typeof t === "number" ? "right" : "left"};">${
+                typeof t === "number" ? Math.round(t).toLocaleString() : t}</td>`).join("")}</tr>`;
+    }
+
+    renderPaginationControls("rcPagination", rows.length, _rcPage, RC_PAGE_SIZE, "goToReportsCenterPage");
+}
+
+function goToReportsCenterPage(n) {
+    _rcPage = n;
+    renderReportsCenterResult();
+}
+
+function exportReportsCenterExcel() {
+    if (!_rcLastResult) return;
+    const def = REPORT_DEFINITIONS.find(r => r.id === _rcSelectedReport);
+    const stamp = new Date().toISOString().split("T")[0];
+    generateStyledExcelFile(
+        def ? def.name : "Report",
+        _rcLastResult.columns,
+        _rcLastResult.rows,
+        `Chaudhary_${(def ? def.id : "report")}_${stamp}.xlsx`
+    );
+}
+
 /* Renders ONLY the screen that is actually open.
 
    This existed already but every id it compared against was wrong - it checked
@@ -7377,6 +7667,7 @@ const TAB_RENDERERS = {
     financialReportsTab: () => renderFinancialReports(),
     analysisReportsTab:  () => renderAnalysisReports(),
     dataSyncTab:         () => renderDataSyncTab(),
+    reportsCenterTab:    () => renderReportsCenter(),
     billingTab:          () => renderPosOptions(),
     settingsTab:         () => renderCompanyMasterTable()
 };
@@ -14356,7 +14647,10 @@ function renderOrdersTable() {
     const delivDateFilter = document.getElementById("ordersDeliveryDateFilter")?.value || "";
     const sortVal = document.getElementById("ordersSortSelect")?.value || "newest";
 
-    let filtered = (AppState.orders || []).filter(o => {
+    const viewOrders = getViewSource("orders");
+    renderViewScopeBanner("ordersScopeBanner", "orders", viewOrders.length);
+
+    let filtered = viewOrders.filter(o => {
         if (o.isVoid) return false;
         if (routeFilter !== "all" && o.routeId !== routeFilter && o.routeName !== routeFilter) return false;
         if (custFilter !== "all" && o.shopId !== custFilter && o.shopName !== custFilter) return false;
@@ -14977,7 +15271,10 @@ function renderPickListTable() {
     const compFilter = document.getElementById("pickListCompanyFilter")?.value || "all";
     const sortBy = document.getElementById("pickListSortSelect")?.value || "newest";
 
-    let filtered = AppState.pickLists.filter(pl => {
+    const viewPickLists = getViewSource("pickLists");
+    renderViewScopeBanner("pickListScopeBanner", "pickLists", viewPickLists.length);
+
+    let filtered = viewPickLists.filter(pl => {
         const plNoStr = String(pl.pickListNo || "").toLowerCase();
         const dateStr = String(pl.finalDeliveryDate || pl.createdDate || "").toLowerCase();
         const statusStr = String(pl.status || "").toLowerCase();
@@ -15238,7 +15535,10 @@ function renderInvoicesTable() {
         }
     });
 
-    let filtered = (AppState.bills || []).filter(b => {
+    const viewBills = getViewSource("bills");
+    renderViewScopeBanner("invoicesScopeBanner", "bills", viewBills.length);
+
+    let filtered = viewBills.filter(b => {
         // Date Filter
         if (dateFilter) {
             const billDate = b.date || (b.createdDate ? b.createdDate.split('T')[0] : '');
@@ -16411,17 +16711,152 @@ function syncWithLocalServerStore() {
         .catch(() => {});
 }
 
-// Manual "Search" button on Orders/PickList/Invoices: pulls the latest data
-// from the server before filtering/rendering, so a device that just logged
-// in (or whose periodic poll hasn't caught up yet) sees every record other
-// devices have already saved, not just whatever happened to be cached
-// locally when the page first loaded.
-function manualSearchRefresh(renderFnName) {
-    const toast = showSyncToast("🔍 Fetching latest data from server...", "loading", 0);
-    syncWithLocalServerStore().then(() => {
-        if (typeof window[renderFnName] === "function") window[renderFnName]();
-        updateSyncToast(toast, "✅ Data refreshed from server.", "success", 2000);
+/* ==========================================================================
+   RECENT-WINDOW VIEW + SERVER-SIDE SEARCH
+
+   Orders / Pick Lists / Invoices no longer paint the entire history on every
+   visit. By default each screen shows only the last few days of records; when
+   the user presses Search, the matching records are fetched from the database
+   (/api/query) with the filters that are actually set on that screen, merged
+   into AppState so every existing action keeps working, and only those records
+   are shown. Older data stays in the database until it is asked for.
+   ========================================================================== */
+
+const RECENT_WINDOW_DAYS = 2;
+
+const VIEW_COLLECTIONS = {
+    bills:     { key: "billNo",     type: "bills",     dateOf: (r) => String(r.confirmedDate || r.date || r.billDate || r.createdDate || "").slice(0, 10) },
+    orders:    { key: "orderNo",    type: "orders",    dateOf: (r) => String(r.deliveryDate || r.date || r.createdDate || "").slice(0, 10) },
+    pickLists: { key: "pickListNo", type: "pickLists", dateOf: (r) => String(r.finalDeliveryDate || r.plannedDeliveryDate || r.createdDate || "").slice(0, 10) }
+};
+
+// Set by a server search: { bills: {keys: Set, label: "..."} , ... }
+AppState._viewFilter = AppState._viewFilter || {};
+
+function recentCutoffDate() {
+    const d = new Date();
+    d.setDate(d.getDate() - (RECENT_WINDOW_DAYS - 1));
+    return d.toISOString().split("T")[0];
+}
+
+/* The records a screen should paint: the last search's results if there was
+   one, otherwise just the recent window. */
+function getViewSource(collection) {
+    const cfg = VIEW_COLLECTIONS[collection];
+    const all = AppState[collection] || [];
+    if (!cfg) return all;
+
+    const active = AppState._viewFilter[collection];
+    if (active && active.keys) return all.filter(r => active.keys.has(String(r[cfg.key])));
+
+    const cutoff = recentCutoffDate();
+    const recent = all.filter(r => {
+        const d = cfg.dateOf(r);
+        return !d || d >= cutoff;
     });
+    // Never show a blank screen just because nothing was booked recently.
+    return recent.length > 0 ? recent : all.slice(-25);
+}
+
+function viewScopeLabel(collection, shownCount) {
+    const active = AppState._viewFilter[collection];
+    const total = (AppState[collection] || []).length;
+    if (active) return `🔍 Search results — ${shownCount} of ${total} record(s). ${active.label || ""}`;
+    return `📅 Showing the last ${RECENT_WINDOW_DAYS} day(s) — ${shownCount} of ${total} record(s). Use Search to pull older records from the database.`;
+}
+
+function renderViewScopeBanner(elementId, collection, shownCount) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const active = AppState._viewFilter[collection];
+    el.innerHTML = `<span style="font-size:12px; font-weight:700; color:var(--text-muted);">${viewScopeLabel(collection, shownCount)}</span>` +
+        (active ? ` <button type="button" class="btn btn-secondary btn-sm" style="margin-left:8px;" onclick="clearViewSearch('${collection}')"><i class="fa-solid fa-xmark"></i> Clear search</button>` : "");
+}
+
+function clearViewSearch(collection) {
+    delete AppState._viewFilter[collection];
+    const fn = collection === "bills" ? renderInvoicesTable
+             : collection === "orders" ? renderOrdersTable
+             : renderPickListTable;
+    fn();
+}
+
+function apiBaseUrl() {
+    return (typeof window !== "undefined" && window.location && String(window.location.origin).startsWith("http"))
+        ? window.location.origin
+        : "https://chaudharytraders.online";
+}
+
+/* Reads the filters that are set on the given screen and asks the database
+   for exactly those records. */
+function collectScreenFilters(collection) {
+    const g = (id) => (document.getElementById(id)?.value || "").trim();
+    if (collection === "orders") {
+        return { search: g("ordersSearchQuery"), status: g("ordersStatusFilter") || "all",
+                 company: g("ordersCompanyFilter") || "all", route: g("ordersRouteFilter") || "all",
+                 from: g("ordersDeliveryDateFilter"), to: g("ordersDeliveryDateFilter") };
+    }
+    if (collection === "pickLists") {
+        return { search: g("pickListSearchQuery"), company: g("pickListCompanyFilter") || "all",
+                 from: g("pickListDateFilter"), to: g("pickListDateFilter") };
+    }
+    const searchEl = document.getElementById("invoiceSearchQuery") || document.getElementById("invoiceSearchInput");
+    return { search: (searchEl?.value || "").trim(), status: g("invoiceStatusFilter") || "all",
+             company: g("invoiceCompanyFilter") || "all", route: g("invoiceRouteFilter") || "all",
+             from: g("invoiceDateFilter"), to: g("invoiceDateFilter") };
+}
+
+// Manual "Search" button on Orders/PickList/Invoices: asks the database for the
+// records matching the filters on screen instead of pulling and filtering the
+// entire dataset in the browser.
+function manualSearchRefresh(renderFnName) {
+    const collection = renderFnName === "renderOrdersTable" ? "orders"
+                     : renderFnName === "renderPickListTable" ? "pickLists"
+                     : "bills";
+    const cfg = VIEW_COLLECTIONS[collection];
+    const f = collectScreenFilters(collection);
+
+    const params = new URLSearchParams({ type: cfg.type, limit: "0" });
+    ["search", "status", "company", "route", "from", "to"].forEach(k => { if (f[k]) params.set(k, f[k]); });
+
+    const toast = showSyncToast("🔍 Searching the database...", "loading", 0);
+
+    fetch(`${apiBaseUrl()}/api/query?${params.toString()}`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.error || "Search failed");
+            const items = data.items || [];
+
+            // Merge into AppState (in memory only - never pushed back to the
+            // cloud) so Confirm / Print / Delete keep finding their record.
+            const existing = AppState[collection] || [];
+            const byKey = {};
+            existing.forEach(r => { byKey[String(r[cfg.key])] = r; });
+            items.forEach(r => {
+                const k = String(r[cfg.key]);
+                if (!byKey[k]) { byKey[k] = r; existing.push(r); }
+            });
+            AppState[collection] = existing;
+
+            const bits = [];
+            if (f.from) bits.push(`Date: ${f.from}`);
+            if (f.search) bits.push(`"${f.search}"`);
+            if (f.status && f.status !== "all") bits.push(f.status);
+            if (f.company && f.company !== "all") bits.push(f.company);
+
+            AppState._viewFilter[collection] = { keys: new Set(items.map(r => String(r[cfg.key]))), label: bits.join(" · ") };
+
+            if (typeof window[renderFnName] === "function") window[renderFnName]();
+            updateSyncToast(toast, `✅ ${items.length} record(s) found in the database.`, "success", 2500);
+        })
+        .catch(err => {
+            // Server unreachable (offline PC): fall back to the old behaviour.
+            syncWithLocalServerStore().then(() => {
+                delete AppState._viewFilter[collection];
+                if (typeof window[renderFnName] === "function") window[renderFnName]();
+                updateSyncToast(toast, "⚠️ Server search unavailable, showing local data.", "error", 3000);
+            });
+        });
 }
 
 function forcePushLocalStateToCloud() {
