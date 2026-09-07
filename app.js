@@ -7055,11 +7055,17 @@ let _saveStorageTimer = null;
    full-state save push only what this device genuinely changed, by diffing
    against the last snapshot the server gave us.
    -------------------------------------------------------------------------- */
-function captureServerSnapshot() {
+function captureServerSnapshot(serverData) {
+    // Must be built from what the SERVER sent, never from AppState. AppState
+    // also holds records this device created and has not managed to upload
+    // yet; snapshotting those marks them as "already on the server", and
+    // collectLocallyChangedRecords() then never sends them again - the bill
+    // lives on in this browser and reaches no one else, permanently.
+    if (!serverData) return;
     const snapshot = {};
     Object.keys(PARTIAL_SYNC_KEY_FIELDS).forEach(collection => {
         const keyField = PARTIAL_SYNC_KEY_FIELDS[collection];
-        const records = Array.isArray(AppState[collection]) ? AppState[collection] : [];
+        const records = Array.isArray(serverData[collection]) ? serverData[collection] : [];
         const byKey = {};
         records.forEach(rec => {
             const key = rec && rec[keyField];
@@ -15443,7 +15449,7 @@ function syncWithLocalServerStore() {
             // Remember exactly what the server just told us, so the next
             // full-state save can tell which records this device actually
             // changed and send only those.
-            captureServerSnapshot();
+            captureServerSnapshot(data);
 
             if (!AppState.initialServerHydrated) {
                 AppState.initialServerHydrated = true;
