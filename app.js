@@ -7457,253 +7457,120 @@ const r2 = (n) => +(n || 0).toFixed(2);
 const r0 = (n) => Math.round(n || 0);
 
 /* Standard column sets so every report shows the same level of detail. */
-const SUMMARY_COLS = ["Bills", "Cartons", "Loose Pkts", "Weight (KG)", "Gross Basic (Rs.)", "Discount (Rs.)", "Net Amount (Rs.)"];
-const summaryVals  = (g) => [g.count, g.cartons, g.units, r2(g.kg), r0(g.basic), r0(g.disc), r0(g.value)];
-
 const ITEM_SUMMARY_COLS = ["Cartons", "Loose Pkts", "Total Packets", "Weight (KG)", "Gross Basic (Rs.)", "Discount (Rs.)", "Net Amount (Rs.)"];
 const itemSummaryVals   = (g) => [g.cartons, g.units, g.packets, r2(g.kg), r0(g.basic), r0(g.disc), r0(g.value)];
 
-const BILL_DETAIL_COLS = ["Bill No", "Date", "Shop", "Route", "Salesman", "Company", "Tax Mode", "Payment",
-                          "Cartons", "Loose Pkts", "Weight (KG)", "Gross Basic (Rs.)", "Discount (Rs.)", "ADWH Tax (Rs.)", "Net Amount (Rs.)"];
-const billDetailVals = (b) => {
-    const t = billTotals(b);
-    return [b.billNo || "-", saleDateOf(b), b.shopName || "-", b.routeName || "-", b.salesman || "-",
-            companyLabel(b), taxModeLabel(b), paymentLabel(b),
-            t.cartons, t.units, r2(t.kg), r0(t.basic), r0(t.disc), r0(t.tax), r0(t.value)];
-};
-
-const LINE_DETAIL_COLS = ["Bill No", "Date", "Shop", "Route", "Company", "Brand", "Flavour", "Category", "SKU Code", "Product",
-                          "Cartons", "Loose Pkts", "Total Packets", "Weight (KG)", "TP Rate (Rs.)", "Gross Basic (Rs.)", "Discount (Rs.)", "Line Net (Rs.)"];
-const lineDetailVals = (r) => [
-    r.b.billNo || "-", saleDateOf(r.b), r.b.shopName || "-", r.b.routeName || "-", companyLabel(r.b),
-    r.brand, itemFlavour(r.i), categoryName(r.cat), r.i.code || "-", r.i.desc || "-",
-    r.m.cartons, r.m.units, r.m.packets, r2(r.m.kg), r2(r.m.tp), r0(r.m.basic), r0(r.m.disc), r0(r.m.net)
-];
-
 /* ---- The report catalogue ------------------------------------------------
-   Sections mirror the old Sales / Financial / Analysis tabs, so everything
-   that used to be spread across three screens now lives in one place.
+   Only the reports the business actually runs, grouped into four sections.
    -------------------------------------------------------------------------- */
 
 const REPORT_DEFINITIONS = [
 
     /* ============================ SALES ============================ */
     {
-        section: "Sales Reports", id: "pcSale", name: "PC Sale Report",
-        desc: "Potato Chips only - Lays / MAXX / Wavy, line by line",
-        columns: LINE_DETAIL_COLS,
-        build: (bills) => flattenItems(bills).filter(r => r.cat === "PC").map(lineDetailVals)
-    },
-    {
-        section: "Sales Reports", id: "npcSale", name: "NPC Sale Report",
-        desc: "Non-Potato Chips only - Kurkure / Cheetos / Oats",
-        columns: LINE_DETAIL_COLS,
-        build: (bills) => flattenItems(bills).filter(r => r.cat === "NPC").map(lineDetailVals)
-    },
-    {
-        section: "Sales Reports", id: "hashSale", name: "Hash Sale Report",
-        desc: "Hash Foods and Beverages catalog only",
-        columns: LINE_DETAIL_COLS,
-        build: (bills) => flattenItems(bills).filter(r => r.cat === "Hash").map(lineDetailVals)
-    },
-    {
-        section: "Sales Reports", id: "filerSale", name: "Filer Sale (0.5% ADWH)",
-        desc: "Bills of filer outlets only, with tax",
-        columns: BILL_DETAIL_COLS,
-        build: (bills) => bills.filter(b => String(b.taxMode).toLowerCase() === "filer").map(billDetailVals)
-    },
-    {
-        section: "Sales Reports", id: "nonFilerSale", name: "Non-Filer Sale (2.5% ADWH)",
-        desc: "Bills of non-filer outlets only, with tax",
-        columns: BILL_DETAIL_COLS,
-        build: (bills) => bills.filter(b => String(b.taxMode).toLowerCase() === "nonfiler").map(billDetailVals)
-    },
-    {
-        section: "Sales Reports", id: "combinedSale", name: "Combined Master Ledger",
-        desc: "Every bill in the period with full totals",
-        columns: BILL_DETAIL_COLS,
-        build: (bills) => bills.map(billDetailVals)
-    },
-    {
-        section: "Sales Reports", id: "billItemDetail", name: "Bill-wise Item Detail",
-        desc: "Every bill line: which bill, which product, how much",
-        columns: LINE_DETAIL_COLS,
-        build: (bills) => flattenItems(bills).map(lineDetailVals)
-    },
-    {
-        section: "Sales Reports", id: "productWise", name: "Product / SKU-wise Sale",
-        desc: "Per SKU with brand, category and pack size",
-        columns: ["SKU Code", "Product", "Brand", "Flavour", "Category", "Pack"].concat(ITEM_SUMMARY_COLS),
+        section: "Sales", id: "saleByProduct", name: "Sale by Product",
+        desc: "Which day, which route, which product, how much sold",
+        columns: ["Date", "Route", "SKU Code", "Product", "Brand", "Flavour", "Category",
+                  "Cartons", "Loose Pkts", "Total Packets", "Weight (KG)",
+                  "Gross Basic (Rs.)", "Discount (Rs.)", "Net Amount (Rs.)"],
         build: (bills) => {
             const rows = flattenItems(bills);
             const meta = {};
-            rows.forEach(r => { meta[r.i.code || r.i.desc || "SKU"] = r; });
-            return itemGroup(rows, r => (r.i.code || r.i.desc || "SKU")).map(x => {
-                const r = meta[x.key];
-                return [r.i.code || "-", r.i.desc || "-", r.brand, itemFlavour(r.i), categoryName(r.cat), r.m.pack].concat(itemSummaryVals(x));
-            }).sort((a, b) => b[b.length - 1] - a[a.length - 1]);
+            rows.forEach(r => {
+                const k = saleDateOf(r.b) + "||" + (r.b.routeName || "Unassigned") + "||" + (r.i.code || r.i.desc || "SKU");
+                meta[k] = r;
+            });
+            return itemGroup(rows, r => saleDateOf(r.b) + "||" + (r.b.routeName || "Unassigned") + "||" + (r.i.code || r.i.desc || "SKU"))
+                .map(x => {
+                    const r = meta[x.key];
+                    const [date, route] = x.key.split("||");
+                    return [date, route, r.i.code || "-", r.i.desc || "-", r.brand, itemFlavour(r.i), categoryName(r.cat),
+                            x.cartons, x.units, x.packets, r2(x.kg), r0(x.basic), r0(x.disc), r0(x.value)];
+                })
+                .sort((a, b) => String(b[0]).localeCompare(String(a[0])) ||
+                                String(a[1]).localeCompare(String(b[1])) ||
+                                b[13] - a[13]);
         }
     },
     {
-        section: "Sales Reports", id: "brandWise", name: "Brand-wise Sale",
-        desc: "Lays / Wavy / MAXX / Kurkure / Cheetos / Hash split",
-        columns: ["Brand", "Category"].concat(ITEM_SUMMARY_COLS),
-        build: (bills) => {
-            const rows = flattenItems(bills);
-            const cat = {};
-            rows.forEach(r => { cat[r.brand] = categoryName(r.cat); });
-            return itemGroup(rows, r => r.brand)
-                .map(x => [x.key, cat[x.key] || "-"].concat(itemSummaryVals(x)))
-                .sort((a, b) => b[b.length - 1] - a[a.length - 1]);
-        }
-    },
-    {
-        section: "Sales Reports", id: "flavourWise", name: "Flavour / Variant-wise Sale",
-        desc: "Masala, Salt, Y&H, Wavy BBQ, Cheetos Bites and the rest",
-        columns: ["Flavour / Variant", "Brand", "Category"].concat(ITEM_SUMMARY_COLS),
-        build: (bills) => {
-            const rows = flattenItems(bills);
-            const meta = {};
-            rows.forEach(r => { meta[r.flavour] = r; });
-            return itemGroup(rows, r => r.flavour)
-                .map(x => [x.key, (meta[x.key] || {}).brand || "-", categoryName((meta[x.key] || {}).cat)].concat(itemSummaryVals(x)))
-                .sort((a, b) => b[b.length - 1] - a[a.length - 1]);
-        }
-    },
-    {
-        section: "Sales Reports", id: "categoryWise", name: "Category-wise Sale (PC / NPC / Hash)",
-        desc: "Potato Chips vs Non-Potato Chips vs Hash",
-        columns: ["Category"].concat(ITEM_SUMMARY_COLS),
-        build: (bills) => itemGroup(flattenItems(bills), r => categoryName(r.cat))
-            .map(x => [x.key].concat(itemSummaryVals(x))).sort((a, b) => b[b.length - 1] - a[a.length - 1])
-    },
-    {
-        section: "Sales Reports", id: "companyWise", name: "Company-wise Sale",
-        desc: "Lays / PepsiCo vs Fast / Hash",
-        columns: ["Company"].concat(SUMMARY_COLS),
-        build: (bills) => billGroup(bills, b => companyLabel(b))
-            .map(g => [g.key].concat(summaryVals(g))).sort((a, b) => b[b.length - 1] - a[a.length - 1])
-    },
-    {
-        section: "Sales Reports", id: "shopWise", name: "Shop-wise Sale",
-        desc: "Per outlet, with route and salesman",
-        columns: ["Shop", "Route", "Salesman"].concat(SUMMARY_COLS),
+        section: "Sales", id: "saleByOutlet", name: "Sale by Outlet",
+        desc: "Per shop, with route and salesman",
+        columns: ["Shop", "Route", "Salesman", "Company", "Bills", "Cartons", "Loose Pkts",
+                  "Weight (KG)", "Gross Basic (Rs.)", "Discount (Rs.)", "Net Amount (Rs.)", "Avg Bill (Rs.)"],
         build: (bills) => {
             const meta = {};
             bills.forEach(b => { meta[b.shopName || "Unknown Shop"] = b; });
             return billGroup(bills, b => b.shopName || "Unknown Shop")
-                .map(x => [x.key, (meta[x.key] || {}).routeName || "-", (meta[x.key] || {}).salesman || "-"].concat(summaryVals(x)))
-                .sort((a, b) => b[b.length - 1] - a[a.length - 1]);
+                .map(x => {
+                    const b = meta[x.key] || {};
+                    return [x.key, b.routeName || "-", b.salesman || "-", companyLabel(b),
+                            x.count, x.cartons, x.units, r2(x.kg), r0(x.basic), r0(x.disc),
+                            r0(x.value), r0(x.value / (x.count || 1))];
+                })
+                .sort((a, b) => b[10] - a[10]);
         }
-    },
-    {
-        section: "Sales Reports", id: "routeWise", name: "Route-wise Sale",
-        desc: "Per beat / route, with shop count",
-        columns: ["Route", "Shops Billed"].concat(SUMMARY_COLS),
-        build: (bills) => {
-            const shops = {};
-            bills.forEach(b => {
-                const k = b.routeName || "Unassigned";
-                (shops[k] = shops[k] || new Set()).add(b.shopName);
-            });
-            return billGroup(bills, b => b.routeName || "Unassigned")
-                .map(g => [g.key, (shops[g.key] || new Set()).size].concat(summaryVals(g)))
-                .sort((a, b) => b[b.length - 1] - a[a.length - 1]);
-        }
-    },
-    {
-        section: "Sales Reports", id: "salesmanWise", name: "Salesman-wise Sale",
-        desc: "Per salesman, with shops covered",
-        columns: ["Salesman", "Shops Billed"].concat(SUMMARY_COLS),
-        build: (bills) => {
-            const shops = {};
-            bills.forEach(b => {
-                const k = b.salesman || "Unassigned";
-                (shops[k] = shops[k] || new Set()).add(b.shopName);
-            });
-            return billGroup(bills, b => b.salesman || "Unassigned")
-                .map(g => [g.key, (shops[g.key] || new Set()).size].concat(summaryVals(g)))
-                .sort((a, b) => b[b.length - 1] - a[a.length - 1]);
-        }
-    },
-    {
-        section: "Sales Reports", id: "dateWise", name: "Day-wise Sale",
-        desc: "Totals for each day in the period",
-        columns: ["Date"].concat(SUMMARY_COLS),
-        build: (bills) => billGroup(bills, b => saleDateOf(b))
-            .map(g => [g.key].concat(summaryVals(g))).sort((a, b) => String(a[0]).localeCompare(String(b[0])))
-    },
-    {
-        section: "Sales Reports", id: "monthWise", name: "Month-wise Sale",
-        desc: "Totals for each month in the period",
-        columns: ["Month"].concat(SUMMARY_COLS),
-        build: (bills) => billGroup(bills, b => saleDateOf(b).slice(0, 7))
-            .map(g => [g.key].concat(summaryVals(g))).sort((a, b) => String(a[0]).localeCompare(String(b[0])))
     },
 
-    /* ========================== FINANCIAL ========================== */
+    /* =========================== INVOICES =========================== */
     {
-        section: "Financial Reports", id: "totalSale", name: "Total Sales Summary",
-        desc: "Day-wise gross, discount, tax and net revenue",
-        columns: ["Date", "Bills", "Cartons", "Loose Pkts", "Weight (KG)", "Gross Basic (Rs.)", "Discount (Rs.)", "ADWH Tax (Rs.)", "Net Revenue (Rs.)"],
-        build: (bills) => billGroup(bills, b => saleDateOf(b))
-            .map(g => [g.key, g.count, g.cartons, g.units, r2(g.kg), r0(g.basic), r0(g.disc), r0(g.tax), r0(g.value)])
-            .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+        section: "Invoices", id: "invoiceListing", name: "Invoice Listing Detail",
+        desc: "Every invoice with its full detail",
+        columns: ["Invoice No", "Date", "Order No", "Pick List", "Shop", "Route", "Salesman",
+                  "Company", "Tax Mode", "Payment", "Status", "Items", "Cartons", "Loose Pkts",
+                  "Total Packets", "Weight (KG)", "Gross Basic (Rs.)", "Discount (Rs.)",
+                  "ADWH Tax (Rs.)", "Net Amount (Rs.)"],
+        build: (bills) => bills.map(b => {
+            const t = billTotals(b);
+            const status = b.isVoid ? "Voided" : (b.deliveryStatus || "Open");
+            return [b.billNo || "-", saleDateOf(b), b.orderNo || "-", b.pickListNo || "-",
+                    b.shopName || "-", b.routeName || "-", b.salesman || "-",
+                    companyLabel(b), taxModeLabel(b), paymentLabel(b), status,
+                    (b.items || []).length, t.cartons, t.units, t.packets, r2(t.kg),
+                    r0(t.basic), r0(t.disc), r0(t.tax), r0(t.value)];
+        }).sort((a, b) => String(b[1]).localeCompare(String(a[1])) || String(b[0]).localeCompare(String(a[0])))
     },
     {
-        section: "Financial Reports", id: "cashSale", name: "Cash Sales Ledger",
-        desc: "Cash bills only, bill by bill",
-        columns: BILL_DETAIL_COLS,
-        build: (bills) => bills.filter(b => paymentLabel(b) === "Cash").map(billDetailVals)
+        section: "Invoices", id: "invoiceItemDetail", name: "Invoice Item Detail",
+        desc: "Every invoice line: which invoice held which product",
+        columns: ["Invoice No", "Date", "Shop", "Route", "Company", "Brand", "Flavour", "Category",
+                  "SKU Code", "Product", "Cartons", "Loose Pkts", "Total Packets", "Weight (KG)",
+                  "TP Rate (Rs.)", "Gross Basic (Rs.)", "Discount (Rs.)", "Line Net (Rs.)"],
+        build: (bills) => flattenItems(bills).map(r => [
+            r.b.billNo || "-", saleDateOf(r.b), r.b.shopName || "-", r.b.routeName || "-", companyLabel(r.b),
+            r.brand, itemFlavour(r.i), categoryName(r.cat), r.i.code || "-", r.i.desc || "-",
+            r.m.cartons, r.m.units, r.m.packets, r2(r.m.kg), r2(r.m.tp), r0(r.m.basic), r0(r.m.disc), r0(r.m.net)
+        ]).sort((a, b) => String(b[1]).localeCompare(String(a[1])) || String(b[0]).localeCompare(String(a[0])))
     },
+
+    /* =========================== FINANCE ============================ */
     {
-        section: "Financial Reports", id: "creditSale", name: "Credit Sales (Udhaar)",
-        desc: "Credit bills only, bill by bill",
-        columns: BILL_DETAIL_COLS,
-        build: (bills) => bills.filter(b => paymentLabel(b) === "Credit").map(billDetailVals)
-    },
-    {
-        section: "Financial Reports", id: "paymentWise", name: "Cash vs Credit Summary",
-        desc: "Collection split by payment type",
-        columns: ["Payment Type"].concat(SUMMARY_COLS),
-        build: (bills) => billGroup(bills, b => paymentLabel(b))
-            .map(g => [g.key].concat(summaryVals(g))).sort((a, b) => b[b.length - 1] - a[a.length - 1])
-    },
-    {
-        section: "Financial Reports", id: "discountReport", name: "Shop Discount Ledger",
-        desc: "Discount given to each outlet, and as a % of sale",
-        columns: ["Shop", "Route", "Bills", "Gross Basic (Rs.)", "Discount (Rs.)", "Discount %", "Net Amount (Rs.)"],
+        section: "Finance", id: "financeSummary", name: "Complete Finance Report",
+        desc: "Day-wise gross, discount, tax, cash, credit and net revenue",
+        columns: ["Date", "Bills", "Cartons", "Weight (KG)", "Gross Basic (Rs.)", "Discount (Rs.)",
+                  "Discount %", "ADWH Tax (Rs.)", "Cash Sales (Rs.)", "Credit Sales (Rs.)",
+                  "Net Revenue (Rs.)", "Avg Bill (Rs.)"],
         build: (bills) => {
-            const meta = {};
-            bills.forEach(b => { meta[b.shopName || "Unknown Shop"] = b; });
-            return billGroup(bills, b => b.shopName || "Unknown Shop")
-                .map(x => [x.key, (meta[x.key] || {}).routeName || "-", x.count, r0(x.basic), r0(x.disc),
-                           r2(x.basic > 0 ? (x.disc / x.basic) * 100 : 0), r0(x.value)])
-                .sort((a, b) => b[4] - a[4]);
+            // Cash / credit have to be split before grouping, so build the map by hand.
+            const map = {};
+            bills.forEach(b => {
+                const d = saleDateOf(b);
+                if (!map[d]) map[d] = { count: 0, cartons: 0, kg: 0, basic: 0, disc: 0, tax: 0, cash: 0, credit: 0, value: 0 };
+                const t = billTotals(b);
+                const m = map[d];
+                m.count += 1; m.cartons += t.cartons; m.kg += t.kg;
+                m.basic += t.basic; m.disc += t.disc; m.tax += t.tax; m.value += t.value;
+                if (paymentLabel(b) === "Credit") m.credit += t.value; else m.cash += t.value;
+            });
+            return Object.keys(map).sort().map(d => {
+                const m = map[d];
+                return [d, m.count, m.cartons, r2(m.kg), r0(m.basic), r0(m.disc),
+                        r2(m.basic > 0 ? (m.disc / m.basic) * 100 : 0), r0(m.tax),
+                        r0(m.cash), r0(m.credit), r0(m.value), r0(m.value / (m.count || 1))];
+            });
         }
     },
     {
-        section: "Financial Reports", id: "taxReport", name: "ADWH Tax Report (Filer / Non-Filer)",
-        desc: "Tax collected by filer status",
-        columns: ["Tax Mode"].concat(SUMMARY_COLS).concat(["ADWH Tax (Rs.)"]),
-        build: (bills) => billGroup(bills, b => taxModeLabel(b))
-            .map(g => [g.key].concat(summaryVals(g)).concat([r0(g.tax)]))
-            .sort((a, b) => b[b.length - 2] - a[a.length - 2])
-    },
-    {
-        section: "Financial Reports", id: "returns", name: "Sales Returns and Cancelled Bills",
-        desc: "Bills that were returned, cancelled or voided",
-        allStatuses: true,
-        columns: ["Bill No", "Date", "Shop", "Route", "Company", "Status", "Cartons", "Weight (KG)", "Amount (Rs.)"],
-        build: (bills) => bills.filter(b => b.isVoid || b.deliveryStatus === "Cancelled" || b.deliveryStatus === "Returned")
-            .map(b => {
-                const t = billTotals(b);
-                return [b.billNo || "-", saleDateOf(b), b.shopName || "-", b.routeName || "-", companyLabel(b),
-                        b.isVoid ? "Voided" : (b.deliveryStatus || "Cancelled"), t.cartons, r2(t.kg), r0(t.value)];
-            })
-    },
-    {
-        section: "Financial Reports", id: "outstanding", name: "Outstanding Balances (Credit)",
+        section: "Finance", id: "outstanding", name: "Outstanding Balances (Credit)",
         desc: "Unpaid credit amount per outlet",
         columns: ["Shop", "Route", "Credit Bills", "Outstanding (Rs.)", "Last Bill Date"],
         build: (bills) => {
@@ -7718,6 +7585,18 @@ const REPORT_DEFINITIONS = [
                 .map(x => [x.key, (last[x.key] || {}).route || "-", x.count, r0(x.value), (last[x.key] || {}).d || "-"])
                 .sort((a, b) => b[3] - a[3]);
         }
+    },
+    {
+        section: "Finance", id: "returns", name: "Returns and Cancelled Bills",
+        desc: "Bills that were returned, cancelled or voided",
+        allStatuses: true,
+        columns: ["Bill No", "Date", "Shop", "Route", "Company", "Status", "Cartons", "Weight (KG)", "Amount (Rs.)"],
+        build: (bills) => bills.filter(b => b.isVoid || b.deliveryStatus === "Cancelled" || b.deliveryStatus === "Returned")
+            .map(b => {
+                const t = billTotals(b);
+                return [b.billNo || "-", saleDateOf(b), b.shopName || "-", b.routeName || "-", companyLabel(b),
+                        b.isVoid ? "Voided" : (b.deliveryStatus || "Cancelled"), t.cartons, r2(t.kg), r0(t.value)];
+            })
     },
 
     /* =========================== ANALYSIS =========================== */
