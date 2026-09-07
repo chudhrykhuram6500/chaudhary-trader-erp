@@ -6469,6 +6469,95 @@ function handleHttpRequest(req, res) {
                       &status=&company=&route=&shop=&search=
                       &limit=&offset=&sort=newest|oldest
        -> { success, total, items, limit, offset } */
+    // Read-only diagnostics. Compares what Supabase actually holds against what
+    // this process is serving from its cache, and reports the write-guard stamp,
+    // so a "data stopped updating" report can be diagnosed without guessing.
+    // Touches nothing.
+    if (pathname === '/api/diagnostics' && req.method === 'GET') {
+        (async () => {
+        const summarise = (s) => {
+            if (!s) return null;
+            const newest = (arr, fields) => {
+                const ds = (arr || []).map(r => {
+                    for (const f of fields) if (r[f]) return String(r[f]).slice(0, 10);
+                    return '';
+                }).filter(Boolean).sort();
+                return ds.length ? ds[ds.length - 1] : null;
+            };
+            return {
+                bills: (s.bills || []).length,
+                orders: (s.orders || []).length,
+                pickLists: (s.pickLists || []).length,
+                shops: (s.shops || []).length,
+                skus: (s.skus || []).length,
+                newestBill: newest(s.bills, ['confirmedDate', 'date', 'billDate', 'createdDate']),
+                newestOrder: newest(s.orders, ['date', 'deliveryDate', 'createdDate']),
+                newestPickList: newest(s.pickLists, ['createdDate', 'finalDeliveryDate']),
+                lastLocalWriteAt: s.__lastLocalWriteAt || null,
+                lastLocalWriteAtIso: s.__lastLocalWriteAt ? new Date(Number(s.__lastLocalWriteAt)).toISOString() : null
+            };
+        };
+
+        const out = {
+            success: true,
+            serverNow: new Date().toISOString(),
+            serverNowMs: Date.now(),
+            serving: summarise(_cachedAppState),
+            supabase: null,
+            localJsonFile: null,
+            writeGuard: null
+        };
+
+        try {
+            const r = await supabasePool.query(
+                "SELECT data, updated_at FROM erp_master_store WHERE id = 'master_state';");
+            if (r && r.rows && r.rows.length > 0) {
+                out.supabase = summarise(r.rows[0].data);
+                out.supabase.rowUpdatedAt = r.rows[0].updated_at;
+
+                // The upsert only writes when the incoming stamp is NEWER than the
+                // stored one. A stored stamp ahead of the server clock would make
+                // every further write a silent no-op - exactly what a "data frozen
+                // on a given day" report looks like.
+                const stored = Number((r.rows[0].data || {}).__lastLocalWriteAt || 0);
+                out.writeGuard = {
+                    storedStamp: stored || null,
+                    storedStampIso: stored ? new Date(stored).toISOString() : null,
+                    storedStampIsInFuture: stored > Date.now(),
+                    wouldBlockFurtherWrites: stored > Date.now(),
+                    minutesAhead: stored > Date.now() ? Math.round((stored - Date.now()) / 60000) : 0
+                };
+            } else {
+                out.supabase = { error: 'no master_state row found' };
+            }
+        } catch (e) {
+            out.supabase = { error: e.message };
+        }
+
+        try {
+            if (fs.existsSync(dbManager.jsonFallbackPath)) {
+                const raw = JSON.parse(fs.readFileSync(dbManager.jsonFallbackPath, 'utf8'));
+                out.localJsonFile = summarise(raw);
+                out.localJsonFile.fileModified = fs.statSync(dbManager.jsonFallbackPath).mtime;
+            } else {
+                out.localJsonFile = { error: 'fallback file does not exist' };
+            }
+        } catch (e) {
+            out.localJsonFile = { error: e.message };
+        }
+
+        try {
+            const backupDir = path.join(BASE_DIR, 'Backups');
+            out.backups = fs.existsSync(backupDir)
+                ? fs.readdirSync(backupDir).sort().slice(-10)
+                : [];
+        } catch (e) { out.backups = { error: e.message }; }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(out, null, 2));
+        })();
+        return;
+    }
     if (pathname === '/api/query' && req.method === 'GET') {
         try {
             const q = parsedUrl.query || {};
