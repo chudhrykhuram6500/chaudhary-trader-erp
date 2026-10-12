@@ -192,6 +192,55 @@
         /* Floating glass-morphism orbs, same technique as the desktop app -
            a fully flat background gives backdrop-filter nothing to blur, so the
            glass cards would look like plain flat boxes without these. */
+        /* Lite mode: the glass look is built from three large animated blurred
+           orbs and twenty-odd backdrop-filter surfaces. A modern phone absorbs
+           that; a low-end one repaints those surfaces on every scroll and the
+           whole app drags. Lite mode keeps the colours and the layout and drops
+           the effects that cost GPU time on every frame. It turns itself on
+           when the device looks weak, and can be switched by hand. */
+        body.lite-mode .ambient-orbs { display: none !important; }
+
+        /* The modal overlays carry their blur inline, so they need catching too. */
+        body.lite-mode [id$="Modal"] {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
+        body.lite-mode .glass-card,
+        body.lite-mode .top-navbar,
+        body.lite-mode .bottom-nav,
+        body.lite-mode .order-sticky-filters,
+        body.lite-mode .order-action-bar,
+        body.lite-mode .sku-card,
+        body.lite-mode .item-card,
+        body.lite-mode .shop-item-card {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            box-shadow: none !important;
+        }
+
+        body.lite-mode .glass-card,
+        body.lite-mode .sku-card,
+        body.lite-mode .item-card,
+        body.lite-mode .shop-item-card { background: #121212; }
+        body.lite-mode .top-navbar,
+        body.lite-mode .bottom-nav,
+        body.lite-mode .order-sticky-filters,
+        body.lite-mode .order-action-bar { background: #0a0a0a; }
+
+        body.lite-mode.light .glass-card,
+        body.lite-mode.light .sku-card,
+        body.lite-mode.light .item-card,
+        body.lite-mode.light .shop-item-card { background: #ffffff; }
+        body.lite-mode.light .top-navbar,
+        body.lite-mode.light .bottom-nav,
+        body.lite-mode.light .order-sticky-filters,
+        body.lite-mode.light .order-action-bar { background: #f4f4f5; }
+
+        /* Nothing should be animating forever in the background. */
+        body.lite-mode .ambient-orbs span,
+        body.lite-mode .liquid-progress-fill { animation: none !important; }
+
         .ambient-orbs {
             position: fixed;
             inset: 0;
@@ -603,6 +652,45 @@
         .btn-success-sm { background: var(--green-gradient); color: #fff; }
         .btn-warning-sm { background: var(--gold-gradient); color: var(--on-accent); }
 
+        /* The brand filters follow the SKU list down the screen, so switching
+           from Lays to Cheetos never means scrolling back to the top. */
+        .order-sticky-filters {
+            position: sticky;
+            top: var(--sticky-top, 62px);
+            z-index: 90;
+            margin: 0 -16px 10px -16px;
+            padding: 8px 16px 6px 16px;
+            background: rgba(0, 0, 0, 0.93);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .order-sticky-filters .pill-row {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .order-sticky-filters .pill-row::-webkit-scrollbar { display: none; }
+
+        /* Saving is always one tap away, wherever the salesman is in the list. */
+        .order-action-bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 65px;
+            z-index: 95;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)) 14px;
+            background: rgba(0, 0, 0, 0.93);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid var(--glass-border);
+            box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.5);
+        }
+
         .tab-section { display: none; }
         .tab-section.active { display: block; }
 
@@ -780,6 +868,9 @@
                 <span class="status-dot offline" id="statusDot"></span>
                 <span id="statusText">Offline</span>
             </div>
+            <button type="button" class="theme-toggle-btn" id="liteModeBtn" onclick="toggleLiteMode()" title="Lite mode">
+                <i class="fa-regular fa-gem" id="liteModeIcon"></i>
+            </button>
             <button type="button" class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleMobileTheme()" title="Switch theme">
                 <i class="fa-solid fa-sun" id="themeToggleIcon"></i>
             </button>
@@ -1190,18 +1281,6 @@
                     <label>Select Shop</label>
                     <select id="orderShopSelect" class="input-glass" onchange="MobileState.selectedShopId = this.value; calculateNetOrderValue();"></select>
                 </div>
-                <div class="form-group">
-                    <label><i class="fa-solid fa-building"></i> Main Company Filter</label>
-                    <div style="display: flex; gap: 8px; margin-bottom: 8px;" id="mobileMainCompanyPills">
-                        <button type="button" class="btn-action-sm active-main-comp" onclick="setMobileMainCompany('lays', this)" style="flex: 1; font-size: 12px; font-weight: 800; padding: 8px 12px; border-radius: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none; box-shadow: 0 2px 6px rgba(217,119,6,0.3);">🍿 LAYS / PEPSICO</button>
-                        <button type="button" class="btn-action-sm" onclick="setMobileMainCompany('fast', this)" style="flex: 1; font-size: 12px; font-weight: 800; padding: 8px 12px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); color: #047857; border: 1.5px solid rgba(16, 185, 129, 0.4);">🥜 FAST FOODS</button>
-                    </div>
-
-                    <label style="font-size: 11px; margin-top: 4px;"><i class="fa-solid fa-layer-group"></i> Sub-Category Filter</label>
-                    <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 8px;" id="mobileSubCategoryPills">
-                        <!-- Dynamically rendered based on selected Main Company -->
-                    </div>
-                </div>
                 <div class="form-group" style="margin-top: 6px;">
                     <label><i class="fa-solid fa-boxes-stacked"></i> Stock Filter</label>
                     <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 8px;" id="mobileStockFilterPills">
@@ -1215,6 +1294,16 @@
                 </div>
             </div>
 
+            <div class="order-sticky-filters">
+                <div class="pill-row" style="margin-bottom: 6px;" id="mobileMainCompanyPills">
+                    <button type="button" class="btn-action-sm active-main-comp" onclick="setMobileMainCompany('lays', this)" style="flex: 1; white-space: nowrap; font-size: 11.5px; font-weight: 800; padding: 7px 10px; border-radius: 10px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none;">🍿 LAYS</button>
+                    <button type="button" class="btn-action-sm" onclick="setMobileMainCompany('fast', this)" style="flex: 1; white-space: nowrap; font-size: 11.5px; font-weight: 800; padding: 7px 10px; border-radius: 10px; background: rgba(16, 185, 129, 0.12); color: #047857; border: 1.5px solid rgba(16, 185, 129, 0.4);">🥜 FAST</button>
+                </div>
+                <div class="pill-row" id="mobileSubCategoryPills">
+                    <!-- Dynamically rendered based on selected Main Company -->
+                </div>
+            </div>
+
             <div id="skuOrderList"></div>
 
             <div id="mobileFocBannerContainer"></div>
@@ -1225,12 +1314,24 @@
                     <span>NET ORDER VALUE:</span>
                     <strong id="orderNetPayable" style="font-size: 18px; color: #059669;">Rs. 0</strong>
                 </div>
-                <button class="btn-sync-liquid" style="background: var(--green-gradient); margin-top: 12px; padding: 14px;" onclick="saveOfflineOrder()">
-                    <i class="fa-solid fa-check-circle"></i> SAVE ORDER
+                <button class="btn-sync-liquid" style="background: var(--green-gradient); margin-top: 12px; padding: 14px;" onclick="openOrderReview()">
+                    <i class="fa-solid fa-clipboard-check"></i> REVIEW &amp; SAVE ORDER
                 </button>
             </div>
         </section>
 
+
+        <!-- Always-visible order bar: the salesman never has to scroll to the
+             bottom of the SKU list to see the total or to save. -->
+        <div id="orderActionBar" class="order-action-bar" style="display: none;">
+            <div style="flex: 1; min-width: 0;">
+                <div id="orderBarCount" style="font-size: 10.5px; font-weight: 800; color: var(--text-muted); white-space: nowrap;">No items</div>
+                <div id="orderBarTotal" style="font-size: 16px; font-weight: 900; color: var(--brand-gold); white-space: nowrap;">Rs. 0</div>
+            </div>
+            <button class="btn-action-sm" style="flex-shrink: 0; padding: 11px 16px; font-size: 12.5px; font-weight: 900; border-radius: 12px; background: var(--green-gradient); color: #fff; border: none;" onclick="openOrderReview()">
+                <i class="fa-solid fa-clipboard-check"></i> Review &amp; Save
+            </button>
+        </div>
 
         <!-- TAB 4: ORDERS HISTORY -->
         <section id="historyTab" class="tab-section">
@@ -1247,6 +1348,63 @@
     </div>
 
     <!-- NEW ON-FIELD SHOP CREATION MODAL -->
+    <!-- SUBMIT PROGRESS DIALOG - one bar per step, so the wait is never blind -->
+    <!-- ORDER REVIEW - last look before the order is saved -->
+    <div id="orderReviewModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px); z-index: 2500; justify-content: center; align-items: flex-end; padding: 0;">
+        <div class="glass-card" style="background: var(--bg-surface-strong); width: 100%; max-width: 520px; max-height: 92vh; display: flex; flex-direction: column; border-radius: 22px 22px 0 0; padding: 18px 16px calc(14px + env(safe-area-inset-bottom, 0px)) 16px; margin: 0;">
+
+            <div class="flex-between" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; margin-bottom: 10px;">
+                <div style="min-width: 0;">
+                    <h3 style="font-size: 15px; font-weight: 900; color: var(--text-dark);"><i class="fa-solid fa-clipboard-check" style="color: var(--brand-gold);"></i> Review Order</h3>
+                    <p id="orderReviewShop" style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></p>
+                </div>
+                <button onclick="closeMobileModal('orderReviewModal')" style="background: none; border: none; font-size: 22px; font-weight: 800; color: var(--text-muted); cursor: pointer; flex-shrink: 0;">&times;</button>
+            </div>
+
+            <div id="orderReviewList" style="flex: 1; overflow-y: auto; min-height: 80px;"></div>
+
+            <div id="orderReviewTotals" style="border-top: 1px solid var(--glass-border); padding-top: 10px; margin-top: 10px;"></div>
+
+            <div style="display: flex; gap: 10px; margin-top: 12px;">
+                <button class="btn-action-sm" style="flex: 1; padding: 13px; font-weight: 800; background: var(--bg-surface-strong); color: var(--text-muted); border: 1px solid var(--glass-border); border-radius: 12px;" onclick="closeMobileModal('orderReviewModal')">
+                    <i class="fa-solid fa-pen"></i> Keep Editing
+                </button>
+                <button id="orderReviewConfirmBtn" class="btn-action-sm" style="flex: 1.3; padding: 13px; font-weight: 900; background: var(--green-gradient); color: #fff; border: none; border-radius: 12px;" onclick="confirmOrderFromReview()">
+                    <i class="fa-solid fa-check-circle"></i> Confirm &amp; Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="syncStepsModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.78); backdrop-filter: blur(10px); z-index: 3000; justify-content: center; align-items: center; padding: 16px;">
+        <div class="glass-card" style="background: var(--bg-surface-strong); width: 100%; max-width: 440px; max-height: 92vh; overflow-y: auto; border-radius: 20px; padding: 20px;">
+
+            <div style="text-align: center; margin-bottom: 4px;">
+                <div id="syncStepsIcon" style="font-size: 26px; color: var(--brand-gold);"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                <h3 id="syncStepsTitle" style="font-size: 16px; font-weight: 900; color: var(--text-dark); margin-top: 6px;">Submitting Orders</h3>
+                <p id="syncStepsSubtitle" style="font-size: 11.5px; font-weight: 600; color: var(--text-muted); margin-top: 3px;"></p>
+            </div>
+
+            <!-- Overall -->
+            <div style="margin: 14px 0 6px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px;">
+                    <span style="font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted);">Overall</span>
+                    <span id="syncStepsOverallPct" style="font-size: 12px; font-weight: 900; color: var(--brand-gold);">0%</span>
+                </div>
+                <div style="height: 8px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden;">
+                    <div id="syncStepsOverallBar" style="height: 100%; width: 0%; background: var(--gold-gradient); border-radius: 99px; transition: width .25s ease;"></div>
+                </div>
+            </div>
+
+            <div id="syncStepsList" style="margin-top: 14px;"></div>
+
+            <div id="syncStepsFooter" style="margin-top: 14px; font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-align: center; min-height: 18px;"></div>
+
+            <button id="syncStepsCloseBtn" class="btn-action-sm" style="width: 100%; margin-top: 12px; padding: 12px; font-weight: 800; display: none;"
+                    onclick="closeMobileModal('syncStepsModal')">Close</button>
+        </div>
+    </div>
+
     <div id="newMobileShopModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: center; padding: 16px;">
         <div class="glass-card" style="background: var(--bg-surface-strong); width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 20px;">
             <div class="flex-between" style="margin-bottom: 14px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
@@ -1506,10 +1664,45 @@
             applyMobileTheme(document.body.classList.contains("light") ? "dark" : "light");
         }
 
+        /* A phone with little memory or few cores is the one that struggles,
+           so Lite mode defaults on there. Whatever the salesman picks after
+           that is remembered. */
+        function deviceLooksLowEnd() {
+            const mem = navigator.deviceMemory;              // GB, Chrome/Android
+            const cores = navigator.hardwareConcurrency;
+            if (typeof mem === "number" && mem <= 3) return true;
+            if (typeof cores === "number" && cores <= 4) return true;
+            return false;
+        }
+
+        function applyLiteMode(on) {
+            document.body.classList.toggle("lite-mode", !!on);
+            try { localStorage.setItem("chaudhary_mobile_lite", on ? "1" : "0"); } catch (e) {}
+            const icon = document.getElementById("liteModeIcon");
+            const btn = document.getElementById("liteModeBtn");
+            if (icon) icon.className = on ? "fa-solid fa-bolt" : "fa-regular fa-gem";
+            if (btn) btn.title = on ? "Lite mode on - tap for the full glass look" : "Full glass look - tap for lite mode";
+        }
+
+        function toggleLiteMode() {
+            const on = !document.body.classList.contains("lite-mode");
+            applyLiteMode(on);
+            alert(on
+                ? "⚡ Lite mode ON\n\nBackground effects are off, so the app runs faster on slower phones."
+                : "💎 Lite mode OFF\n\nThe full glass look is back.");
+        }
+
+        function initLiteMode() {
+            let saved = null;
+            try { saved = localStorage.getItem("chaudhary_mobile_lite"); } catch (e) {}
+            applyLiteMode(saved === null ? deviceLooksLowEnd() : saved === "1");
+        }
+
         function initMobileTheme() {
             let saved = "dark";
             try { saved = localStorage.getItem("chaudhary_mobile_theme") || "dark"; } catch(e) {}
             applyMobileTheme(saved);
+            initLiteMode();
         }
 
         /* Real packet colour per flavour, so a product is recognisable at a glance
@@ -1791,11 +1984,38 @@
             updatePendingBadge();
         }
 
+        // Tabs whose contents the dashboard recalc builds.
+        const DASHBOARD_TABS = ["dashboardTab", "summaryTab"];
+        let _dashboardNeedsRefresh = true;
+
+        function markDashboardStale() {
+            _dashboardNeedsRefresh = true;
+            const active = document.querySelector(".tab-section.active");
+            // Only pay for the rebuild if the salesman is looking at it.
+            if (active && DASHBOARD_TABS.indexOf(active.id) !== -1) refreshDashboardIfStale();
+        }
+
+        function refreshDashboardIfStale() {
+            if (!_dashboardNeedsRefresh) return;
+            _dashboardNeedsRefresh = false;
+            try { updateSalesmanMonthlyKgDashboard(); } catch (e) { console.warn(e); }
+        }
+
         function saveMobileState() {
             localStorage.setItem("chaudhary_mobile_state", JSON.stringify(MobileState));
             updatePendingBadge();
-            updateSalesmanMonthlyKgDashboard();
+            markDashboardStale();
         }
+
+        // The header is sticky, so the filter strip below it needs its real
+        // height rather than a guessed one.
+        function syncStickyOffset() {
+            const hdr = document.querySelector(".top-navbar");
+            if (hdr) document.documentElement.style.setProperty("--sticky-top", hdr.offsetHeight + "px");
+        }
+        window.addEventListener("resize", syncStickyOffset);
+        window.addEventListener("orientationchange", syncStickyOffset);
+        document.addEventListener("DOMContentLoaded", syncStickyOffset);
 
         function setTodayBeatFilter() {
             const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -1806,11 +2026,24 @@
             }
         }
 
+        let _skuIndex = null;
+        let _skuIndexFor = null;
+
+        function skuByCode(code) {
+            const list = MobileState.skus || [];
+            if (_skuIndexFor !== list) {
+                _skuIndex = new Map();
+                list.forEach(s => { if (s && s.code !== undefined) _skuIndex.set(String(s.code), s); });
+                _skuIndexFor = list;
+            }
+            return _skuIndex.get(String(code));
+        }
+
         function getOrderWeightKg(order) {
             if (!order || !order.items) return 0;
             let totalGrams = 0;
             order.items.forEach(item => {
-                const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+                const sku = skuByCode(item.code) || {};
                 const gramsPerPack = sku.grams || item.grams || 0;
                 const packPerCtn = sku.pack || item.pack || 1;
                 const totalPacks = ((item.cartons || 0) * packPerCtn) + (item.units || 0);
@@ -1823,7 +2056,7 @@
             if (!order || !order.items) return 0;
             let totalGrams = 0;
             order.items.forEach(item => {
-                const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+                const sku = skuByCode(item.code) || {};
                 const brandStr = (sku.brand || item.brand || "").toLowerCase();
                 const compIdStr = (sku.companyId || item.companyId || "").toLowerCase();
                 
@@ -1850,7 +2083,7 @@
             const brandKey = (brandFilter || "").toLowerCase();
 
             (order.items || []).forEach(item => {
-                const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+                const sku = skuByCode(item.code) || {};
                 const brandStr = (sku.brand || item.brand || sku.desc || item.desc || "").toLowerCase();
                 const compIdStr = (sku.companyId || item.companyId || "").toLowerCase();
 
@@ -2096,7 +2329,7 @@
                     if (currentSummaryCompanyFilter === 'lays' && comp !== 'lays') return;
                     if (currentSummaryCompanyFilter === 'fast' && comp !== 'fast') return;
 
-                    const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+                    const sku = skuByCode(item.code) || {};
                     const gramsPerPack = sku.grams || item.grams || 0;
                     const packPerCtn = sku.pack || item.pack || 1;
                     const totalPacks = ((item.cartons || 0) * packPerCtn) + (item.units || 0);
@@ -2234,7 +2467,7 @@
 
         function getCompanyIdForMobileItem(item) {
             if (!item) return "lays";
-            const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+            const sku = skuByCode(item.code) || {};
             const compId = String(item.companyId || sku.companyId || "").toLowerCase();
             if (compId === "hash" || compId === "fast") return "fast";
             if (compId === "lays" || compId === "pepsico") return "lays";
@@ -2255,7 +2488,7 @@
 
         function getSubCategoryForMobileItem(item) {
             if (!item) return "PC";
-            const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+            const sku = skuByCode(item.code) || {};
             const compId = getCompanyIdForMobileItem(item);
             const desc = String(item.desc || item.name || sku.desc || "").toUpperCase();
             const brand = String(item.brand || sku.brand || "").toUpperCase();
@@ -2290,7 +2523,7 @@
                 if (!isMyOrder) return;
 
                 (o.items || []).forEach(item => {
-                    const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+                    const sku = skuByCode(item.code) || {};
                     const gramsPerPack = sku.grams || item.grams || 0;
                     const packPerCtn = sku.pack || item.pack || 1;
                     const totalPacks = ((item.cartons || 0) * packPerCtn) + (item.units || 0);
@@ -3046,6 +3279,10 @@
             if (tabId === "shopsTab") {
                 renderMobileShops();
             }
+            if (DASHBOARD_TABS.indexOf(tabId) !== -1) {
+                refreshDashboardIfStale();
+            }
+            if (typeof renderOrderActionBar === "function") renderOrderActionBar();
         }
 
         function renderSalesmanProfilesDropdown() {
@@ -3064,11 +3301,13 @@
                 return;
             }
             sel.disabled = false;
+            const optionsHtml = [];
             activeList.forEach(s => {
                 const route = (MobileState.routes || []).find(r => r.id === s.routeId) || { name: "Assigned Route" };
                 const isSel = (MobileState.salesman && MobileState.salesman.id === s.id) ? "selected" : "";
-                sel.innerHTML += `<option value="${s.id}" ${isSel}>${s.name} (${route.name})</option>`;
+                optionsHtml.push(`<option value="${s.id}" ${isSel}>${s.name} (${route.name})</option>`);
             });
+            sel.innerHTML += optionsHtml.join("");
         }
         function updateSalesmanProfileHeaderUI() {
             if (!MobileState.salesman) {
@@ -3139,10 +3378,166 @@
             alert(`🎉 Authenticated & Logged In Successfully as '${target.name}' (${target.username})!`);
         }
 
-        function submitAllPendingOrdersLive() {
+        /* Drives the submit dialog: every step is listed up front so the
+           salesman knows what is coming, each one has its own bar, and a step
+           only lights up once the one before it has reached 100%. */
+        const SyncSteps = (function () {
+            let steps = [];
+            let current = -1;
+            let startedAt = 0;
+            let timer = null;
+
+            const el = (id) => document.getElementById(id);
+
+            function rowHtml(s, i) {
+                return `
+                    <div id="syncStepRow${i}" style="display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <div id="syncStepMark${i}" style="flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,0.08); color: var(--text-muted); font-size: 10.5px; font-weight: 900; display: flex; align-items: center; justify-content: center; margin-top: 1px;">${i + 1}</div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; justify-content: space-between; gap: 8px; align-items: baseline;">
+                                <span id="syncStepName${i}" style="font-size: 12.5px; font-weight: 800; color: var(--text-muted);">${s.name}</span>
+                                <span id="syncStepNote${i}" style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); white-space: nowrap;">Waiting</span>
+                            </div>
+                            <div style="height: 5px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; margin-top: 6px;">
+                                <div id="syncStepBar${i}" style="height: 100%; width: 0%; background: var(--gold-gradient); border-radius: 99px; transition: width .2s ease;"></div>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            function paintOverall() {
+                // Every step counts the same; a running step contributes its own share.
+                const done = steps.reduce((acc, s) => acc + (s.pct || 0), 0);
+                const pct = Math.round(done / Math.max(1, steps.length));
+                const bar = el("syncStepsOverallBar");
+                const lbl = el("syncStepsOverallPct");
+                if (bar) bar.style.width = pct + "%";
+                if (lbl) lbl.innerText = pct + "%";
+            }
+
+            function elapsed() { return Math.round((Date.now() - startedAt) / 1000); }
+
+            return {
+                // Shown before anything starts, so the steps are known in advance.
+                begin(stepNames, subtitle) {
+                    steps = stepNames.map(n => ({ name: n, pct: 0 }));
+                    current = -1;
+                    startedAt = Date.now();
+
+                    el("syncStepsTitle").innerText = "Submitting Orders";
+                    el("syncStepsSubtitle").innerText = subtitle || "";
+                    el("syncStepsIcon").innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i>`;
+                    el("syncStepsIcon").style.color = "var(--brand-gold)";
+                    el("syncStepsList").innerHTML = steps.map(rowHtml).join("");
+                    el("syncStepsFooter").innerText = `${steps.length} steps - starting…`;
+                    el("syncStepsCloseBtn").style.display = "none";
+                    el("syncStepsModal").style.display = "flex";
+                    paintOverall();
+
+                    if (timer) clearInterval(timer);
+                    timer = setInterval(() => {
+                        const f = el("syncStepsFooter");
+                        if (f && current >= 0 && current < steps.length) {
+                            f.innerText = `Step ${current + 1} of ${steps.length}  ·  ${elapsed()}s elapsed`;
+                        }
+                    }, 1000);
+                },
+
+                start(i, note) {
+                    current = i;
+                    const mark = el(`syncStepMark${i}`), name = el(`syncStepName${i}`), n = el(`syncStepNote${i}`);
+                    if (mark) { mark.style.background = "var(--gold-gradient)"; mark.style.color = "var(--on-accent)"; }
+                    if (name) name.style.color = "var(--text-dark)";
+                    if (n) { n.innerText = note || "Working…"; n.style.color = "var(--brand-gold)"; }
+                },
+
+                progress(i, pct, note) {
+                    if (!steps[i]) return;
+                    steps[i].pct = Math.max(0, Math.min(100, pct));
+                    const bar = el(`syncStepBar${i}`), n = el(`syncStepNote${i}`);
+                    if (bar) bar.style.width = steps[i].pct + "%";
+                    if (n && note) n.innerText = note;
+                    paintOverall();
+                },
+
+                // A step reaching 100% is what reveals the next one as active.
+                done(i, note) {
+                    if (!steps[i]) return;
+                    steps[i].pct = 100;
+                    const bar = el(`syncStepBar${i}`), mark = el(`syncStepMark${i}`), n = el(`syncStepNote${i}`);
+                    if (bar) { bar.style.width = "100%"; bar.style.background = "var(--green-gradient)"; }
+                    if (mark) { mark.style.background = "var(--green-gradient)"; mark.style.color = "#fff"; mark.innerHTML = `<i class="fa-solid fa-check"></i>`; }
+                    if (n) { n.innerText = note || "Done"; n.style.color = "#22c58b"; }
+                    paintOverall();
+                },
+
+                // Reset a step that has to be retried against another server.
+                retry(i, note) {
+                    if (!steps[i]) return;
+                    steps[i].pct = 0;
+                    const bar = el(`syncStepBar${i}`), n = el(`syncStepNote${i}`);
+                    if (bar) bar.style.width = "0%";
+                    if (n) { n.innerText = note || "Retrying…"; n.style.color = "#fbbf24"; }
+                    paintOverall();
+                },
+
+                fail(i, message) {
+                    if (timer) { clearInterval(timer); timer = null; }
+                    const mark = el(`syncStepMark${i}`), bar = el(`syncStepBar${i}`), n = el(`syncStepNote${i}`);
+                    if (mark) { mark.style.background = "var(--danger-gradient)"; mark.style.color = "#fff"; mark.innerHTML = `<i class="fa-solid fa-xmark"></i>`; }
+                    if (bar) bar.style.background = "var(--danger-gradient)";
+                    if (n) { n.innerText = "Failed"; n.style.color = "#f87171"; }
+                    el("syncStepsIcon").innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i>`;
+                    el("syncStepsIcon").style.color = "#f87171";
+                    el("syncStepsTitle").innerText = "Not Submitted";
+                    el("syncStepsFooter").innerText = message;
+                    el("syncStepsCloseBtn").style.display = "block";
+                },
+
+                finish(message) {
+                    if (timer) { clearInterval(timer); timer = null; }
+                    el("syncStepsIcon").innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
+                    el("syncStepsIcon").style.color = "#22c58b";
+                    el("syncStepsTitle").innerText = "Submitted";
+                    el("syncStepsFooter").innerText = message;
+                    el("syncStepsCloseBtn").style.display = "block";
+                },
+
+                elapsed
+            };
+        })();
+
+        /* Submitting the pending orders, shown as five named steps the
+           salesman can see before anything starts. Each step has its own bar
+           and only hands over once it reaches 100%.
+
+           The old version set one bar to 30%, left it there for however long
+           the upload took - often 5 to 10 minutes - and snapped to 100% when
+           the reply finally arrived, with nothing to say what was happening. */
+
+        const SYNC_ENDPOINTS = [
+            "https://chaudharytraders.online",
+            "https://chaudhary-trader-erp.onrender.com"
+        ];
+
+        const SUBMIT_STEPS = [
+            "Preparing the orders",
+            "Connecting to the server",
+            "Uploading the orders",
+            "Server saving the orders",
+            "Updating this phone"
+        ];
+        const STEP_PREPARE = 0, STEP_CONNECT = 1, STEP_UPLOAD = 2, STEP_SERVER = 3, STEP_LOCAL = 4;
+
+        // Kept so the old inline bar on the Sync screen still reflects the state.
+        function setSyncProgress(pct, message) {
             const bar = document.getElementById("syncProgressBar");
             const txt = document.getElementById("syncProgressText");
+            if (bar) bar.style.width = Math.max(0, Math.min(100, pct)) + "%";
+            if (txt) txt.innerText = message;
+        }
 
+        function submitAllPendingOrdersLive() {
             const pendingOrders = (MobileState.orders || []).filter(o => !o.synced);
             const pendingTxs = (MobileState.stockTransactions || []).filter(t => !t.synced);
 
@@ -3151,67 +3546,142 @@
                 return;
             }
 
-            if (bar) bar.style.width = "30%";
-            if (txt) txt.innerText = `Submitting ${pendingOrders.length} Order(s) to https://chaudharytraders.online (4G)...`;
+            // The server only adds shops it does not already hold, so sending the
+            // whole shop book every time is wasted upload on mobile data.
+            const newShops = (MobileState.shops || []).filter(s => s.isNewOnField && !s.syncedToServer);
 
-            const tryEndpoints = [
-                "https://chaudhary-trader-erp.onrender.com",
-                "https://chaudharytraders.online",
-                (localStorage.getItem("chaudhary_pc_ip") || "http://192.168.100.129:8888")
-            ];
+            const payload = JSON.stringify({
+                salesmanId: MobileState.salesman ? MobileState.salesman.id : "sales_real_1",
+                salesmanName: MobileState.salesman ? MobileState.salesman.name : "Arif Sanwal",
+                deviceId: "Android_Phone",
+                shops: newShops,
+                orders: pendingOrders,
+                stockTransactions: pendingTxs
+            });
+            const totalKb = Math.max(1, Math.round(payload.length / 1024));
 
-            function attemptSubmit(index) {
-                if (index >= tryEndpoints.length) {
-                    if (bar) bar.style.width = "100%";
-                    if (txt) txt.innerText = "⚠️ Submission Connection Timeout. Tap Submit to retry.";
-                    alert("⚠️ Submission Connection Timeout.\n\nPlease check 4G SIM Data or Wi-Fi connection and tap Submit again.");
+            SyncSteps.begin(SUBMIT_STEPS,
+                `${pendingOrders.length} order(s)${newShops.length ? " + " + newShops.length + " new shop(s)" : ""}  ·  ${totalKb} KB`);
+
+            SyncSteps.start(STEP_PREPARE);
+            SyncSteps.progress(STEP_PREPARE, 100);
+            SyncSteps.done(STEP_PREPARE, `${pendingOrders.length} order(s)`);
+            setSyncProgress(5, `Preparing ${pendingOrders.length} order(s)…`);
+
+            const endpoints = SYNC_ENDPOINTS.concat([
+                localStorage.getItem("chaudhary_pc_ip") || "http://192.168.100.129:8888"
+            ]);
+
+            function attempt(index) {
+                if (index >= endpoints.length) {
+                    SyncSteps.fail(STEP_CONNECT,
+                        `Could not reach any server after ${SyncSteps.elapsed()}s. Your orders are safe on this phone - tap Submit to try again.`);
+                    setSyncProgress(100, "⚠️ Could not reach the server. Tap Submit to retry.");
                     return;
                 }
 
-                let targetUrl = formatPcIp(tryEndpoints[index]);
+                const targetUrl = formatPcIp(endpoints[index]);
+                const host = String(targetUrl).replace(/^https?:\/\//, "").split("/")[0];
 
-                fetch(`${targetUrl}/api/sync/evening-upload`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        salesmanId: MobileState.salesman ? MobileState.salesman.id : "sales_real_1",
-                        salesmanName: MobileState.salesman ? MobileState.salesman.name : "Arif Sanwal",
-                        deviceId: "Android_Phone",
-                        shops: MobileState.shops,
-                        orders: pendingOrders,
-                        stockTransactions: pendingTxs
-                    })
-                })
-                .then(r => {
-                    if (!r.ok) throw new Error("HTTP " + r.status);
-                    return r.json();
-                })
-                .then(uploadRes => {
-                    if (bar) bar.style.width = "100%";
-                    if (txt) txt.innerText = "🚀 Pending Orders Submitted Successfully!";
+                if (index > 0) {
+                    SyncSteps.retry(STEP_CONNECT, "Trying next server…");
+                    SyncSteps.retry(STEP_UPLOAD, "Waiting");
+                    SyncSteps.retry(STEP_SERVER, "Waiting");
+                }
+                SyncSteps.start(STEP_CONNECT, host);
+                SyncSteps.progress(STEP_CONNECT, 40);
+                setSyncProgress(10, `Connecting to ${host}…`);
 
-                    (MobileState.orders || []).forEach(o => o.synced = true);
-                    (MobileState.stockTransactions || []).forEach(t => t.synced = true);
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", `${targetUrl}/api/sync/evening-upload`, true);
+                xhr.setRequestHeader("Content-Type", "application/json");
+                xhr.timeout = 90000;                 // a sleeping server needs time to wake
 
+                let connected = false;
+                let waitTimer = null;
+
+                // Real byte progress, not a guess.
+                xhr.upload.onprogress = (e) => {
+                    if (!connected) {
+                        connected = true;
+                        SyncSteps.done(STEP_CONNECT, host);
+                        SyncSteps.start(STEP_UPLOAD);
+                    }
+                    if (!e.lengthComputable) return;
+                    const pct = Math.round((e.loaded / e.total) * 100);
+                    SyncSteps.progress(STEP_UPLOAD, pct, `${Math.round(e.loaded / 1024)} / ${totalKb} KB`);
+                    setSyncProgress(10 + Math.round(pct * 0.55), `Uploading… ${Math.round(e.loaded / 1024)} of ${totalKb} KB`);
+                };
+
+                xhr.upload.onload = () => {
+                    if (!connected) { connected = true; SyncSteps.done(STEP_CONNECT, host); SyncSteps.start(STEP_UPLOAD); }
+                    SyncSteps.done(STEP_UPLOAD, `${totalKb} KB sent`);
+
+                    // The server is working now. Creep the bar so it never looks
+                    // stuck, but hold it short of 100 until the reply lands.
+                    SyncSteps.start(STEP_SERVER);
+                    let p = 0;
+                    waitTimer = setInterval(() => {
+                        p = Math.min(92, p + 3);
+                        const secs = SyncSteps.elapsed();
+                        SyncSteps.progress(STEP_SERVER, p, secs > 20 ? `${secs}s - waking up` : `${secs}s`);
+                        setSyncProgress(65 + Math.round(p * 0.3), `Server is saving… ${secs}s`);
+                    }, 700);
+                };
+
+                const stopWaiting = () => { if (waitTimer) { clearInterval(waitTimer); waitTimer = null; } };
+
+                xhr.onload = () => {
+                    stopWaiting();
+                    if (xhr.status < 200 || xhr.status >= 300) {
+                        console.warn(`Submit to ${host} returned HTTP ${xhr.status}`);
+                        return attempt(index + 1);
+                    }
+                    let res = {};
+                    try { res = JSON.parse(xhr.responseText || "{}"); } catch (e) {}
+                    if (res && res.success === false) {
+                        // Refused on purpose - say why rather than retry blindly.
+                        SyncSteps.fail(STEP_SERVER, res.error || "The server refused the upload. Your orders are safe on this phone.");
+                        setSyncProgress(100, "⚠️ " + (res.error || "The server refused the upload."));
+                        return;
+                    }
+                    SyncSteps.done(STEP_SERVER, `${SyncSteps.elapsed()}s`);
+
+                    SyncSteps.start(STEP_LOCAL);
+                    pendingOrders.forEach(o => o.synced = true);
+                    pendingTxs.forEach(t => t.synced = true);
+                    newShops.forEach(s => s.syncedToServer = true);
                     MobileState.lastSyncTime = new Date().toLocaleTimeString();
                     saveMobileState();
                     renderMobileOrdersHistory();
                     updatePendingBadge();
+                    SyncSteps.done(STEP_LOCAL, "Saved");
+
+                    const secs = SyncSteps.elapsed();
+                    SyncSteps.finish(`${pendingOrders.length} order(s) submitted  ·  ${totalKb} KB  ·  ${secs}s`);
+                    setSyncProgress(100, `✅ ${pendingOrders.length} order(s) submitted in ${secs}s`);
 
                     const resCard = document.getElementById("syncResultCard");
                     if (resCard) resCard.style.display = "block";
                     const resUpl = document.getElementById("resUploadsCount");
                     if (resUpl) resUpl.innerText = pendingOrders.length;
+                };
 
-                    alert(`🚀 SUBMISSION SUCCESSFUL!\n\n• ${pendingOrders.length} Order(s) Submitted Live to Server over 4G!`);
-                })
-                .catch(err => {
-                    console.warn(`Submission attempt ${index + 1} failed for ${targetUrl}:`, err);
-                    attemptSubmit(index + 1);
-                });
+                xhr.onerror = () => {
+                    stopWaiting();
+                    console.warn(`Submit to ${host} failed (network)`);
+                    attempt(index + 1);
+                };
+                xhr.ontimeout = () => {
+                    stopWaiting();
+                    console.warn(`Submit to ${host} timed out`);
+                    attempt(index + 1);
+                };
+
+                xhr.send(payload);
             }
 
-            attemptSubmit(0);
+            attempt(0);
         }
 
         function syncMasterDataLive() {
@@ -3695,6 +4165,7 @@
                 return;
             }
 
+            const sectionsHtml = [];
             activeSections.forEach(sec => {
                 let itemsHtml = '';
                 sec.skus.forEach(s => {
@@ -3745,7 +4216,7 @@
                     `;
                 });
 
-                listEl.innerHTML += `
+                sectionsHtml.push(`
                     <div style="margin-bottom: 14px;">
                         <div style="background: ${sec.bg}; border: 1px solid ${sec.border}; padding: 8px 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                             <strong style="font-size: 13px; font-weight: 900; color: ${sec.color};">${sec.name}</strong>
@@ -3753,8 +4224,9 @@
                         </div>
                         ${itemsHtml}
                     </div>
-                `;
+                `);
             });
+            listEl.innerHTML = sectionsHtml.join("");
 
             calculateNetOrderValue();
         }
@@ -3783,6 +4255,116 @@
             }
 
             renderSkuOrderList();
+        }
+
+        /* The running order total, kept by calculateNetOrderValue() so the
+           action bar and the review sheet never have to work it out again. */
+        let _orderSummary = { items: [], gross: 0, discPct: 0, discAmount: 0, net: 0, cartons: 0, units: 0, kg: 0, shop: null };
+
+        /* The bar pinned above the tab strip: how much is in the order and a
+           way to save it, from anywhere in the SKU list. */
+        function renderOrderActionBar() {
+            const bar = document.getElementById("orderActionBar");
+            if (!bar) return;
+
+            const onOrderScreen = (document.querySelector(".tab-section.active") || {}).id === "orderTab";
+            const anyItems = _orderSummary.items.length > 0;
+            bar.style.display = (onOrderScreen && anyItems) ? "flex" : "none";
+            if (!anyItems) return;
+
+            const cnt = document.getElementById("orderBarCount");
+            const tot = document.getElementById("orderBarTotal");
+            if (cnt) cnt.innerText = `${_orderSummary.items.length} product(s)  ·  ${_orderSummary.cartons} ctn` +
+                                     (_orderSummary.units ? ` + ${_orderSummary.units} pkt` : "");
+            if (tot) tot.innerText = `Rs. ${_orderSummary.net.toLocaleString()}`;
+        }
+
+        function openOrderReview() {
+            const shopId = document.getElementById("orderShopSelect")?.value;
+            const shop = (MobileState.shops || []).find(s => s.id === shopId);
+            if (!shop) return alert("Select a shop first!");
+            if (Object.keys(MobileState.cart || {}).length === 0) return alert("Cart is empty!");
+
+            calculateNetOrderValue();
+            renderOrderReview();
+            document.getElementById("orderReviewModal").style.display = "flex";
+        }
+
+        /* The sheet lists what was punched and lets it be corrected in place,
+           so a mistake does not mean closing, hunting the SKU down the list
+           and starting again. */
+        function renderOrderReview() {
+            const shop = _orderSummary.shop;
+            const shopEl = document.getElementById("orderReviewShop");
+            if (shopEl) shopEl.innerText = shop ? `${shop.name}${shop.routeName ? " · " + shop.routeName : ""}` : "";
+
+            const listEl = document.getElementById("orderReviewList");
+            if (!listEl) return;
+
+            if (_orderSummary.items.length === 0) {
+                listEl.innerHTML = `<p style="text-align:center; padding:24px; font-size:12px; color:var(--text-muted);">Nothing left in this order.</p>`;
+            } else {
+                const rows = _orderSummary.items.map(it => `
+                    <div style="padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <div class="flex-between" style="gap: 8px;">
+                            <strong style="font-size: 12.5px; font-weight: 800; color: var(--text-dark); line-height: 1.3;">${it.desc}</strong>
+                            <strong style="font-size: 12.5px; font-weight: 900; color: var(--brand-gold); white-space: nowrap;">Rs. ${Math.round(it.lineAmt).toLocaleString()}</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 7px; flex-wrap: wrap;">
+                            <span style="font-size: 10px; font-weight: 700; color: var(--text-muted);">Ctn</span>
+                            <button class="btn-action-sm" style="padding: 2px 9px; font-size: 14px; font-weight: 900; background: rgba(255,255,255,0.08); color: var(--text-dark); border: 1px solid var(--glass-border); border-radius: 8px;" onclick="reviewAdjust('${it.code}','cartons',-1)">-</button>
+                            <strong style="font-size: 13px; min-width: 22px; text-align: center; color: #22c58b;">${it.cartons}</strong>
+                            <button class="btn-action-sm" style="padding: 2px 9px; font-size: 14px; font-weight: 900; background: rgba(255,255,255,0.08); color: var(--text-dark); border: 1px solid var(--glass-border); border-radius: 8px;" onclick="reviewAdjust('${it.code}','cartons',1)">+</button>
+
+                            <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); margin-left: 6px;">Pkt</span>
+                            <button class="btn-action-sm" style="padding: 2px 9px; font-size: 14px; font-weight: 900; background: rgba(255,255,255,0.08); color: var(--text-dark); border: 1px solid var(--glass-border); border-radius: 8px;" onclick="reviewAdjust('${it.code}','units',-1)">-</button>
+                            <strong style="font-size: 13px; min-width: 22px; text-align: center; color: var(--brand-gold);">${it.units}</strong>
+                            <button class="btn-action-sm" style="padding: 2px 9px; font-size: 14px; font-weight: 900; background: rgba(255,255,255,0.08); color: var(--text-dark); border: 1px solid var(--glass-border); border-radius: 8px;" onclick="reviewAdjust('${it.code}','units',1)">+</button>
+
+                            <button class="btn-action-sm" style="margin-left: auto; padding: 3px 10px; font-size: 10.5px; font-weight: 800; background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.35); border-radius: 8px;" onclick="reviewRemove('${it.code}')">
+                                <i class="fa-solid fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>`);
+                listEl.innerHTML = rows.join("");
+            }
+
+            const line = (label, value, strong) => `
+                <div class="flex-between" style="padding: 3px 0;">
+                    <span style="font-size: ${strong ? 12.5 : 11.5}px; font-weight: ${strong ? 900 : 700}; color: ${strong ? "var(--text-dark)" : "var(--text-muted)"};">${label}</span>
+                    <span style="font-size: ${strong ? 16 : 11.5}px; font-weight: ${strong ? 900 : 800}; color: ${strong ? "#22c58b" : "var(--text-dark)"};">${value}</span>
+                </div>`;
+
+            document.getElementById("orderReviewTotals").innerHTML =
+                line("Items", `${_orderSummary.items.length} product(s)`) +
+                line("Quantity", `${_orderSummary.cartons} ctn${_orderSummary.units ? " + " + _orderSummary.units + " pkt" : ""}`) +
+                line("Weight", `${_orderSummary.kg.toFixed(2)} KG`) +
+                line("Gross", `Rs. ${Math.round(_orderSummary.gross).toLocaleString()}`) +
+                (_orderSummary.discPct > 0
+                    ? line(`Discount (${_orderSummary.discPct}%)`, `- Rs. ${Math.round(_orderSummary.discAmount).toLocaleString()}`)
+                    : "") +
+                line("NET PAYABLE", `Rs. ${_orderSummary.net.toLocaleString()}`, true);
+
+            const btn = document.getElementById("orderReviewConfirmBtn");
+            if (btn) btn.disabled = _orderSummary.items.length === 0;
+        }
+
+        function reviewAdjust(code, type, delta) {
+            updateCartQty(code, type, delta);     // also re-renders the SKU list
+            calculateNetOrderValue();
+            renderOrderReview();
+        }
+
+        function reviewRemove(code) {
+            delete MobileState.cart[code];
+            renderSkuOrderList();
+            calculateNetOrderValue();
+            renderOrderReview();
+        }
+
+        function confirmOrderFromReview() {
+            closeMobileModal("orderReviewModal");
+            saveOfflineOrder();
         }
 
         function updateCartQty(code, type, delta) {
@@ -3958,6 +4540,7 @@
                         if (isHash) hasHashItem = true;
 
                         cartItemsBreakdown.push({
+                            code: sku.code,
                             desc: sku.desc,
                             cartons: q.cartons,
                             units: q.units,
@@ -3978,6 +4561,19 @@
 
             const discAmount = grossTotal * (shopDiscPct / 100);
             const netPayable = Math.max(0, Math.round(grossTotal - discAmount));
+
+            _orderSummary = {
+                items: cartItemsBreakdown,
+                gross: grossTotal,
+                discPct: shopDiscPct,
+                discAmount: discAmount,
+                net: netPayable,
+                cartons: totalCartons,
+                units: totalUnits,
+                kg: totalWeightKg,
+                shop: shop || null
+            };
+            renderOrderActionBar();
 
             const netEl = document.getElementById("orderNetPayable");
             if (netEl) {
@@ -4165,17 +4761,6 @@
             switchMobileTab('shopsTab', document.querySelectorAll(".nav-tab-btn")[2]);
         }
 
-        function submitOrderDirectToWebsite() {
-            const shopId = document.getElementById("orderShopSelect")?.value;
-            const shop = MobileState.shops ? MobileState.shops.find(s => s.id === shopId) : null;
-            if (!shop) return alert("Select a shop!");
-            const cartKeys = Object.keys(MobileState.cart || {});
-            if (cartKeys.length === 0) return alert("Cart is empty!");
-
-            saveOfflineOrder();
-            startTwoWaySync();
-        }
-
         function openEditMobileOrderModal(orderNo) {
             const order = (MobileState.orders || []).find(o => o.orderNo === orderNo);
             if (!order) return alert("Order not found!");
@@ -4190,11 +4775,12 @@
             const container = document.getElementById("editOrderItemsList");
             container.innerHTML = "";
 
+            const itemRows = [];
             (MobileState.skus || []).forEach(sku => {
                 const existingItem = (order.items || []).find(i => i.code === sku.code);
                 const currentCtns = existingItem ? (existingItem.cartons || 0) : 0;
 
-                container.innerHTML += `
+                itemRows.push(`
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
                         <div>
                             <strong style="font-size: 12px; color: var(--text-dark);">${sku.desc}</strong>
@@ -4205,8 +4791,9 @@
                             <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">Ctns</span>
                         </div>
                     </div>
-                `;
+                `);
             });
+            container.innerHTML = itemRows.join("");
 
             updateEditOrderCalculation();
             document.getElementById("editMobileOrderModal").style.display = "flex";
@@ -4294,6 +4881,15 @@
             alert(`🗑️ Order ${orderNo} cancelled and removed.`);
         }
 
+        // Set by "Show all orders"; reset whenever the screen is rebuilt fresh.
+        let _showAllMobileOrders = false;
+        const MOBILE_ORDERS_VISIBLE = 40;
+
+        function showAllMobileOrders() {
+            _showAllMobileOrders = true;
+            renderMobileOrdersHistory();
+        }
+
         function renderMobileOrdersHistory() {
             const listEl = document.getElementById("mobileOrdersHistoryList");
             listEl.innerHTML = "";
@@ -4303,7 +4899,23 @@
                 return;
             }
 
-            MobileState.orders.forEach(o => {
+            const all = MobileState.orders;
+            // Anything not yet uploaded always stays visible - that is the list
+            // the salesman acts on. Older uploaded orders are history.
+            let visible = all;
+            let hiddenCount = 0;
+            if (!_showAllMobileOrders && all.length > MOBILE_ORDERS_VISIBLE) {
+                const pending = all.filter(o => !o.synced && o.status !== "Invoiced");
+                const rest = all.filter(o => o.synced || o.status === "Invoiced");
+                visible = pending.concat(rest.slice(0, Math.max(0, MOBILE_ORDERS_VISIBLE - pending.length)));
+                hiddenCount = all.length - visible.length;
+            }
+
+            // Built in an array and written once: appending to innerHTML inside
+            // the loop re-parses the whole list on every single order.
+            const html = [];
+
+            visible.forEach(o => {
                 const totalCtns = o.totalCartons || (o.items || []).reduce((acc, i) => acc + (i.cartons || 0), 0);
                 const orderKg = getOrderWeightKg(o);
                 
@@ -4324,7 +4936,7 @@
                     `;
                 }
 
-                listEl.innerHTML += `
+                html.push(`
                     <div class="item-card">
                         <div class="flex-between">
                             <h4 style="font-size: 13px; font-weight: 800;">${o.orderNo} - ${o.shopName}</h4>
@@ -4336,8 +4948,19 @@
                         </div>
                         ${actionBtns}
                     </div>
-                `;
+                `);
             });
+
+            if (hiddenCount > 0) {
+                html.push(`
+                    <button class="btn-action-sm" style="width: 100%; margin-top: 10px; padding: 10px; font-size: 12px; font-weight: 800;"
+                            onclick="showAllMobileOrders()">
+                        Show ${hiddenCount} older order(s)
+                    </button>
+                `);
+            }
+
+            listEl.innerHTML = html.join("");
         }
 
         function exportEmergencySyncFile() {
