@@ -192,6 +192,55 @@
         /* Floating glass-morphism orbs, same technique as the desktop app -
            a fully flat background gives backdrop-filter nothing to blur, so the
            glass cards would look like plain flat boxes without these. */
+        /* Lite mode: the glass look is built from three large animated blurred
+           orbs and twenty-odd backdrop-filter surfaces. A modern phone absorbs
+           that; a low-end one repaints those surfaces on every scroll and the
+           whole app drags. Lite mode keeps the colours and the layout and drops
+           the effects that cost GPU time on every frame. It turns itself on
+           when the device looks weak, and can be switched by hand. */
+        body.lite-mode .ambient-orbs { display: none !important; }
+
+        /* The modal overlays carry their blur inline, so they need catching too. */
+        body.lite-mode [id$="Modal"] {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
+        body.lite-mode .glass-card,
+        body.lite-mode .top-navbar,
+        body.lite-mode .bottom-nav,
+        body.lite-mode .order-sticky-filters,
+        body.lite-mode .order-action-bar,
+        body.lite-mode .sku-card,
+        body.lite-mode .item-card,
+        body.lite-mode .shop-item-card {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            box-shadow: none !important;
+        }
+
+        body.lite-mode .glass-card,
+        body.lite-mode .sku-card,
+        body.lite-mode .item-card,
+        body.lite-mode .shop-item-card { background: #121212; }
+        body.lite-mode .top-navbar,
+        body.lite-mode .bottom-nav,
+        body.lite-mode .order-sticky-filters,
+        body.lite-mode .order-action-bar { background: #0a0a0a; }
+
+        body.lite-mode.light .glass-card,
+        body.lite-mode.light .sku-card,
+        body.lite-mode.light .item-card,
+        body.lite-mode.light .shop-item-card { background: #ffffff; }
+        body.lite-mode.light .top-navbar,
+        body.lite-mode.light .bottom-nav,
+        body.lite-mode.light .order-sticky-filters,
+        body.lite-mode.light .order-action-bar { background: #f4f4f5; }
+
+        /* Nothing should be animating forever in the background. */
+        body.lite-mode .ambient-orbs span,
+        body.lite-mode .liquid-progress-fill { animation: none !important; }
+
         .ambient-orbs {
             position: fixed;
             inset: 0;
@@ -819,6 +868,9 @@
                 <span class="status-dot offline" id="statusDot"></span>
                 <span id="statusText">Offline</span>
             </div>
+            <button type="button" class="theme-toggle-btn" id="liteModeBtn" onclick="toggleLiteMode()" title="Lite mode">
+                <i class="fa-regular fa-gem" id="liteModeIcon"></i>
+            </button>
             <button type="button" class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleMobileTheme()" title="Switch theme">
                 <i class="fa-solid fa-sun" id="themeToggleIcon"></i>
             </button>
@@ -1612,10 +1664,45 @@
             applyMobileTheme(document.body.classList.contains("light") ? "dark" : "light");
         }
 
+        /* A phone with little memory or few cores is the one that struggles,
+           so Lite mode defaults on there. Whatever the salesman picks after
+           that is remembered. */
+        function deviceLooksLowEnd() {
+            const mem = navigator.deviceMemory;              // GB, Chrome/Android
+            const cores = navigator.hardwareConcurrency;
+            if (typeof mem === "number" && mem <= 3) return true;
+            if (typeof cores === "number" && cores <= 4) return true;
+            return false;
+        }
+
+        function applyLiteMode(on) {
+            document.body.classList.toggle("lite-mode", !!on);
+            try { localStorage.setItem("chaudhary_mobile_lite", on ? "1" : "0"); } catch (e) {}
+            const icon = document.getElementById("liteModeIcon");
+            const btn = document.getElementById("liteModeBtn");
+            if (icon) icon.className = on ? "fa-solid fa-bolt" : "fa-regular fa-gem";
+            if (btn) btn.title = on ? "Lite mode on - tap for the full glass look" : "Full glass look - tap for lite mode";
+        }
+
+        function toggleLiteMode() {
+            const on = !document.body.classList.contains("lite-mode");
+            applyLiteMode(on);
+            alert(on
+                ? "⚡ Lite mode ON\n\nBackground effects are off, so the app runs faster on slower phones."
+                : "💎 Lite mode OFF\n\nThe full glass look is back.");
+        }
+
+        function initLiteMode() {
+            let saved = null;
+            try { saved = localStorage.getItem("chaudhary_mobile_lite"); } catch (e) {}
+            applyLiteMode(saved === null ? deviceLooksLowEnd() : saved === "1");
+        }
+
         function initMobileTheme() {
             let saved = "dark";
             try { saved = localStorage.getItem("chaudhary_mobile_theme") || "dark"; } catch(e) {}
             applyMobileTheme(saved);
+            initLiteMode();
         }
 
         /* Real packet colour per flavour, so a product is recognisable at a glance
