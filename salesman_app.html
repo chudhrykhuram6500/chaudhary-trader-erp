@@ -603,6 +603,45 @@
         .btn-success-sm { background: var(--green-gradient); color: #fff; }
         .btn-warning-sm { background: var(--gold-gradient); color: var(--on-accent); }
 
+        /* The brand filters follow the SKU list down the screen, so switching
+           from Lays to Cheetos never means scrolling back to the top. */
+        .order-sticky-filters {
+            position: sticky;
+            top: var(--sticky-top, 62px);
+            z-index: 90;
+            margin: 0 -16px 10px -16px;
+            padding: 8px 16px 6px 16px;
+            background: rgba(0, 0, 0, 0.93);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .order-sticky-filters .pill-row {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .order-sticky-filters .pill-row::-webkit-scrollbar { display: none; }
+
+        /* Saving is always one tap away, wherever the salesman is in the list. */
+        .order-action-bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 65px;
+            z-index: 95;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)) 14px;
+            background: rgba(0, 0, 0, 0.93);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid var(--glass-border);
+            box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.5);
+        }
+
         .tab-section { display: none; }
         .tab-section.active { display: block; }
 
@@ -1190,18 +1229,6 @@
                     <label>Select Shop</label>
                     <select id="orderShopSelect" class="input-glass" onchange="MobileState.selectedShopId = this.value; calculateNetOrderValue();"></select>
                 </div>
-                <div class="form-group">
-                    <label><i class="fa-solid fa-building"></i> Main Company Filter</label>
-                    <div style="display: flex; gap: 8px; margin-bottom: 8px;" id="mobileMainCompanyPills">
-                        <button type="button" class="btn-action-sm active-main-comp" onclick="setMobileMainCompany('lays', this)" style="flex: 1; font-size: 12px; font-weight: 800; padding: 8px 12px; border-radius: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none; box-shadow: 0 2px 6px rgba(217,119,6,0.3);">🍿 LAYS / PEPSICO</button>
-                        <button type="button" class="btn-action-sm" onclick="setMobileMainCompany('fast', this)" style="flex: 1; font-size: 12px; font-weight: 800; padding: 8px 12px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); color: #047857; border: 1.5px solid rgba(16, 185, 129, 0.4);">🥜 FAST FOODS</button>
-                    </div>
-
-                    <label style="font-size: 11px; margin-top: 4px;"><i class="fa-solid fa-layer-group"></i> Sub-Category Filter</label>
-                    <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 8px;" id="mobileSubCategoryPills">
-                        <!-- Dynamically rendered based on selected Main Company -->
-                    </div>
-                </div>
                 <div class="form-group" style="margin-top: 6px;">
                     <label><i class="fa-solid fa-boxes-stacked"></i> Stock Filter</label>
                     <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 8px;" id="mobileStockFilterPills">
@@ -1215,6 +1242,16 @@
                 </div>
             </div>
 
+            <div class="order-sticky-filters">
+                <div class="pill-row" style="margin-bottom: 6px;" id="mobileMainCompanyPills">
+                    <button type="button" class="btn-action-sm active-main-comp" onclick="setMobileMainCompany('lays', this)" style="flex: 1; white-space: nowrap; font-size: 11.5px; font-weight: 800; padding: 7px 10px; border-radius: 10px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none;">🍿 LAYS</button>
+                    <button type="button" class="btn-action-sm" onclick="setMobileMainCompany('fast', this)" style="flex: 1; white-space: nowrap; font-size: 11.5px; font-weight: 800; padding: 7px 10px; border-radius: 10px; background: rgba(16, 185, 129, 0.12); color: #047857; border: 1.5px solid rgba(16, 185, 129, 0.4);">🥜 FAST</button>
+                </div>
+                <div class="pill-row" id="mobileSubCategoryPills">
+                    <!-- Dynamically rendered based on selected Main Company -->
+                </div>
+            </div>
+
             <div id="skuOrderList"></div>
 
             <div id="mobileFocBannerContainer"></div>
@@ -1225,12 +1262,24 @@
                     <span>NET ORDER VALUE:</span>
                     <strong id="orderNetPayable" style="font-size: 18px; color: #059669;">Rs. 0</strong>
                 </div>
-                <button class="btn-sync-liquid" style="background: var(--green-gradient); margin-top: 12px; padding: 14px;" onclick="saveOfflineOrder()">
-                    <i class="fa-solid fa-check-circle"></i> SAVE ORDER
+                <button class="btn-sync-liquid" style="background: var(--green-gradient); margin-top: 12px; padding: 14px;" onclick="openOrderReview()">
+                    <i class="fa-solid fa-clipboard-check"></i> REVIEW &amp; SAVE ORDER
                 </button>
             </div>
         </section>
 
+
+        <!-- Always-visible order bar: the salesman never has to scroll to the
+             bottom of the SKU list to see the total or to save. -->
+        <div id="orderActionBar" class="order-action-bar" style="display: none;">
+            <div style="flex: 1; min-width: 0;">
+                <div id="orderBarCount" style="font-size: 10.5px; font-weight: 800; color: var(--text-muted); white-space: nowrap;">No items</div>
+                <div id="orderBarTotal" style="font-size: 16px; font-weight: 900; color: var(--brand-gold); white-space: nowrap;">Rs. 0</div>
+            </div>
+            <button class="btn-action-sm" style="flex-shrink: 0; padding: 11px 16px; font-size: 12.5px; font-weight: 900; border-radius: 12px; background: var(--green-gradient); color: #fff; border: none;" onclick="openOrderReview()">
+                <i class="fa-solid fa-clipboard-check"></i> Review &amp; Save
+            </button>
+        </div>
 
         <!-- TAB 4: ORDERS HISTORY -->
         <section id="historyTab" class="tab-section">
@@ -1248,6 +1297,33 @@
 
     <!-- NEW ON-FIELD SHOP CREATION MODAL -->
     <!-- SUBMIT PROGRESS DIALOG - one bar per step, so the wait is never blind -->
+    <!-- ORDER REVIEW - last look before the order is saved -->
+    <div id="orderReviewModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px); z-index: 2500; justify-content: center; align-items: flex-end; padding: 0;">
+        <div class="glass-card" style="background: var(--bg-surface-strong); width: 100%; max-width: 520px; max-height: 92vh; display: flex; flex-direction: column; border-radius: 22px 22px 0 0; padding: 18px 16px calc(14px + env(safe-area-inset-bottom, 0px)) 16px; margin: 0;">
+
+            <div class="flex-between" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; margin-bottom: 10px;">
+                <div style="min-width: 0;">
+                    <h3 style="font-size: 15px; font-weight: 900; color: var(--text-dark);"><i class="fa-solid fa-clipboard-check" style="color: var(--brand-gold);"></i> Review Order</h3>
+                    <p id="orderReviewShop" style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></p>
+                </div>
+                <button onclick="closeMobileModal('orderReviewModal')" style="background: none; border: none; font-size: 22px; font-weight: 800; color: var(--text-muted); cursor: pointer; flex-shrink: 0;">&times;</button>
+            </div>
+
+            <div id="orderReviewList" style="flex: 1; overflow-y: auto; min-height: 80px;"></div>
+
+            <div id="orderReviewTotals" style="border-top: 1px solid var(--glass-border); padding-top: 10px; margin-top: 10px;"></div>
+
+            <div style="display: flex; gap: 10px; margin-top: 12px;">
+                <button class="btn-action-sm" style="flex: 1; padding: 13px; font-weight: 800; background: var(--bg-surface-strong); color: var(--text-muted); border: 1px solid var(--glass-border); border-radius: 12px;" onclick="closeMobileModal('orderReviewModal')">
+                    <i class="fa-solid fa-pen"></i> Keep Editing
+                </button>
+                <button id="orderReviewConfirmBtn" class="btn-action-sm" style="flex: 1.3; padding: 13px; font-weight: 900; background: var(--green-gradient); color: #fff; border: none; border-radius: 12px;" onclick="confirmOrderFromReview()">
+                    <i class="fa-solid fa-check-circle"></i> Confirm &amp; Save
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="syncStepsModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.78); backdrop-filter: blur(10px); z-index: 3000; justify-content: center; align-items: center; padding: 16px;">
         <div class="glass-card" style="background: var(--bg-surface-strong); width: 100%; max-width: 440px; max-height: 92vh; overflow-y: auto; border-radius: 20px; padding: 20px;">
 
@@ -1843,6 +1919,16 @@
             updatePendingBadge();
             markDashboardStale();
         }
+
+        // The header is sticky, so the filter strip below it needs its real
+        // height rather than a guessed one.
+        function syncStickyOffset() {
+            const hdr = document.querySelector(".top-navbar");
+            if (hdr) document.documentElement.style.setProperty("--sticky-top", hdr.offsetHeight + "px");
+        }
+        window.addEventListener("resize", syncStickyOffset);
+        window.addEventListener("orientationchange", syncStickyOffset);
+        document.addEventListener("DOMContentLoaded", syncStickyOffset);
 
         function setTodayBeatFilter() {
             const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -3109,6 +3195,7 @@
             if (DASHBOARD_TABS.indexOf(tabId) !== -1) {
                 refreshDashboardIfStale();
             }
+            if (typeof renderOrderActionBar === "function") renderOrderActionBar();
         }
 
         function renderSalesmanProfilesDropdown() {
@@ -4083,6 +4170,116 @@
             renderSkuOrderList();
         }
 
+        /* The running order total, kept by calculateNetOrderValue() so the
+           action bar and the review sheet never have to work it out again. */
+        let _orderSummary = { items: [], gross: 0, discPct: 0, discAmount: 0, net: 0, cartons: 0, units: 0, kg: 0, shop: null };
+
+        /* The bar pinned above the tab strip: how much is in the order and a
+           way to save it, from anywhere in the SKU list. */
+        function renderOrderActionBar() {
+            const bar = document.getElementById("orderActionBar");
+            if (!bar) return;
+
+            const onOrderScreen = (document.querySelector(".tab-section.active") || {}).id === "orderTab";
+            const anyItems = _orderSummary.items.length > 0;
+            bar.style.display = (onOrderScreen && anyItems) ? "flex" : "none";
+            if (!anyItems) return;
+
+            const cnt = document.getElementById("orderBarCount");
+            const tot = document.getElementById("orderBarTotal");
+            if (cnt) cnt.innerText = `${_orderSummary.items.length} product(s)  ·  ${_orderSummary.cartons} ctn` +
+                                     (_orderSummary.units ? ` + ${_orderSummary.units} pkt` : "");
+            if (tot) tot.innerText = `Rs. ${_orderSummary.net.toLocaleString()}`;
+        }
+
+        function openOrderReview() {
+            const shopId = document.getElementById("orderShopSelect")?.value;
+            const shop = (MobileState.shops || []).find(s => s.id === shopId);
+            if (!shop) return alert("Select a shop first!");
+            if (Object.keys(MobileState.cart || {}).length === 0) return alert("Cart is empty!");
+
+            calculateNetOrderValue();
+            renderOrderReview();
+            document.getElementById("orderReviewModal").style.display = "flex";
+        }
+
+        /* The sheet lists what was punched and lets it be corrected in place,
+           so a mistake does not mean closing, hunting the SKU down the list
+           and starting again. */
+        function renderOrderReview() {
+            const shop = _orderSummary.shop;
+            const shopEl = document.getElementById("orderReviewShop");
+            if (shopEl) shopEl.innerText = shop ? `${shop.name}${shop.routeName ? " · " + shop.routeName : ""}` : "";
+
+            const listEl = document.getElementById("orderReviewList");
+            if (!listEl) return;
+
+            if (_orderSummary.items.length === 0) {
+                listEl.innerHTML = `<p style="text-align:center; padding:24px; font-size:12px; color:var(--text-muted);">Nothing left in this order.</p>`;
+            } else {
+                const rows = _orderSummary.items.map(it => `
+                    <div style="padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <div class="flex-between" style="gap: 8px;">
+                            <strong style="font-size: 12.5px; font-weight: 800; color: var(--text-dark); line-height: 1.3;">${it.desc}</strong>
+                            <strong style="font-size: 12.5px; font-weight: 900; color: var(--brand-gold); white-space: nowrap;">Rs. ${Math.round(it.lineAmt).toLocaleString()}</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 7px; flex-wrap: wrap;">
+                            <span style="font-size: 10px; font-weight: 700; color: var(--text-muted);">Ctn</span>
+                            <button class="btn-action-sm" style="padding: 2px 9px; font-size: 14px; font-weight: 900; background: rgba(255,255,255,0.08); color: var(--text-dark); border: 1px solid var(--glass-border); border-radius: 8px;" onclick="reviewAdjust('${it.code}','cartons',-1)">-</button>
+                            <strong style="font-size: 13px; min-width: 22px; text-align: center; color: #22c58b;">${it.cartons}</strong>
+                            <button class="btn-action-sm" style="padding: 2px 9px; font-size: 14px; font-weight: 900; background: rgba(255,255,255,0.08); color: var(--text-dark); border: 1px solid var(--glass-border); border-radius: 8px;" onclick="reviewAdjust('${it.code}','cartons',1)">+</button>
+
+                            <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); margin-left: 6px;">Pkt</span>
+                            <button class="btn-action-sm" style="padding: 2px 9px; font-size: 14px; font-weight: 900; background: rgba(255,255,255,0.08); color: var(--text-dark); border: 1px solid var(--glass-border); border-radius: 8px;" onclick="reviewAdjust('${it.code}','units',-1)">-</button>
+                            <strong style="font-size: 13px; min-width: 22px; text-align: center; color: var(--brand-gold);">${it.units}</strong>
+                            <button class="btn-action-sm" style="padding: 2px 9px; font-size: 14px; font-weight: 900; background: rgba(255,255,255,0.08); color: var(--text-dark); border: 1px solid var(--glass-border); border-radius: 8px;" onclick="reviewAdjust('${it.code}','units',1)">+</button>
+
+                            <button class="btn-action-sm" style="margin-left: auto; padding: 3px 10px; font-size: 10.5px; font-weight: 800; background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.35); border-radius: 8px;" onclick="reviewRemove('${it.code}')">
+                                <i class="fa-solid fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>`);
+                listEl.innerHTML = rows.join("");
+            }
+
+            const line = (label, value, strong) => `
+                <div class="flex-between" style="padding: 3px 0;">
+                    <span style="font-size: ${strong ? 12.5 : 11.5}px; font-weight: ${strong ? 900 : 700}; color: ${strong ? "var(--text-dark)" : "var(--text-muted)"};">${label}</span>
+                    <span style="font-size: ${strong ? 16 : 11.5}px; font-weight: ${strong ? 900 : 800}; color: ${strong ? "#22c58b" : "var(--text-dark)"};">${value}</span>
+                </div>`;
+
+            document.getElementById("orderReviewTotals").innerHTML =
+                line("Items", `${_orderSummary.items.length} product(s)`) +
+                line("Quantity", `${_orderSummary.cartons} ctn${_orderSummary.units ? " + " + _orderSummary.units + " pkt" : ""}`) +
+                line("Weight", `${_orderSummary.kg.toFixed(2)} KG`) +
+                line("Gross", `Rs. ${Math.round(_orderSummary.gross).toLocaleString()}`) +
+                (_orderSummary.discPct > 0
+                    ? line(`Discount (${_orderSummary.discPct}%)`, `- Rs. ${Math.round(_orderSummary.discAmount).toLocaleString()}`)
+                    : "") +
+                line("NET PAYABLE", `Rs. ${_orderSummary.net.toLocaleString()}`, true);
+
+            const btn = document.getElementById("orderReviewConfirmBtn");
+            if (btn) btn.disabled = _orderSummary.items.length === 0;
+        }
+
+        function reviewAdjust(code, type, delta) {
+            updateCartQty(code, type, delta);     // also re-renders the SKU list
+            calculateNetOrderValue();
+            renderOrderReview();
+        }
+
+        function reviewRemove(code) {
+            delete MobileState.cart[code];
+            renderSkuOrderList();
+            calculateNetOrderValue();
+            renderOrderReview();
+        }
+
+        function confirmOrderFromReview() {
+            closeMobileModal("orderReviewModal");
+            saveOfflineOrder();
+        }
+
         function updateCartQty(code, type, delta) {
             const current = getCartItemQty(code);
             if (type === 'cartons') {
@@ -4256,6 +4453,7 @@
                         if (isHash) hasHashItem = true;
 
                         cartItemsBreakdown.push({
+                            code: sku.code,
                             desc: sku.desc,
                             cartons: q.cartons,
                             units: q.units,
@@ -4276,6 +4474,19 @@
 
             const discAmount = grossTotal * (shopDiscPct / 100);
             const netPayable = Math.max(0, Math.round(grossTotal - discAmount));
+
+            _orderSummary = {
+                items: cartItemsBreakdown,
+                gross: grossTotal,
+                discPct: shopDiscPct,
+                discAmount: discAmount,
+                net: netPayable,
+                cartons: totalCartons,
+                units: totalUnits,
+                kg: totalWeightKg,
+                shop: shop || null
+            };
+            renderOrderActionBar();
 
             const netEl = document.getElementById("orderNetPayable");
             if (netEl) {
