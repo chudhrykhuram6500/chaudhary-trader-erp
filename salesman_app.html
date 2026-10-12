@@ -3174,10 +3174,30 @@
             alert(`🎉 Authenticated & Logged In Successfully as '${target.name}' (${target.username})!`);
         }
 
-        function submitAllPendingOrdersLive() {
+        /* Uploads the pending orders with a progress bar that reflects what is
+           actually happening.
+
+           The old version set the bar to 30%, then to 100% when the request
+           finally came back, so it sat at a third of the way for however long
+           the upload took and then jumped. It also sent every shop on the
+           device - roughly three quarters of the payload - although the server
+           only ever adds shops it does not already have. And it tried the
+           spare Render address first, which sleeps when idle and costs a cold
+           start before the real site is even attempted. */
+
+        const SYNC_ENDPOINTS = [
+            "https://chaudharytraders.online",
+            "https://chaudhary-trader-erp.onrender.com"
+        ];
+
+        function setSyncProgress(pct, message) {
             const bar = document.getElementById("syncProgressBar");
             const txt = document.getElementById("syncProgressText");
+            if (bar) bar.style.width = Math.max(0, Math.min(100, pct)) + "%";
+            if (txt) txt.innerText = message;
+        }
 
+        function submitAllPendingOrdersLive() {
             const pendingOrders = (MobileState.orders || []).filter(o => !o.synced);
             const pendingTxs = (MobileState.stockTransactions || []).filter(t => !t.synced);
 
@@ -3186,75 +3206,123 @@
                 return;
             }
 
-            if (bar) bar.style.width = "30%";
-            if (txt) txt.innerText = `Submitting ${pendingOrders.length} Order(s) to https://chaudharytraders.online (4G)...`;
+            // The server only adds shops it does not already hold, so sending
+            // the whole shop book every time is wasted upload on mobile data.
+            const newShops = (MobileState.shops || []).filter(s => s.isNewOnField && !s.syncedToServer);
 
-            const tryEndpoints = [
-                "https://chaudhary-trader-erp.onrender.com",
-                "https://chaudharytraders.online",
-                (localStorage.getItem("chaudhary_pc_ip") || "http://192.168.100.129:8888")
-            ];
+            setSyncProgress(4, `Preparing ${pendingOrders.length} order(s)…`);
 
-            function attemptSubmit(index) {
-                if (index >= tryEndpoints.length) {
-                    if (bar) bar.style.width = "100%";
-                    if (txt) txt.innerText = "⚠️ Submission Connection Timeout. Tap Submit to retry.";
-                    alert("⚠️ Submission Connection Timeout.\n\nPlease check 4G SIM Data or Wi-Fi connection and tap Submit again.");
+            const payload = JSON.stringify({
+                salesmanId: MobileState.salesman ? MobileState.salesman.id : "sales_real_1",
+                salesmanName: MobileState.salesman ? MobileState.salesman.name : "Arif Sanwal",
+                deviceId: "Android_Phone",
+                shops: newShops,
+                orders: pendingOrders,
+                stockTransactions: pendingTxs
+            });
+
+            const totalKb = Math.max(1, Math.round(payload.length / 1024));
+            const startedAt = Date.now();
+            const elapsed = () => Math.round((Date.now() - startedAt) / 1000);
+
+            const endpoints = SYNC_ENDPOINTS.concat([
+                localStorage.getItem("chaudhary_pc_ip") || "http://192.168.100.129:8888"
+            ]);
+
+            function attempt(index) {
+                if (index >= endpoints.length) {
+                    setSyncProgress(100, `⚠️ Could not reach the server after ${elapsed()}s. Tap Submit to retry.`);
+                    alert("⚠️ Could not reach the server.\n\nPlease check your 4G data or Wi-Fi and tap Submit again.\n\nYour orders are safe on this phone - nothing was lost.");
                     return;
                 }
 
-                let targetUrl = formatPcIp(tryEndpoints[index]);
+                const targetUrl = formatPcIp(endpoints[index]);
+                const host = String(targetUrl).replace(/^https?:\/\//, "").split("/")[0];
+                const base = index * 2;                     // a little room per retry
 
-                // Without this a server that accepts the connection and then
-                // goes quiet holds the whole app until the network gives up.
-                const ctrl = new AbortController();
-                const timeoutId = setTimeout(() => ctrl.abort(), 20000);
+                setSyncProgress(base + 6, `Connecting to ${host}…`);
 
-                fetch(`${targetUrl}/api/sync/evening-upload`, {
-                    method: 'POST',
-                    signal: ctrl.signal,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        salesmanId: MobileState.salesman ? MobileState.salesman.id : "sales_real_1",
-                        salesmanName: MobileState.salesman ? MobileState.salesman.name : "Arif Sanwal",
-                        deviceId: "Android_Phone",
-                        shops: MobileState.shops,
-                        orders: pendingOrders,
-                        stockTransactions: pendingTxs
-                    })
-                })
-                .then(r => {
-                    clearTimeout(timeoutId);
-                    if (!r.ok) throw new Error("HTTP " + r.status);
-                    return r.json();
-                })
-                .then(uploadRes => {
-                    if (bar) bar.style.width = "100%";
-                    if (txt) txt.innerText = "🚀 Pending Orders Submitted Successfully!";
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", `${targetUrl}/api/sync/evening-upload`, true);
+                xhr.setRequestHeader("Content-Type", "application/json");
+                xhr.timeout = 90000;                        // a sleeping server can take a while to wake
 
-                    (MobileState.orders || []).forEach(o => o.synced = true);
-                    (MobileState.stockTransactions || []).forEach(t => t.synced = true);
+                // Real upload progress: 10% -> 65% as the bytes actually leave.
+                xhr.upload.onprogress = (e) => {
+                    if (!e.lengthComputable) return;
+                    const sentKb = Math.round(e.loaded / 1024);
+                    const pct = base + 10 + Math.round((e.loaded / e.total) * 55);
+                    setSyncProgress(pct, `Uploading ${pendingOrders.length} order(s)… ${sentKb} of ${totalKb} KB  ·  ${elapsed()}s`);
+                };
+
+                // Once the bytes are gone the server is working; creep forward so
+                // the bar never looks frozen, but never reach 100 until it replies.
+                let waitPct = base + 66;
+                let waitTimer = null;
+                xhr.upload.onload = () => {
+                    setSyncProgress(waitPct, `Server is processing ${pendingOrders.length} order(s)…`);
+                    waitTimer = setInterval(() => {
+                        waitPct = Math.min(94, waitPct + 1);
+                        const secs = elapsed();
+                        const note = secs > 20 ? " (server waking up, please wait)" : "";
+                        setSyncProgress(waitPct, `Server is processing… ${secs}s${note}`);
+                    }, 1000);
+                };
+
+                const stopWaiting = () => { if (waitTimer) { clearInterval(waitTimer); waitTimer = null; } };
+
+                xhr.onload = () => {
+                    stopWaiting();
+                    if (xhr.status < 200 || xhr.status >= 300) {
+                        console.warn(`Submit to ${host} returned HTTP ${xhr.status}`);
+                        return attempt(index + 1);
+                    }
+                    let res = {};
+                    try { res = JSON.parse(xhr.responseText || "{}"); } catch (e) {}
+                    if (res && res.success === false) {
+                        // The server refused on purpose - say why instead of retrying blindly.
+                        setSyncProgress(100, `⚠️ ${res.error || "The server refused the upload."}`);
+                        alert(`⚠️ Not submitted.\n\n${res.error || "The server refused the upload."}\n\nYour orders are safe on this phone.`);
+                        return;
+                    }
+
+                    setSyncProgress(97, "Saving on this phone…");
+                    pendingOrders.forEach(o => o.synced = true);
+                    pendingTxs.forEach(t => t.synced = true);
+                    newShops.forEach(s => s.syncedToServer = true);
 
                     MobileState.lastSyncTime = new Date().toLocaleTimeString();
                     saveMobileState();
                     renderMobileOrdersHistory();
                     updatePendingBadge();
 
+                    const secs = elapsed();
+                    setSyncProgress(100, `✅ ${pendingOrders.length} order(s) submitted in ${secs}s`);
+
                     const resCard = document.getElementById("syncResultCard");
                     if (resCard) resCard.style.display = "block";
                     const resUpl = document.getElementById("resUploadsCount");
                     if (resUpl) resUpl.innerText = pendingOrders.length;
 
-                    alert(`🚀 SUBMISSION SUCCESSFUL!\n\n• ${pendingOrders.length} Order(s) Submitted Live to Server over 4G!`);
-                })
-                .catch(err => {
-                    clearTimeout(timeoutId);
-                    console.warn(`Submission attempt ${index + 1} failed for ${targetUrl}:`, err);
-                    attemptSubmit(index + 1);
-                });
+                    alert(`🚀 SUBMITTED!\n\n• ${pendingOrders.length} order(s) sent to the server\n• ${totalKb} KB in ${secs} second(s)`);
+                };
+
+                xhr.onerror = () => {
+                    stopWaiting();
+                    console.warn(`Submit to ${host} failed (network)`);
+                    attempt(index + 1);
+                };
+                xhr.ontimeout = () => {
+                    stopWaiting();
+                    console.warn(`Submit to ${host} timed out`);
+                    setSyncProgress(base + 8, `${host} did not answer, trying the next server…`);
+                    attempt(index + 1);
+                };
+
+                xhr.send(payload);
             }
 
-            attemptSubmit(0);
+            attempt(0);
         }
 
         function syncMasterDataLive() {
