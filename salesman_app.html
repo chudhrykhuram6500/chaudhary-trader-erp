@@ -1791,10 +1791,27 @@
             updatePendingBadge();
         }
 
+        // Tabs whose contents the dashboard recalc builds.
+        const DASHBOARD_TABS = ["dashboardTab", "summaryTab"];
+        let _dashboardNeedsRefresh = true;
+
+        function markDashboardStale() {
+            _dashboardNeedsRefresh = true;
+            const active = document.querySelector(".tab-section.active");
+            // Only pay for the rebuild if the salesman is looking at it.
+            if (active && DASHBOARD_TABS.indexOf(active.id) !== -1) refreshDashboardIfStale();
+        }
+
+        function refreshDashboardIfStale() {
+            if (!_dashboardNeedsRefresh) return;
+            _dashboardNeedsRefresh = false;
+            try { updateSalesmanMonthlyKgDashboard(); } catch (e) { console.warn(e); }
+        }
+
         function saveMobileState() {
             localStorage.setItem("chaudhary_mobile_state", JSON.stringify(MobileState));
             updatePendingBadge();
-            updateSalesmanMonthlyKgDashboard();
+            markDashboardStale();
         }
 
         function setTodayBeatFilter() {
@@ -1806,11 +1823,24 @@
             }
         }
 
+        let _skuIndex = null;
+        let _skuIndexFor = null;
+
+        function skuByCode(code) {
+            const list = MobileState.skus || [];
+            if (_skuIndexFor !== list) {
+                _skuIndex = new Map();
+                list.forEach(s => { if (s && s.code !== undefined) _skuIndex.set(String(s.code), s); });
+                _skuIndexFor = list;
+            }
+            return _skuIndex.get(String(code));
+        }
+
         function getOrderWeightKg(order) {
             if (!order || !order.items) return 0;
             let totalGrams = 0;
             order.items.forEach(item => {
-                const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+                const sku = skuByCode(item.code) || {};
                 const gramsPerPack = sku.grams || item.grams || 0;
                 const packPerCtn = sku.pack || item.pack || 1;
                 const totalPacks = ((item.cartons || 0) * packPerCtn) + (item.units || 0);
@@ -1823,7 +1853,7 @@
             if (!order || !order.items) return 0;
             let totalGrams = 0;
             order.items.forEach(item => {
-                const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+                const sku = skuByCode(item.code) || {};
                 const brandStr = (sku.brand || item.brand || "").toLowerCase();
                 const compIdStr = (sku.companyId || item.companyId || "").toLowerCase();
                 
@@ -1850,7 +1880,7 @@
             const brandKey = (brandFilter || "").toLowerCase();
 
             (order.items || []).forEach(item => {
-                const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+                const sku = skuByCode(item.code) || {};
                 const brandStr = (sku.brand || item.brand || sku.desc || item.desc || "").toLowerCase();
                 const compIdStr = (sku.companyId || item.companyId || "").toLowerCase();
 
@@ -2096,7 +2126,7 @@
                     if (currentSummaryCompanyFilter === 'lays' && comp !== 'lays') return;
                     if (currentSummaryCompanyFilter === 'fast' && comp !== 'fast') return;
 
-                    const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+                    const sku = skuByCode(item.code) || {};
                     const gramsPerPack = sku.grams || item.grams || 0;
                     const packPerCtn = sku.pack || item.pack || 1;
                     const totalPacks = ((item.cartons || 0) * packPerCtn) + (item.units || 0);
@@ -2234,7 +2264,7 @@
 
         function getCompanyIdForMobileItem(item) {
             if (!item) return "lays";
-            const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+            const sku = skuByCode(item.code) || {};
             const compId = String(item.companyId || sku.companyId || "").toLowerCase();
             if (compId === "hash" || compId === "fast") return "fast";
             if (compId === "lays" || compId === "pepsico") return "lays";
@@ -2255,7 +2285,7 @@
 
         function getSubCategoryForMobileItem(item) {
             if (!item) return "PC";
-            const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+            const sku = skuByCode(item.code) || {};
             const compId = getCompanyIdForMobileItem(item);
             const desc = String(item.desc || item.name || sku.desc || "").toUpperCase();
             const brand = String(item.brand || sku.brand || "").toUpperCase();
@@ -2290,7 +2320,7 @@
                 if (!isMyOrder) return;
 
                 (o.items || []).forEach(item => {
-                    const sku = (MobileState.skus || []).find(s => s.code === item.code) || {};
+                    const sku = skuByCode(item.code) || {};
                     const gramsPerPack = sku.grams || item.grams || 0;
                     const packPerCtn = sku.pack || item.pack || 1;
                     const totalPacks = ((item.cartons || 0) * packPerCtn) + (item.units || 0);
@@ -3046,6 +3076,9 @@
             if (tabId === "shopsTab") {
                 renderMobileShops();
             }
+            if (DASHBOARD_TABS.indexOf(tabId) !== -1) {
+                refreshDashboardIfStale();
+            }
         }
 
         function renderSalesmanProfilesDropdown() {
@@ -3064,11 +3097,13 @@
                 return;
             }
             sel.disabled = false;
+            const optionsHtml = [];
             activeList.forEach(s => {
                 const route = (MobileState.routes || []).find(r => r.id === s.routeId) || { name: "Assigned Route" };
                 const isSel = (MobileState.salesman && MobileState.salesman.id === s.id) ? "selected" : "";
-                sel.innerHTML += `<option value="${s.id}" ${isSel}>${s.name} (${route.name})</option>`;
+                optionsHtml.push(`<option value="${s.id}" ${isSel}>${s.name} (${route.name})</option>`);
             });
+            sel.innerHTML += optionsHtml.join("");
         }
         function updateSalesmanProfileHeaderUI() {
             if (!MobileState.salesman) {
@@ -3170,8 +3205,14 @@
 
                 let targetUrl = formatPcIp(tryEndpoints[index]);
 
+                // Without this a server that accepts the connection and then
+                // goes quiet holds the whole app until the network gives up.
+                const ctrl = new AbortController();
+                const timeoutId = setTimeout(() => ctrl.abort(), 20000);
+
                 fetch(`${targetUrl}/api/sync/evening-upload`, {
                     method: 'POST',
+                    signal: ctrl.signal,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         salesmanId: MobileState.salesman ? MobileState.salesman.id : "sales_real_1",
@@ -3183,6 +3224,7 @@
                     })
                 })
                 .then(r => {
+                    clearTimeout(timeoutId);
                     if (!r.ok) throw new Error("HTTP " + r.status);
                     return r.json();
                 })
@@ -3206,6 +3248,7 @@
                     alert(`🚀 SUBMISSION SUCCESSFUL!\n\n• ${pendingOrders.length} Order(s) Submitted Live to Server over 4G!`);
                 })
                 .catch(err => {
+                    clearTimeout(timeoutId);
                     console.warn(`Submission attempt ${index + 1} failed for ${targetUrl}:`, err);
                     attemptSubmit(index + 1);
                 });
@@ -3695,6 +3738,7 @@
                 return;
             }
 
+            const sectionsHtml = [];
             activeSections.forEach(sec => {
                 let itemsHtml = '';
                 sec.skus.forEach(s => {
@@ -3745,7 +3789,7 @@
                     `;
                 });
 
-                listEl.innerHTML += `
+                sectionsHtml.push(`
                     <div style="margin-bottom: 14px;">
                         <div style="background: ${sec.bg}; border: 1px solid ${sec.border}; padding: 8px 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                             <strong style="font-size: 13px; font-weight: 900; color: ${sec.color};">${sec.name}</strong>
@@ -3753,8 +3797,9 @@
                         </div>
                         ${itemsHtml}
                     </div>
-                `;
+                `);
             });
+            listEl.innerHTML = sectionsHtml.join("");
 
             calculateNetOrderValue();
         }
@@ -4165,17 +4210,6 @@
             switchMobileTab('shopsTab', document.querySelectorAll(".nav-tab-btn")[2]);
         }
 
-        function submitOrderDirectToWebsite() {
-            const shopId = document.getElementById("orderShopSelect")?.value;
-            const shop = MobileState.shops ? MobileState.shops.find(s => s.id === shopId) : null;
-            if (!shop) return alert("Select a shop!");
-            const cartKeys = Object.keys(MobileState.cart || {});
-            if (cartKeys.length === 0) return alert("Cart is empty!");
-
-            saveOfflineOrder();
-            startTwoWaySync();
-        }
-
         function openEditMobileOrderModal(orderNo) {
             const order = (MobileState.orders || []).find(o => o.orderNo === orderNo);
             if (!order) return alert("Order not found!");
@@ -4190,11 +4224,12 @@
             const container = document.getElementById("editOrderItemsList");
             container.innerHTML = "";
 
+            const itemRows = [];
             (MobileState.skus || []).forEach(sku => {
                 const existingItem = (order.items || []).find(i => i.code === sku.code);
                 const currentCtns = existingItem ? (existingItem.cartons || 0) : 0;
 
-                container.innerHTML += `
+                itemRows.push(`
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
                         <div>
                             <strong style="font-size: 12px; color: var(--text-dark);">${sku.desc}</strong>
@@ -4205,8 +4240,9 @@
                             <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">Ctns</span>
                         </div>
                     </div>
-                `;
+                `);
             });
+            container.innerHTML = itemRows.join("");
 
             updateEditOrderCalculation();
             document.getElementById("editMobileOrderModal").style.display = "flex";
@@ -4294,6 +4330,15 @@
             alert(`🗑️ Order ${orderNo} cancelled and removed.`);
         }
 
+        // Set by "Show all orders"; reset whenever the screen is rebuilt fresh.
+        let _showAllMobileOrders = false;
+        const MOBILE_ORDERS_VISIBLE = 40;
+
+        function showAllMobileOrders() {
+            _showAllMobileOrders = true;
+            renderMobileOrdersHistory();
+        }
+
         function renderMobileOrdersHistory() {
             const listEl = document.getElementById("mobileOrdersHistoryList");
             listEl.innerHTML = "";
@@ -4303,7 +4348,23 @@
                 return;
             }
 
-            MobileState.orders.forEach(o => {
+            const all = MobileState.orders;
+            // Anything not yet uploaded always stays visible - that is the list
+            // the salesman acts on. Older uploaded orders are history.
+            let visible = all;
+            let hiddenCount = 0;
+            if (!_showAllMobileOrders && all.length > MOBILE_ORDERS_VISIBLE) {
+                const pending = all.filter(o => !o.synced && o.status !== "Invoiced");
+                const rest = all.filter(o => o.synced || o.status === "Invoiced");
+                visible = pending.concat(rest.slice(0, Math.max(0, MOBILE_ORDERS_VISIBLE - pending.length)));
+                hiddenCount = all.length - visible.length;
+            }
+
+            // Built in an array and written once: appending to innerHTML inside
+            // the loop re-parses the whole list on every single order.
+            const html = [];
+
+            visible.forEach(o => {
                 const totalCtns = o.totalCartons || (o.items || []).reduce((acc, i) => acc + (i.cartons || 0), 0);
                 const orderKg = getOrderWeightKg(o);
                 
@@ -4324,7 +4385,7 @@
                     `;
                 }
 
-                listEl.innerHTML += `
+                html.push(`
                     <div class="item-card">
                         <div class="flex-between">
                             <h4 style="font-size: 13px; font-weight: 800;">${o.orderNo} - ${o.shopName}</h4>
@@ -4336,8 +4397,19 @@
                         </div>
                         ${actionBtns}
                     </div>
-                `;
+                `);
             });
+
+            if (hiddenCount > 0) {
+                html.push(`
+                    <button class="btn-action-sm" style="width: 100%; margin-top: 10px; padding: 10px; font-size: 12px; font-weight: 800;"
+                            onclick="showAllMobileOrders()">
+                        Show ${hiddenCount} older order(s)
+                    </button>
+                `);
+            }
+
+            listEl.innerHTML = html.join("");
         }
 
         function exportEmergencySyncFile() {
