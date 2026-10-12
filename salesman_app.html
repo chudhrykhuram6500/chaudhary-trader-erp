@@ -1247,6 +1247,36 @@
     </div>
 
     <!-- NEW ON-FIELD SHOP CREATION MODAL -->
+    <!-- SUBMIT PROGRESS DIALOG - one bar per step, so the wait is never blind -->
+    <div id="syncStepsModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.78); backdrop-filter: blur(10px); z-index: 3000; justify-content: center; align-items: center; padding: 16px;">
+        <div class="glass-card" style="background: var(--bg-surface-strong); width: 100%; max-width: 440px; max-height: 92vh; overflow-y: auto; border-radius: 20px; padding: 20px;">
+
+            <div style="text-align: center; margin-bottom: 4px;">
+                <div id="syncStepsIcon" style="font-size: 26px; color: var(--brand-gold);"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                <h3 id="syncStepsTitle" style="font-size: 16px; font-weight: 900; color: var(--text-dark); margin-top: 6px;">Submitting Orders</h3>
+                <p id="syncStepsSubtitle" style="font-size: 11.5px; font-weight: 600; color: var(--text-muted); margin-top: 3px;"></p>
+            </div>
+
+            <!-- Overall -->
+            <div style="margin: 14px 0 6px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px;">
+                    <span style="font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted);">Overall</span>
+                    <span id="syncStepsOverallPct" style="font-size: 12px; font-weight: 900; color: var(--brand-gold);">0%</span>
+                </div>
+                <div style="height: 8px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden;">
+                    <div id="syncStepsOverallBar" style="height: 100%; width: 0%; background: var(--gold-gradient); border-radius: 99px; transition: width .25s ease;"></div>
+                </div>
+            </div>
+
+            <div id="syncStepsList" style="margin-top: 14px;"></div>
+
+            <div id="syncStepsFooter" style="margin-top: 14px; font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-align: center; min-height: 18px;"></div>
+
+            <button id="syncStepsCloseBtn" class="btn-action-sm" style="width: 100%; margin-top: 12px; padding: 12px; font-weight: 800; display: none;"
+                    onclick="closeMobileModal('syncStepsModal')">Close</button>
+        </div>
+    </div>
+
     <div id="newMobileShopModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: center; padding: 16px;">
         <div class="glass-card" style="background: var(--bg-surface-strong); width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 20px;">
             <div class="flex-between" style="margin-bottom: 14px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
@@ -3174,22 +3204,158 @@
             alert(`🎉 Authenticated & Logged In Successfully as '${target.name}' (${target.username})!`);
         }
 
-        /* Uploads the pending orders with a progress bar that reflects what is
-           actually happening.
+        /* Drives the submit dialog: every step is listed up front so the
+           salesman knows what is coming, each one has its own bar, and a step
+           only lights up once the one before it has reached 100%. */
+        const SyncSteps = (function () {
+            let steps = [];
+            let current = -1;
+            let startedAt = 0;
+            let timer = null;
 
-           The old version set the bar to 30%, then to 100% when the request
-           finally came back, so it sat at a third of the way for however long
-           the upload took and then jumped. It also sent every shop on the
-           device - roughly three quarters of the payload - although the server
-           only ever adds shops it does not already have. And it tried the
-           spare Render address first, which sleeps when idle and costs a cold
-           start before the real site is even attempted. */
+            const el = (id) => document.getElementById(id);
+
+            function rowHtml(s, i) {
+                return `
+                    <div id="syncStepRow${i}" style="display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <div id="syncStepMark${i}" style="flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,0.08); color: var(--text-muted); font-size: 10.5px; font-weight: 900; display: flex; align-items: center; justify-content: center; margin-top: 1px;">${i + 1}</div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; justify-content: space-between; gap: 8px; align-items: baseline;">
+                                <span id="syncStepName${i}" style="font-size: 12.5px; font-weight: 800; color: var(--text-muted);">${s.name}</span>
+                                <span id="syncStepNote${i}" style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); white-space: nowrap;">Waiting</span>
+                            </div>
+                            <div style="height: 5px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; margin-top: 6px;">
+                                <div id="syncStepBar${i}" style="height: 100%; width: 0%; background: var(--gold-gradient); border-radius: 99px; transition: width .2s ease;"></div>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            function paintOverall() {
+                // Every step counts the same; a running step contributes its own share.
+                const done = steps.reduce((acc, s) => acc + (s.pct || 0), 0);
+                const pct = Math.round(done / Math.max(1, steps.length));
+                const bar = el("syncStepsOverallBar");
+                const lbl = el("syncStepsOverallPct");
+                if (bar) bar.style.width = pct + "%";
+                if (lbl) lbl.innerText = pct + "%";
+            }
+
+            function elapsed() { return Math.round((Date.now() - startedAt) / 1000); }
+
+            return {
+                // Shown before anything starts, so the steps are known in advance.
+                begin(stepNames, subtitle) {
+                    steps = stepNames.map(n => ({ name: n, pct: 0 }));
+                    current = -1;
+                    startedAt = Date.now();
+
+                    el("syncStepsTitle").innerText = "Submitting Orders";
+                    el("syncStepsSubtitle").innerText = subtitle || "";
+                    el("syncStepsIcon").innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i>`;
+                    el("syncStepsIcon").style.color = "var(--brand-gold)";
+                    el("syncStepsList").innerHTML = steps.map(rowHtml).join("");
+                    el("syncStepsFooter").innerText = `${steps.length} steps - starting…`;
+                    el("syncStepsCloseBtn").style.display = "none";
+                    el("syncStepsModal").style.display = "flex";
+                    paintOverall();
+
+                    if (timer) clearInterval(timer);
+                    timer = setInterval(() => {
+                        const f = el("syncStepsFooter");
+                        if (f && current >= 0 && current < steps.length) {
+                            f.innerText = `Step ${current + 1} of ${steps.length}  ·  ${elapsed()}s elapsed`;
+                        }
+                    }, 1000);
+                },
+
+                start(i, note) {
+                    current = i;
+                    const mark = el(`syncStepMark${i}`), name = el(`syncStepName${i}`), n = el(`syncStepNote${i}`);
+                    if (mark) { mark.style.background = "var(--gold-gradient)"; mark.style.color = "var(--on-accent)"; }
+                    if (name) name.style.color = "var(--text-dark)";
+                    if (n) { n.innerText = note || "Working…"; n.style.color = "var(--brand-gold)"; }
+                },
+
+                progress(i, pct, note) {
+                    if (!steps[i]) return;
+                    steps[i].pct = Math.max(0, Math.min(100, pct));
+                    const bar = el(`syncStepBar${i}`), n = el(`syncStepNote${i}`);
+                    if (bar) bar.style.width = steps[i].pct + "%";
+                    if (n && note) n.innerText = note;
+                    paintOverall();
+                },
+
+                // A step reaching 100% is what reveals the next one as active.
+                done(i, note) {
+                    if (!steps[i]) return;
+                    steps[i].pct = 100;
+                    const bar = el(`syncStepBar${i}`), mark = el(`syncStepMark${i}`), n = el(`syncStepNote${i}`);
+                    if (bar) { bar.style.width = "100%"; bar.style.background = "var(--green-gradient)"; }
+                    if (mark) { mark.style.background = "var(--green-gradient)"; mark.style.color = "#fff"; mark.innerHTML = `<i class="fa-solid fa-check"></i>`; }
+                    if (n) { n.innerText = note || "Done"; n.style.color = "#22c58b"; }
+                    paintOverall();
+                },
+
+                // Reset a step that has to be retried against another server.
+                retry(i, note) {
+                    if (!steps[i]) return;
+                    steps[i].pct = 0;
+                    const bar = el(`syncStepBar${i}`), n = el(`syncStepNote${i}`);
+                    if (bar) bar.style.width = "0%";
+                    if (n) { n.innerText = note || "Retrying…"; n.style.color = "#fbbf24"; }
+                    paintOverall();
+                },
+
+                fail(i, message) {
+                    if (timer) { clearInterval(timer); timer = null; }
+                    const mark = el(`syncStepMark${i}`), bar = el(`syncStepBar${i}`), n = el(`syncStepNote${i}`);
+                    if (mark) { mark.style.background = "var(--danger-gradient)"; mark.style.color = "#fff"; mark.innerHTML = `<i class="fa-solid fa-xmark"></i>`; }
+                    if (bar) bar.style.background = "var(--danger-gradient)";
+                    if (n) { n.innerText = "Failed"; n.style.color = "#f87171"; }
+                    el("syncStepsIcon").innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i>`;
+                    el("syncStepsIcon").style.color = "#f87171";
+                    el("syncStepsTitle").innerText = "Not Submitted";
+                    el("syncStepsFooter").innerText = message;
+                    el("syncStepsCloseBtn").style.display = "block";
+                },
+
+                finish(message) {
+                    if (timer) { clearInterval(timer); timer = null; }
+                    el("syncStepsIcon").innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
+                    el("syncStepsIcon").style.color = "#22c58b";
+                    el("syncStepsTitle").innerText = "Submitted";
+                    el("syncStepsFooter").innerText = message;
+                    el("syncStepsCloseBtn").style.display = "block";
+                },
+
+                elapsed
+            };
+        })();
+
+        /* Submitting the pending orders, shown as five named steps the
+           salesman can see before anything starts. Each step has its own bar
+           and only hands over once it reaches 100%.
+
+           The old version set one bar to 30%, left it there for however long
+           the upload took - often 5 to 10 minutes - and snapped to 100% when
+           the reply finally arrived, with nothing to say what was happening. */
 
         const SYNC_ENDPOINTS = [
             "https://chaudharytraders.online",
             "https://chaudhary-trader-erp.onrender.com"
         ];
 
+        const SUBMIT_STEPS = [
+            "Preparing the orders",
+            "Connecting to the server",
+            "Uploading the orders",
+            "Server saving the orders",
+            "Updating this phone"
+        ];
+        const STEP_PREPARE = 0, STEP_CONNECT = 1, STEP_UPLOAD = 2, STEP_SERVER = 3, STEP_LOCAL = 4;
+
+        // Kept so the old inline bar on the Sync screen still reflects the state.
         function setSyncProgress(pct, message) {
             const bar = document.getElementById("syncProgressBar");
             const txt = document.getElementById("syncProgressText");
@@ -3206,11 +3372,9 @@
                 return;
             }
 
-            // The server only adds shops it does not already hold, so sending
-            // the whole shop book every time is wasted upload on mobile data.
+            // The server only adds shops it does not already hold, so sending the
+            // whole shop book every time is wasted upload on mobile data.
             const newShops = (MobileState.shops || []).filter(s => s.isNewOnField && !s.syncedToServer);
-
-            setSyncProgress(4, `Preparing ${pendingOrders.length} order(s)…`);
 
             const payload = JSON.stringify({
                 salesmanId: MobileState.salesman ? MobileState.salesman.id : "sales_real_1",
@@ -3220,10 +3384,15 @@
                 orders: pendingOrders,
                 stockTransactions: pendingTxs
             });
-
             const totalKb = Math.max(1, Math.round(payload.length / 1024));
-            const startedAt = Date.now();
-            const elapsed = () => Math.round((Date.now() - startedAt) / 1000);
+
+            SyncSteps.begin(SUBMIT_STEPS,
+                `${pendingOrders.length} order(s)${newShops.length ? " + " + newShops.length + " new shop(s)" : ""}  ·  ${totalKb} KB`);
+
+            SyncSteps.start(STEP_PREPARE);
+            SyncSteps.progress(STEP_PREPARE, 100);
+            SyncSteps.done(STEP_PREPARE, `${pendingOrders.length} order(s)`);
+            setSyncProgress(5, `Preparing ${pendingOrders.length} order(s)…`);
 
             const endpoints = SYNC_ENDPOINTS.concat([
                 localStorage.getItem("chaudhary_pc_ip") || "http://192.168.100.129:8888"
@@ -3231,42 +3400,59 @@
 
             function attempt(index) {
                 if (index >= endpoints.length) {
-                    setSyncProgress(100, `⚠️ Could not reach the server after ${elapsed()}s. Tap Submit to retry.`);
-                    alert("⚠️ Could not reach the server.\n\nPlease check your 4G data or Wi-Fi and tap Submit again.\n\nYour orders are safe on this phone - nothing was lost.");
+                    SyncSteps.fail(STEP_CONNECT,
+                        `Could not reach any server after ${SyncSteps.elapsed()}s. Your orders are safe on this phone - tap Submit to try again.`);
+                    setSyncProgress(100, "⚠️ Could not reach the server. Tap Submit to retry.");
                     return;
                 }
 
                 const targetUrl = formatPcIp(endpoints[index]);
                 const host = String(targetUrl).replace(/^https?:\/\//, "").split("/")[0];
-                const base = index * 2;                     // a little room per retry
 
-                setSyncProgress(base + 6, `Connecting to ${host}…`);
+                if (index > 0) {
+                    SyncSteps.retry(STEP_CONNECT, "Trying next server…");
+                    SyncSteps.retry(STEP_UPLOAD, "Waiting");
+                    SyncSteps.retry(STEP_SERVER, "Waiting");
+                }
+                SyncSteps.start(STEP_CONNECT, host);
+                SyncSteps.progress(STEP_CONNECT, 40);
+                setSyncProgress(10, `Connecting to ${host}…`);
 
                 const xhr = new XMLHttpRequest();
                 xhr.open("POST", `${targetUrl}/api/sync/evening-upload`, true);
                 xhr.setRequestHeader("Content-Type", "application/json");
-                xhr.timeout = 90000;                        // a sleeping server can take a while to wake
+                xhr.timeout = 90000;                 // a sleeping server needs time to wake
 
-                // Real upload progress: 10% -> 65% as the bytes actually leave.
+                let connected = false;
+                let waitTimer = null;
+
+                // Real byte progress, not a guess.
                 xhr.upload.onprogress = (e) => {
+                    if (!connected) {
+                        connected = true;
+                        SyncSteps.done(STEP_CONNECT, host);
+                        SyncSteps.start(STEP_UPLOAD);
+                    }
                     if (!e.lengthComputable) return;
-                    const sentKb = Math.round(e.loaded / 1024);
-                    const pct = base + 10 + Math.round((e.loaded / e.total) * 55);
-                    setSyncProgress(pct, `Uploading ${pendingOrders.length} order(s)… ${sentKb} of ${totalKb} KB  ·  ${elapsed()}s`);
+                    const pct = Math.round((e.loaded / e.total) * 100);
+                    SyncSteps.progress(STEP_UPLOAD, pct, `${Math.round(e.loaded / 1024)} / ${totalKb} KB`);
+                    setSyncProgress(10 + Math.round(pct * 0.55), `Uploading… ${Math.round(e.loaded / 1024)} of ${totalKb} KB`);
                 };
 
-                // Once the bytes are gone the server is working; creep forward so
-                // the bar never looks frozen, but never reach 100 until it replies.
-                let waitPct = base + 66;
-                let waitTimer = null;
                 xhr.upload.onload = () => {
-                    setSyncProgress(waitPct, `Server is processing ${pendingOrders.length} order(s)…`);
+                    if (!connected) { connected = true; SyncSteps.done(STEP_CONNECT, host); SyncSteps.start(STEP_UPLOAD); }
+                    SyncSteps.done(STEP_UPLOAD, `${totalKb} KB sent`);
+
+                    // The server is working now. Creep the bar so it never looks
+                    // stuck, but hold it short of 100 until the reply lands.
+                    SyncSteps.start(STEP_SERVER);
+                    let p = 0;
                     waitTimer = setInterval(() => {
-                        waitPct = Math.min(94, waitPct + 1);
-                        const secs = elapsed();
-                        const note = secs > 20 ? " (server waking up, please wait)" : "";
-                        setSyncProgress(waitPct, `Server is processing… ${secs}s${note}`);
-                    }, 1000);
+                        p = Math.min(92, p + 3);
+                        const secs = SyncSteps.elapsed();
+                        SyncSteps.progress(STEP_SERVER, p, secs > 20 ? `${secs}s - waking up` : `${secs}s`);
+                        setSyncProgress(65 + Math.round(p * 0.3), `Server is saving… ${secs}s`);
+                    }, 700);
                 };
 
                 const stopWaiting = () => { if (waitTimer) { clearInterval(waitTimer); waitTimer = null; } };
@@ -3280,31 +3466,31 @@
                     let res = {};
                     try { res = JSON.parse(xhr.responseText || "{}"); } catch (e) {}
                     if (res && res.success === false) {
-                        // The server refused on purpose - say why instead of retrying blindly.
-                        setSyncProgress(100, `⚠️ ${res.error || "The server refused the upload."}`);
-                        alert(`⚠️ Not submitted.\n\n${res.error || "The server refused the upload."}\n\nYour orders are safe on this phone.`);
+                        // Refused on purpose - say why rather than retry blindly.
+                        SyncSteps.fail(STEP_SERVER, res.error || "The server refused the upload. Your orders are safe on this phone.");
+                        setSyncProgress(100, "⚠️ " + (res.error || "The server refused the upload."));
                         return;
                     }
+                    SyncSteps.done(STEP_SERVER, `${SyncSteps.elapsed()}s`);
 
-                    setSyncProgress(97, "Saving on this phone…");
+                    SyncSteps.start(STEP_LOCAL);
                     pendingOrders.forEach(o => o.synced = true);
                     pendingTxs.forEach(t => t.synced = true);
                     newShops.forEach(s => s.syncedToServer = true);
-
                     MobileState.lastSyncTime = new Date().toLocaleTimeString();
                     saveMobileState();
                     renderMobileOrdersHistory();
                     updatePendingBadge();
+                    SyncSteps.done(STEP_LOCAL, "Saved");
 
-                    const secs = elapsed();
+                    const secs = SyncSteps.elapsed();
+                    SyncSteps.finish(`${pendingOrders.length} order(s) submitted  ·  ${totalKb} KB  ·  ${secs}s`);
                     setSyncProgress(100, `✅ ${pendingOrders.length} order(s) submitted in ${secs}s`);
 
                     const resCard = document.getElementById("syncResultCard");
                     if (resCard) resCard.style.display = "block";
                     const resUpl = document.getElementById("resUploadsCount");
                     if (resUpl) resUpl.innerText = pendingOrders.length;
-
-                    alert(`🚀 SUBMITTED!\n\n• ${pendingOrders.length} order(s) sent to the server\n• ${totalKb} KB in ${secs} second(s)`);
                 };
 
                 xhr.onerror = () => {
@@ -3315,7 +3501,6 @@
                 xhr.ontimeout = () => {
                     stopWaiting();
                     console.warn(`Submit to ${host} timed out`);
-                    setSyncProgress(base + 8, `${host} did not answer, trying the next server…`);
                     attempt(index + 1);
                 };
 
