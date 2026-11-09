@@ -1193,9 +1193,47 @@
                     </div>
 
                     <div class="panel-box">
-                        <div class="panel-header flex-between">
-                            <h3><i class="fa-solid fa-shop"></i> Shops Database (With Beat Visit Days)</h3>
-                            <input type="text" id="shopSearchInput" placeholder="Filter shop name..." onkeyup="renderShopsTable()">
+                        <div class="panel-header">
+                            <div class="flex-between" style="width: 100%;">
+                                <h3><i class="fa-solid fa-shop"></i> Shops Database (With Beat Visit Days)</h3>
+                                <span id="shopsCountLabel" style="font-size: 11px; font-weight: 700; color: var(--text-muted);"></span>
+                            </div>
+                        </div>
+                        <div class="search-filter-grid" style="margin-bottom: 12px;">
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-magnifying-glass"></i> Search:</label>
+                                <input type="text" id="shopSearchInput" placeholder="Shop, owner or phone..." onkeyup="renderShopsTable()">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-route"></i> Route / Beat:</label>
+                                <select id="shopRouteFilter" onchange="renderShopsTable()">
+                                    <option value="all" selected>All Routes</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-calendar-day"></i> Visit Day:</label>
+                                <select id="shopDayFilter" onchange="renderShopsTable()">
+                                    <option value="all" selected>All Days</option>
+                                    <option value="Monday">Monday</option>
+                                    <option value="Tuesday">Tuesday</option>
+                                    <option value="Wednesday">Wednesday</option>
+                                    <option value="Thursday">Thursday</option>
+                                    <option value="Friday">Friday</option>
+                                    <option value="Saturday">Saturday</option>
+                                    <option value="Sunday">Sunday</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-arrow-down-short-wide"></i> Sort By:</label>
+                                <select id="shopSortSelect" onchange="renderShopsTable()">
+                                    <option value="name" selected>Shop Name (A–Z)</option>
+                                    <option value="nameDesc">Shop Name (Z–A)</option>
+                                    <option value="route">Route, then Shop</option>
+                                    <option value="day">Visit Day, then Shop</option>
+                                    <option value="discHigh">Discount — High to Low</option>
+                                    <option value="owner">Owner Name (A–Z)</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="table-responsive">
                             <table class="data-table">
