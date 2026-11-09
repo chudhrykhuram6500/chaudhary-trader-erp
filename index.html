@@ -759,7 +759,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label><i class="fa-solid fa-calendar-days"></i> Invoice Date:</label>
+                            <label><i class="fa-solid fa-calendar-days"></i> Sale Date (confirmed):</label>
                             <input type="date" id="invoiceDateFilter" onchange="renderInvoicesTable()" class="form-control">
                         </div>
                         <div class="form-group">
@@ -793,6 +793,19 @@
                                 <option value="Picked">✅ Picked</option>
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-arrow-down-short-wide"></i> Sort By:</label>
+                            <select id="invoiceSortSelect" onchange="renderInvoicesTable()">
+                                <option value="newest" selected>Sale Date — Newest First</option>
+                                <option value="oldest">Sale Date — Oldest First</option>
+                                <option value="amountHigh">Net Amount — High to Low</option>
+                                <option value="amountLow">Net Amount — Low to High</option>
+                                <option value="cartonsHigh">Cartons — High to Low</option>
+                                <option value="shop">Shop Name (A–Z)</option>
+                                <option value="route">Route (A–Z)</option>
+                                <option value="billNo">Invoice No.</option>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- Centralized Action Toolbar -->
@@ -823,7 +836,7 @@
                                     </th>
                                     <th>Invoice No.</th>
                                     <th>Company</th>
-                                    <th>Order Date</th>
+                                    <th>Sale Date</th>
                                     <th>Shop Name</th>
                                     <th>Route</th>
                                     <th>Pick Status</th>

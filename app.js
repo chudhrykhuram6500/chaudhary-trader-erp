@@ -6513,7 +6513,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const savedTheme = localStorage.getItem("chaudhary_theme") || "dark";
         selectAppTheme(savedTheme);
 
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = todayISO();
         const posBillDateEl = document.getElementById("posBillDate");
         const posDeliveryDateEl = document.getElementById("posDeliveryDate");
         if (posBillDateEl) posBillDateEl.value = todayStr;
@@ -7404,6 +7404,19 @@ function billTotals(b) {
     };
 }
 
+// The calendar date as it reads on the wall here, not in UTC.
+function toLocalISODate(d) {
+    const dt = (d instanceof Date) ? d : new Date(d);
+    if (isNaN(dt.getTime())) return "";
+    return dt.getFullYear() + "-" +
+           String(dt.getMonth() + 1).padStart(2, "0") + "-" +
+           String(dt.getDate()).padStart(2, "0");
+}
+
+function todayISO() {
+    return toLocalISODate(new Date());
+}
+
 function saleDateOf(b) {
     return String(b.confirmedDate || b.billDate || b.date || b.createdDate || b.orderDate || "").slice(0, 10);
 }
@@ -7800,7 +7813,7 @@ function onReportsCenterPresetChange() {
     const preset = document.getElementById("rcPeriodPreset").value;
     const fromEl = document.getElementById("rcFromDate");
     const toEl = document.getElementById("rcToDate");
-    const iso = (d) => d.toISOString().split("T")[0];
+    const iso = (d) => toLocalISODate(d);
     const today = new Date();
     let from = null, to = iso(today);
 
@@ -7921,7 +7934,7 @@ function goToReportsCenterPage(n) {
 function exportReportsCenterExcel() {
     if (!_rcLastResult) return;
     const def = REPORT_DEFINITIONS.find(r => r.id === _rcSelectedReport);
-    const stamp = new Date().toISOString().split("T")[0];
+    const stamp = todayISO();
     generateStyledExcelFile(
         def ? def.name : "Report",
         _rcLastResult.columns,
@@ -8005,8 +8018,8 @@ function getStartEndDatesFromPreset(preset, startDateId, endDateId) {
         return { start: "", end: "" };
     }
 
-    const startStr = startDate ? startDate.toISOString().split('T')[0] : "";
-    const endStr = endDate ? endDate.toISOString().split('T')[0] : "";
+    const startStr = startDate ? toLocalISODate(startDate) : "";
+    const endStr = endDate ? toLocalISODate(endDate) : "";
     return { start: startStr, end: endStr };
 }
 
@@ -8102,7 +8115,7 @@ function selectOrderCompany(companyId) {
 }
 
 function normalizeDateToISO(dateStr) {
-    if (!dateStr) return new Date().toISOString().split('T')[0];
+    if (!dateStr) return todayISO();
     dateStr = String(dateStr).trim();
     if (dateStr.includes('T')) dateStr = dateStr.split('T')[0];
     if (dateStr.includes(' ')) dateStr = dateStr.split(' ')[0];
@@ -8317,7 +8330,7 @@ function renderFocManagementTab() {
 }
 
 function renderFocKpiStats() {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = todayISO();
     const activeSchemes = getActiveFocSchemes(todayStr);
 
     const activeEl = document.getElementById("focStatActiveSchemes");
@@ -8328,7 +8341,7 @@ function renderFocKpiStats() {
     const focProductCounts = {};
 
     (AppState.bills || []).forEach(b => {
-        if (b.date === todayStr && !b.isVoid) {
+        if (saleDateOf(b) === todayStr && !b.isVoid) {
             (b.items || []).forEach(i => {
                 if (i.isFoc) {
                     const ctn = (i.cartons || 0);
@@ -8390,7 +8403,7 @@ function renderFocSchemesTable() {
 
     const searchTerm = (document.getElementById("focSchemeSearchInput")?.value || "").toLowerCase().trim();
     const statusFilter = document.getElementById("focSchemeStatusFilter")?.value || "all";
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = todayISO();
 
     let filtered = (AppState.focSchemes || []).filter(sch => {
         if (statusFilter !== "all") {
@@ -8484,13 +8497,13 @@ function renderFocReportTable() {
     let items = [];
     (AppState.bills || []).forEach(b => {
         if (b.isVoid || b.deliveryStatus === "Cancelled") return;
-        if (start && b.date < start) return;
-        if (end && b.date > end) return;
+        if (start && saleDateOf(b) < start) return;
+        if (end && saleDateOf(b) > end) return;
 
         (b.items || []).forEach(i => {
             if (i.isFoc) {
                 items.push({
-                    date: b.date,
+                    date: saleDateOf(b),
                     billNo: b.billNo,
                     shopName: b.shopName,
                     salesman: b.salesman || "Salesman",
@@ -8567,10 +8580,10 @@ function openCreateFocSchemeModal(schemeId) {
     const priorityEl = document.getElementById("focSchemePriority");
     const repeatEl = document.getElementById("focSchemeRepeatable");
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = todayISO();
     const endOfMonth = new Date();
     endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-    const endStr = endOfMonth.toISOString().split('T')[0];
+    const endStr = toLocalISODate(endOfMonth);
 
     const slabsContainer = document.getElementById("focSlabsContainer");
     slabsContainer.innerHTML = "";
@@ -8994,12 +9007,12 @@ function renderDashboard() {
         let curr = new Date(start);
         const last = new Date(end);
         while (curr <= last) {
-            dateList.push(curr.toISOString().split('T')[0]);
+            dateList.push(toLocalISODate(curr));
             curr.setDate(curr.getDate() + 1);
         }
     }
     if (dateList.length === 0) {
-        const billDates = Array.from(new Set(deliveredBills.map(b => normalizeDateToISO(b.date || b.createdDate)))).filter(Boolean).sort();
+        const billDates = Array.from(new Set(deliveredBills.map(b => saleDateOf(b)))).filter(Boolean).sort();
         if (billDates.length > 0) {
             dateList = billDates;
         } else {
@@ -9007,7 +9020,7 @@ function renderDashboard() {
             for (let i = 6; i >= 0; i--) {
                 const d = new Date();
                 d.setDate(today.getDate() - i);
-                dateList.push(d.toISOString().split('T')[0]);
+                dateList.push(toLocalISODate(d));
             }
         }
     }
@@ -9051,7 +9064,7 @@ function renderDashboard() {
     const skuSalesMap = {};
 
     deliveredBills.forEach(b => {
-        const bDate = normalizeDateToISO(b.date || b.createdDate);
+        const bDate = saleDateOf(b);
 
         (b.items || []).forEach(i => {
             const pGrp = getProductGroup(i);
@@ -9191,7 +9204,7 @@ function computeBillItemAmount(i) {
 }
 
 function renderDashboardSnapshotCards(brandFilter) {
-    const todayISO = new Date().toISOString().split('T')[0];
+    const todayISO = todayISO();
     const monthStartISO = todayISO.slice(0, 7) + '-01';
 
     let todaySale = 0, mtdSale = 0;
@@ -9209,7 +9222,7 @@ function renderDashboardSnapshotCards(brandFilter) {
             if (!matchesBrand) return;
         }
 
-        const bDate = normalizeDateToISO(b.billDate || b.date || b.createdDate || b.orderDate || "");
+        const bDate = saleDateOf(b);
         if (!bDate) return;
 
         const bAmt = (b.items || []).reduce((sum, i) => sum + computeBillItemAmount(i), 0);
@@ -10111,7 +10124,7 @@ function onPosBeatDaySelect() { renderPosShopDropdown(); }
 
 function renderPosShopDropdown() {
     const orderDateEl = document.getElementById("posBillDate");
-    const orderDate = orderDateEl ? orderDateEl.value : new Date().toISOString().split('T')[0];
+    const orderDate = orderDateEl ? orderDateEl.value : todayISO();
     const todayDayName = getDayNameFromDate(orderDate);
     const selectedFilter = document.getElementById("posBeatDaySelect")?.value || "auto";
     const searchQuery = (document.getElementById("posShopSearchInput")?.value || "").toLowerCase().trim();
@@ -10376,7 +10389,7 @@ function renderPosCartTable() {
     const shop = AppState.shops.find(s => s.id === AppState.selectedShopId);
     const route = shop ? AppState.routes.find(r => r.id === shop.routeId) : null;
     const salesman = route ? route.salesman : "Salesman 1";
-    const orderDate = document.getElementById("posBillDate")?.value || new Date().toISOString().split('T')[0];
+    const orderDate = document.getElementById("posBillDate")?.value || todayISO();
 
     const focRes = calculateOrderFoc(AppState.currentCart, shop, salesman, orderDate);
     const focContainer = document.getElementById("posFocBannerContainer");
@@ -10405,7 +10418,7 @@ function saveAndPrintPosBill(shouldPrint) {
     const salesman = route ? route.salesman : "Salesman 1";
     const taxMode = document.querySelector('input[name="taxMode"][value="filer"]').checked ? "filer" : "nonfiler";
     const globalDiscPct = parseFloat(document.getElementById("globalBillDiscountPct").value) || 0;
-    const orderDate = document.getElementById("posBillDate").value || new Date().toISOString().split('T')[0];
+    const orderDate = document.getElementById("posBillDate").value || todayISO();
     const deliveryDate = document.getElementById("posDeliveryDate").value || orderDate;
     const paymentStatus = document.getElementById("posPaymentStatus").value;
     const adwhTaxRate = isNoTaxCompany ? 0 : (taxMode === "nonfiler" ? 0.025 : 0.005);
@@ -10975,7 +10988,7 @@ function exportStockReportCSV() {
         ]);
     });
 
-    generateStyledExcelFile("Warehouse Stock Inventory Ledger", headers, rows, `Chaudhary_Trader_Stock_Report_${new Date().toISOString().split('T')[0]}.xls`);
+    generateStyledExcelFile("Warehouse Stock Inventory Ledger", headers, rows, `Chaudhary_Trader_Stock_Report_${todayISO()}.xls`);
 }
 
 /* STOCK RESTORATION ON RETURN */
@@ -11737,7 +11750,7 @@ function exportMasterShopsExcel() {
         ]);
     });
 
-    generateStyledExcelFile("Master Beat Shops & Retail Outlets Directory", headers, rows, `Chaudhary_Traders_Master_Shops_Data_${new Date().toISOString().split('T')[0]}.xlsx`);
+    generateStyledExcelFile("Master Beat Shops & Retail Outlets Directory", headers, rows, `Chaudhary_Traders_Master_Shops_Data_${todayISO()}.xlsx`);
 }
 
 function onSkuCompanyChange(compId) {
@@ -12211,7 +12224,7 @@ function exportBackupJSON() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(AppState, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `Chaudhary_Trader_Backup_${new Date().toISOString().split('T')[0]}.json`);
+    downloadAnchor.setAttribute("download", `Chaudhary_Trader_Backup_${todayISO()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -12653,7 +12666,7 @@ function downloadOrderPunchingTemplate() {
             ws['!merges'] = merges;
             XLSX.utils.book_append_sheet(wb, ws, "Order Booking");
 
-            const filename = `Chaudhary_Trader_Matrix_Order_Sheet_${todayName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            const filename = `Chaudhary_Trader_Matrix_Order_Sheet_${todayName}_${todayISO()}.xlsx`;
             XLSX.writeFile(wb, filename);
             return;
         } catch (err) {
@@ -12766,7 +12779,7 @@ function downloadOrderPunchingTemplate() {
 
     html += `</tbody></table></body></html>`;
 
-    const filename = `Chaudhary_Trader_Matrix_Order_Sheet_${todayName}_${new Date().toISOString().split('T')[0]}.xls`;
+    const filename = `Chaudhary_Trader_Matrix_Order_Sheet_${todayName}_${todayISO()}.xls`;
 
     const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
     const link = document.createElement("a");
@@ -12850,7 +12863,7 @@ function generateFallbackHtmlXlsDownload(todayName, targetShops, sortedSkus, bra
     const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
     const downloadAnchor = document.createElement('a');
     downloadAnchor.href = URL.createObjectURL(blob);
-    downloadAnchor.download = `Chaudhary_Trader_Matrix_Order_Sheet_${todayName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    downloadAnchor.download = `Chaudhary_Trader_Matrix_Order_Sheet_${todayName}_${todayISO()}.xlsx`;
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -12994,7 +13007,7 @@ function punchGroupedOrdersIntoAppState(orderMapByShop) {
     let totalCtnsPunched = 0;
     let totalUnitsPunched = 0;
     let totalRevenuePunched = 0;
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = todayISO();
 
     shopKeys.forEach(sKey => {
         const shopOrder = orderMapByShop[sKey];
@@ -13152,7 +13165,7 @@ function savePosCartAsDraftOrder() {
     const route = AppState.routes.find(r => r.id === shop.routeId);
     const salesman = route ? route.salesman : "Ijaz";
     const globalDiscPct = parseFloat(document.getElementById("globalBillDiscountPct")?.value) || 0;
-    const orderDate = document.getElementById("posBillDate")?.value || new Date().toISOString().split('T')[0];
+    const orderDate = document.getElementById("posBillDate")?.value || todayISO();
     const deliveryDate = document.getElementById("posDeliveryDate")?.value || orderDate;
 
     let totalBasic = 0, totalCtns = 0, totalUnits = 0;
@@ -13262,7 +13275,7 @@ function saveManualOrder() {
 
     const shop = AppState.shops.find(s => s.id === shopId);
     const rObj = AppState.routes.find(r => r.id === shop.routeId);
-    const orderDate = document.getElementById("manualOrderDate").value || new Date().toISOString().split('T')[0];
+    const orderDate = document.getElementById("manualOrderDate").value || todayISO();
     const deliveryDate = document.getElementById("manualDeliveryDate").value || orderDate;
     const notes = document.getElementById("manualOrderNotes").value.trim();
 
@@ -13532,7 +13545,7 @@ function batchConfirmSelectedOrders() {
             if (bill) {
                 bill.deliveryStatus = "Confirmed";
                 bill.salesRecorded = true;
-                if (!bill.confirmedDate) bill.confirmedDate = new Date().toISOString().split("T")[0];
+                if (!bill.confirmedDate) bill.confirmedDate = todayISO();
                 affectedBills.push(bill);
             }
         });
@@ -13652,22 +13665,43 @@ function applyInModalShortageAdjustmentAndProcess() {
     const targetOrders = AppState.orders.filter(o => orderNos.includes(o.orderNo) && o.status !== "Processed" && o.status !== "Cancelled");
     if (targetOrders.length === 0) return alert("Selected orders could not be found.");
 
+    const allocationNotes = [];
+
     shortages.forEach(s => {
         const ctnInput = document.getElementById(`adj_ctn_${s.code}`);
         const pktInput = document.getElementById(`adj_pkt_${s.code}`);
         const newCtns = ctnInput ? (parseInt(ctnInput.value) || 0) : s.availCtns;
         const newPkts = pktInput ? (parseInt(pktInput.value) || 0) : s.availPkts;
 
+        const sku = AppState.skus.find(x => String(x.code).trim() === String(s.code).trim());
+        const pack = (sku && sku.pack) ? sku.pack : 12;
+
+        // One pool for this SKU, shared across the orders - NOT the same
+        // quantity handed to each of them.
+        let remaining = (newCtns * pack) + newPkts;
+        const given = [];
+
         targetOrders.forEach(o => {
             o.items.forEach(i => {
-                if (i.code === s.code) {
-                    i.cartons = newCtns;
-                    i.units = newPkts;
-                    const unitPrice = i.tpRate / i.pack;
-                    i.basicAmount = (i.cartons * i.tpRate) + (i.units * unitPrice);
-                }
+                if (i.code !== s.code) return;
+                const wanted = (i.cartons * pack) + i.units;
+                const give = Math.max(0, Math.min(wanted, remaining));
+                remaining -= give;
+                i.cartons = Math.floor(give / pack);
+                i.units = give % pack;
+                const unitPrice = i.tpRate / (i.pack || pack);
+                i.basicAmount = (i.cartons * i.tpRate) + (i.units * unitPrice);
+                given.push(`${o.orderNo}: ${i.cartons} ctn${i.units ? " + " + i.units + " pkt" : ""}`);
             });
+        });
 
+        if (given.length > 1) {
+            allocationNotes.push(`${s.desc || s.code} — ${newCtns} ctn shared: ${given.join(", ")}`);
+        }
+    });
+
+    shortages.forEach(() => {
+        targetOrders.forEach(o => {
             o.items = o.items.filter(i => (i.cartons > 0 || i.units > 0));
 
             let tBasic = 0, tCtns = 0, tUnits = 0;
@@ -13684,6 +13718,13 @@ function applyInModalShortageAdjustmentAndProcess() {
     });
 
     closeModal("stockValidationModal");
+
+    // Say plainly how the short stock was divided, so it can be checked
+    // against the bills rather than discovered later.
+    if (allocationNotes.length > 0) {
+        alert("Short stock was shared between the orders:\n\n" + allocationNotes.join("\n"));
+    }
+
     executeOrderProcessing(targetOrders, deliveryDate);
 }
 
@@ -13821,7 +13862,7 @@ function executeOrderProcessing(targetOrders, deliveryDate) {
                 orderNo: o.orderNo,
                 uuid: o.uuid,
                 companyId: cKey,
-                date: o.date || o.orderDate || new Date().toISOString().split('T')[0],
+                date: o.date || o.orderDate || todayISO(),
                 deliveryDate: deliveryDate,
                 shopId: o.shopId,
                 shopName: o.shopName,
@@ -13872,7 +13913,7 @@ function executeOrderProcessing(targetOrders, deliveryDate) {
    ========================================================================== */
 
 function openNewPickListModal() {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = todayISO();
     document.getElementById("pickListPlannedDate").value = todayStr;
     document.getElementById("pickListFinalDate").value = todayStr;
     onPickListDateChange();
@@ -13986,7 +14027,7 @@ function confirmSavePickList() {
 
     const newPickList = {
         pickListNo: pickListNo,
-        createdDate: new Date().toISOString().split('T')[0],
+        createdDate: todayISO(),
         plannedDeliveryDate: plannedDate,
         finalDeliveryDate: finalDate,
         billNos: selectedBillNos,
@@ -14294,7 +14335,7 @@ function renderInvoicesTable() {
     let filtered = viewBills.filter(b => {
         // Date Filter
         if (dateFilter) {
-            const billDate = b.date || (b.createdDate ? b.createdDate.split('T')[0] : '');
+            const billDate = saleDateOf(b);
             if (billDate !== dateFilter) return false;
         }
 
@@ -14342,6 +14383,19 @@ function renderInvoicesTable() {
         return;
     }
 
+    // Sorting runs before paging, so page 1 really is the newest.
+    const invSort = document.getElementById("invoiceSortSelect")?.value || "newest";
+    filtered.sort((a, b) => {
+        if (invSort === "oldest")      return String(saleDateOf(a)).localeCompare(String(saleDateOf(b)));
+        if (invSort === "amountHigh")  return (b.netAmount || 0) - (a.netAmount || 0);
+        if (invSort === "amountLow")   return (a.netAmount || 0) - (b.netAmount || 0);
+        if (invSort === "cartonsHigh") return (b.totalCartons || 0) - (a.totalCartons || 0);
+        if (invSort === "shop")        return String(a.shopName || "").localeCompare(String(b.shopName || ""));
+        if (invSort === "route")       return String(a.routeName || "").localeCompare(String(b.routeName || ""));
+        if (invSort === "billNo")      return String(b.billNo || "").localeCompare(String(a.billNo || ""));
+        return String(saleDateOf(b)).localeCompare(String(saleDateOf(a)));   // newest sale first
+    });
+
     const INVOICES_PAGE_SIZE = 25;
     if (!AppState.invoicesPage) AppState.invoicesPage = 1;
     const invoicesTotalPages = Math.max(1, Math.ceil(filtered.length / INVOICES_PAGE_SIZE));
@@ -14385,7 +14439,7 @@ function renderInvoicesTable() {
                 </td>
                 <td><strong>${b.billNo}</strong></td>
                 <td>${compBadge}</td>
-                <td>${b.date || '-'}</td>
+                <td>${saleDateOf(b) || '-'}${(b.confirmedDate && b.date && b.confirmedDate !== b.date) ? `<div style="font-size:10px; color:var(--text-muted);">punched ${b.date}</div>` : ''}</td>
                 <td><strong>${b.shopName || '-'}</strong></td>
                 <td>${b.routeName || '-'}</td>
                 <td>${pickBadge}</td>
@@ -14462,7 +14516,7 @@ function batchConfirmSelectedInvoices() {
             bill.deliveryStatus = "Confirmed";
             bill.isManuallyConfirmed = true;
             bill.salesRecorded = true;
-            if (!bill.confirmedDate) bill.confirmedDate = new Date().toISOString().split("T")[0];
+            if (!bill.confirmedDate) bill.confirmedDate = todayISO();
             if (bill.orderNo) {
                 const order = AppState.orders.find(o => o.orderNo === bill.orderNo);
                 if (order) {
@@ -14947,7 +15001,7 @@ function saveDeliveryConfirmationWithAdjustments() {
     bill.deliveryStatus = "Confirmed";
     bill.isManuallyConfirmed = true;
     bill.salesRecorded = true;
-    if (!bill.confirmedDate) bill.confirmedDate = new Date().toISOString().split("T")[0];
+    if (!bill.confirmedDate) bill.confirmedDate = todayISO();
 
     let affectedOrder = null;
     if (bill.orderNo) {
@@ -14979,7 +15033,7 @@ function confirmInvoiceOrder(billNo) {
         bill.deliveryStatus = "Confirmed";
         bill.isManuallyConfirmed = true;
         bill.salesRecorded = true;
-        if (!bill.confirmedDate) bill.confirmedDate = new Date().toISOString().split("T")[0];
+        if (!bill.confirmedDate) bill.confirmedDate = todayISO();
 
         const affectedOrders = [];
         if (bill.orderNo) {
@@ -15088,7 +15142,7 @@ function exportBackupJSON() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
     const dlAnchorElem = document.createElement('a');
     dlAnchorElem.setAttribute("href", dataStr);
-    const fileName = `ChaudharyTrader_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    const fileName = `ChaudharyTrader_Backup_${todayISO()}.json`;
     dlAnchorElem.setAttribute("download", fileName);
     dlAnchorElem.click();
 }
@@ -15489,7 +15543,7 @@ AppState._viewFilter = AppState._viewFilter || {};
 function recentCutoffDate() {
     const d = new Date();
     d.setDate(d.getDate() - (RECENT_WINDOW_DAYS - 1));
-    return d.toISOString().split("T")[0];
+    return toLocalISODate(d);
 }
 
 /* The records a screen should paint: the last search's results if there was
@@ -16101,7 +16155,7 @@ function processSyncStringPayload(rawContent) {
                 ord.totalUnits = totalUnits;
                 ord.totalBasic = totalBasic;
                 ord.netAmount = Math.max(0, Math.round(totalBasic - (totalBasic * ((ord.globalDiscPct || 0) / 100))));
-                ord.date = ord.date || ord.orderDate || new Date().toISOString().split('T')[0];
+                ord.date = ord.date || ord.orderDate || todayISO();
                 ord.plannedDelivery = ord.plannedDelivery || ord.deliveryDate || ord.date;
                 ord.routeName = ord.routeName || ord.route || "Territory Beat";
                 ord.status = "Draft"; // Always enters as Draft order!
@@ -16123,7 +16177,7 @@ function processSyncStringPayload(rawContent) {
             recordsCount: ordersAdded + newShopsAdded,
             status: "Completed",
             createdAt: new Date().toISOString(),
-            backupFile: `Auto_Backup_${new Date().toISOString().split('T')[0]}`
+            backupFile: `Auto_Backup_${todayISO()}`
         });
 
         saveStateToStorage();
@@ -16164,7 +16218,7 @@ function getSalesmanMtdSalesKg(salesmanId, brandKey = 'all') {
                                 (assignedRouteName && billRouteName && billRouteName === assignedRouteName);
 
         if (isSalesmanMatch) {
-            const billDate = normalizeDateToISO(b.billDate || b.date || b.createdDate || "");
+            const billDate = saleDateOf(b);
             if (billDate.startsWith(currentMonthStr)) {
                 (b.items || []).forEach(item => {
                     const sku = (AppState.skus || []).find(s => s.code === item.code || (item.desc && s.desc.toLowerCase() === item.desc.toLowerCase())) || {};
@@ -16201,7 +16255,7 @@ function getOverallDistributionMtdSalesKg(brandKey = 'all') {
 
     (AppState.bills || []).forEach(b => {
         if (b.salesRecorded) {
-            const billDate = b.billDate || b.date || "";
+            const billDate = saleDateOf(b);
             if (billDate.startsWith(currentMonthStr)) {
                 (b.items || []).forEach(item => {
                     const sku = (AppState.skus || []).find(s => s.code === item.code) || {};
@@ -16274,7 +16328,7 @@ function exportMasterSyncFile(salesmanId) {
 
     const safeSalesmanName = (salesman.name || "Salesman").replace(/\s+/g, '_');
     const blob = new Blob([packedString], { type: "text/plain;charset=utf-8" });
-    const filename = `Master_Sync_${safeSalesmanName}_${new Date().toISOString().split('T')[0]}.sync`;
+    const filename = `Master_Sync_${safeSalesmanName}_${todayISO()}.sync`;
     
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -16311,7 +16365,7 @@ function openProcessOrdersModal() {
 
     AppState.pendingProcessOrderIds = selectedDraftNos;
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = todayISO();
     const dateInput = document.getElementById("processTargetDeliveryDate");
     if (dateInput) dateInput.value = todayStr;
 
@@ -16403,7 +16457,7 @@ function exportEmergencyReturnFileModal(salesmanId = "sales_01") {
         timestamp: new Date().toISOString()
     }) : JSON.stringify({ skus: AppState.skus, shops: AppState.shops });
 
-    const fileName = `${salesman.name.replace(/\s+/g, '_')}_RETURN_${new Date().toISOString().split('T')[0]}.sync`;
+    const fileName = `${salesman.name.replace(/\s+/g, '_')}_RETURN_${todayISO()}.sync`;
     const blob = new Blob([returnSyncStr], { type: "text/plain" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -16592,7 +16646,7 @@ function batchDownloadPdfSelectedInvoices() {
 }
 
 function downloadStockReportPdf() {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = todayISO();
     const timeStr = new Date().toLocaleTimeString();
 
     // Filter Lay's available SKUs (companyId !== 'hash' AND stock > 0, EXCLUDING 0 stock)
