@@ -9185,15 +9185,19 @@ function renderDashboard() {
     if (document.getElementById("kpiTotalInvoices")) document.getElementById("kpiTotalInvoices").innerText = `${deliveredBills.length} Bills`;
 
     // Render Charts & Tables
-    renderOverallSalesTrendChart(dateList, dailyBrandSales);
-    renderBrandComparisonChart(dateList, dailyBrandSales, productTotals);
-    renderProductAnalyticsSection(brandFilter, dateList, dailyProductSales, productTotals);
-    renderSalesmanPerformanceTable(salesmanMap, totalSalesValue);
-    renderKeyInsights(totalSalesValue, productTotals, dailyOverallSales, dateList);
-    renderTopSkusTable(skuSalesMap);
-    renderDashboardSnapshotCards(brandFilter);
-    renderWeightDistributionChart(dateList, dailyBrandSales);
-    renderCollectionSummary(deliveredBills);
+    // The headline numbers go up first. They used to be written after the
+    // charts, so one failing chart left them showing zero.
+    const safely = (name, fn) => { try { fn(); } catch (e) { console.error("Dashboard: " + name + " failed", e); } };
+
+    safely("snapshot cards",   () => renderDashboardSnapshotCards(brandFilter));
+    safely("sales trend",      () => renderOverallSalesTrendChart(dateList, dailyBrandSales));
+    safely("brand comparison", () => renderBrandComparisonChart(dateList, dailyBrandSales, productTotals));
+    safely("product analytics",() => renderProductAnalyticsSection(brandFilter, dateList, dailyProductSales, productTotals));
+    safely("salesman table",   () => renderSalesmanPerformanceTable(salesmanMap, totalSalesValue));
+    safely("key insights",     () => renderKeyInsights(totalSalesValue, productTotals, dailyOverallSales, dateList));
+    safely("top SKUs",         () => renderTopSkusTable(skuSalesMap));
+    safely("weight chart",     () => renderWeightDistributionChart(dateList, dailyBrandSales));
+    safely("collection",       () => renderCollectionSummary(deliveredBills));
     renderRecentInvoicesWidget();
 }
 
@@ -9204,8 +9208,8 @@ function computeBillItemAmount(i) {
 }
 
 function renderDashboardSnapshotCards(brandFilter) {
-    const todayISO = todayISO();
-    const monthStartISO = todayISO.slice(0, 7) + '-01';
+    const today = todayISO();
+    const monthStartISO = today.slice(0, 7) + '-01';
 
     let todaySale = 0, mtdSale = 0;
 
@@ -9227,11 +9231,17 @@ function renderDashboardSnapshotCards(brandFilter) {
 
         const bAmt = (b.items || []).reduce((sum, i) => sum + computeBillItemAmount(i), 0);
 
-        if (bDate === todayISO) todaySale += bAmt;
-        if (bDate >= monthStartISO && bDate <= todayISO) mtdSale += bAmt;
+        if (bDate === today) todaySale += bAmt;
+        if (bDate >= monthStartISO && bDate <= today) mtdSale += bAmt;
     });
 
-    const pendingInvoicesCount = AppState.bills.filter(b => b.deliveryStatus === "Pending" && !b.isVoid).length;
+    // "Pending" is not a status this system writes - a bill waiting on
+    // delivery is "Open", or has no status yet.
+    const pendingInvoicesCount = AppState.bills.filter(b => {
+        if (b.isVoid) return false;
+        const st = b.deliveryStatus || "Open";
+        return st !== "Confirmed" && st !== "Delivered" && st !== "Cancelled" && st !== "Returned";
+    }).length;
     const lowStockCount = (AppState.skus || []).filter(s => (s.stockCartons || 0) <= 0).length;
 
     const setText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
@@ -11595,10 +11605,11 @@ function renderRoutesAndShops() {
     if (AppState.routes.length === 0) {
         routeList.innerHTML = `<li style="padding: 12px;" class="text-muted">No routes created yet. Click "Add New Route" above.</li>`;
     } else {
+        const routeRows = [];
         AppState.routes.forEach(r => {
             const routeShops = AppState.shops.filter(s => s.routeId === r.id);
 
-            routeList.innerHTML += `
+            routeRows.push(`
                 <li style="padding: 14px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                     <div>
                         <strong style="font-size: 14px; color: var(--text-dark);">📍 ${r.name}</strong>
@@ -11606,26 +11617,89 @@ function renderRoutesAndShops() {
                         <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Salesman: ${r.salesman || 'Arif Sanwal'} | ${routeShops.length} Outlets</div>
                     </div>
                     <div class="flex-gap">
-                        <button class="btn btn-outline btn-sm" onclick="editRoute('${r.id}')" title="Edit Route"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <button class="btn btn-primary btn-sm" onclick="showShopsOfRoute('${r.id}')" title="Show this beat's shops"><i class="fa-solid fa-shop"></i> ${routeShops.length} Shops</button>
+                        <button class="btn btn-outline btn-sm" onclick="editRoute('${r.id}')" title="Edit Route"><i class="fa-solid fa-pen"></i></button>
                         <button class="btn btn-danger btn-sm" onclick="deleteRoute('${r.id}')" title="Delete Route"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                 </li>
-            `;
+            `);
         });
+        routeList.innerHTML = routeRows.join("");
     }
+
+    // The route filter lists every beat with how many shops sit on it, plus
+    // the shops that were never given a route at all.
+    const routeSel = document.getElementById("shopRouteFilter");
+    if (routeSel) {
+        const keep = routeSel.value || "all";
+        const orphans = (AppState.shops || []).filter(s => !s.routeId || !(AppState.routes || []).some(r => r.id === s.routeId)).length;
+        routeSel.innerHTML = `<option value="all">All Routes — ${(AppState.shops || []).length} shops</option>` +
+            (AppState.routes || []).map(r => {
+                const n = (AppState.shops || []).filter(s => s.routeId === r.id).length;
+                return `<option value="${r.id}">${r.name}${r.dayName ? " (" + r.dayName + ")" : ""} — ${n} shops</option>`;
+            }).join("") +
+            (orphans > 0 ? `<option value="__none">No route assigned — ${orphans} shops</option>` : "");
+        routeSel.value = keep;
+    }
+
     renderShopsTable();
+}
+
+// Tapping a beat's shop count filters the table to that beat.
+function showShopsOfRoute(routeId) {
+    const sel = document.getElementById("shopRouteFilter");
+    if (sel) sel.value = routeId;
+    const q = document.getElementById("shopSearchInput");
+    if (q) q.value = "";
+    renderShopsTable();
+    const panel = document.getElementById("shopsTableBody");
+    if (panel) panel.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function renderShopsTable() {
     const tbody = document.getElementById("shopsTableBody");
     if (!tbody) return;
     const query = (document.getElementById("shopSearchInput")?.value || "").toLowerCase().trim();
+    const routeFilter = document.getElementById("shopRouteFilter")?.value || "all";
+    const dayFilter = document.getElementById("shopDayFilter")?.value || "all";
+    const sortBy = document.getElementById("shopSortSelect")?.value || "name";
 
-    const filtered = AppState.shops.filter(s => 
-        s.name.toLowerCase().includes(query) || 
-        (s.customerName && s.customerName.toLowerCase().includes(query)) ||
-        (s.phone && s.phone.includes(query))
-    );
+    const routeNameOf = (sh) => {
+        const r = (AppState.routes || []).find(x => x.id === sh.routeId);
+        return r ? r.name : (sh.routeName || sh.subRouteName || "");
+    };
+
+    const filtered = (AppState.shops || []).filter(s => {
+        if (routeFilter === "__none") {
+            if (s.routeId && (AppState.routes || []).some(r => r.id === s.routeId)) return false;
+        } else if (routeFilter !== "all" && s.routeId !== routeFilter) {
+            return false;
+        }
+        if (dayFilter !== "all" && (s.visitDay || "") !== dayFilter) return false;
+        if (!query) return true;
+        return String(s.name || "").toLowerCase().includes(query) ||
+               (s.customerName && s.customerName.toLowerCase().includes(query)) ||
+               (s.ownerName && s.ownerName.toLowerCase().includes(query)) ||
+               (s.phone && String(s.phone).includes(query)) ||
+               routeNameOf(s).toLowerCase().includes(query);
+    });
+
+    const DAY_ORDER = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+    const byName = (a, b) => String(a.name || "").localeCompare(String(b.name || ""));
+    filtered.sort((a, b) => {
+        if (sortBy === "nameDesc") return byName(b, a);
+        if (sortBy === "route")    return routeNameOf(a).localeCompare(routeNameOf(b)) || byName(a, b);
+        if (sortBy === "day")      return (DAY_ORDER.indexOf(a.visitDay) - DAY_ORDER.indexOf(b.visitDay)) || byName(a, b);
+        if (sortBy === "discHigh") return (parseFloat(b.defaultDiscountPct) || 0) - (parseFloat(a.defaultDiscountPct) || 0) || byName(a, b);
+        if (sortBy === "owner")    return String(a.customerName || a.ownerName || "").localeCompare(String(b.customerName || b.ownerName || "")) || byName(a, b);
+        return byName(a, b);
+    });
+
+    const countEl = document.getElementById("shopsCountLabel");
+    if (countEl) {
+        const total = (AppState.shops || []).length;
+        countEl.innerText = (filtered.length === total) ? (total + " shops") : (filtered.length + " of " + total + " shops");
+    }
 
     if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="text-muted text-center" style="padding: 20px;">No shops added yet. Click "Add New Shop" to start building your beat database.</td></tr>`;
