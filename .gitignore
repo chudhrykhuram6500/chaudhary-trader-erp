@@ -20,3 +20,6 @@ Thumbs.db
 # overwrite everything saved since. Supabase is the durable store.
 Database/ERP_fallback.json
 Backups/
+
+# Built APKs are release artifacts, not source
+*.apk
