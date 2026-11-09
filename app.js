@@ -11750,9 +11750,12 @@ function renderSkuMasterTable() {
         return;
     }
 
+    // Collected and written once: appending inside the loop re-parses
+    // the whole table on every SKU.
+    const rowsHtml = [];
     filtered.forEach(sku => {
         const compObj = AppState.companies.find(c => c.id === (sku.companyId || 'lays')) || { name: 'Lays' };
-        tbody.innerHTML += `
+        rowsHtml.push( `
             <tr style="background: linear-gradient(135deg, ${getPacketTint(sku.desc, 0.20)}, ${getPacketTint(sku.desc, 0.06)});">
                 <td><code>${sku.code}</code></td>
                 <td><span class="badge badge-info">${sku.categoryType || 'PC'}</span></td>
@@ -11766,8 +11769,9 @@ function renderSkuMasterTable() {
                     <button class="btn btn-danger btn-sm" onclick="deleteSkuMaster('${sku.code}')" title="Delete Discontinued SKU"><i class="fa-solid fa-trash-can"></i> Delete</button>
                 </td>
             </tr>
-        `;
+        `);
     });
+    tbody.innerHTML = rowsHtml.join("");
 }
 
 function deleteSkuMaster(skuCode) {

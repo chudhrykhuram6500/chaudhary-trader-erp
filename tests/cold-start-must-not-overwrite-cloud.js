@@ -12,7 +12,8 @@
 const path = require("path");
 const http = require("http");
 
-const APP_DIR = process.argv[2];
+// Defaults to the repo root so `node tests/<file>` just works.
+const APP_DIR = process.argv[2] || path.resolve(__dirname, "..");
 process.chdir(APP_DIR);
 
 // ---- stub Postgres before sync_server.js destructures Pool from it ----------
