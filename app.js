@@ -6571,11 +6571,6 @@ function toggleBackgroundAnimations(enable) {
 }
 
 /* BULLETPROOF TOGGLE FOR EXPANDING & HIDING ACCORDION DETAILS */
-function getNextInvoiceId() {
-    const nextNum = AppState.bills.length + 1;
-    return `CHT${String(nextNum).padStart(6, '0')}`;
-}
-
 let ipcRenderer = null;
 try {
     if (typeof require !== 'undefined') {
@@ -13204,18 +13199,40 @@ function punchGroupedOrdersIntoAppState(orderMapByShop) {
    ANTI GRAVITY ERP - MODULE 1: ORDER MANAGEMENT ENGINE
    ========================================================================== */
 
+/* Next number in a series = highest number already used + 1.
+   Counting the records instead hands out a number that already exists the
+   moment the count falls behind the highest number - which is what made new
+   invoices land on top of old confirmed ones. */
+// Pick lists made on this device that the server has not sent back yet.
+// Kept out of the record itself so the marker never travels to the server.
+const _pickListsAwaitingServer = new Set();
+
+function nextSequenceNumber(list, field, pattern) {
+    let max = 0;
+    (list || []).forEach(rec => {
+        const m = String((rec && rec[field]) || "").match(pattern);
+        if (m) {
+            const n = parseInt(m[1], 10);
+            if (!isNaN(n) && n > max) max = n;
+        }
+    });
+    return max + 1;
+}
+
 function getNextOrderNo() {
-    const nextSeq = AppState.orders.length + 1;
+    const nextSeq = nextSequenceNumber(AppState.orders, "orderNo", /^ORD(\d+)$/);
     return `ORD${String(nextSeq).padStart(6, '0')}`;
 }
 
 function getNextPickListNo() {
-    const nextSeq = AppState.pickLists.length + 1;
-    return `PL-${new Date().getFullYear()}-${String(nextSeq).padStart(3, '0')}`;
+    const year = new Date().getFullYear();
+    const nextSeq = nextSequenceNumber(AppState.pickLists, "pickListNo", new RegExp("^PL-" + year + "-(\\d+)$"));
+    return `PL-${year}-${String(nextSeq).padStart(3, '0')}`;
 }
 
 function getNextInvoiceId() {
-    const nextSeq = AppState.bills.length + 1;
+    // Matches CHT001715 and the split forms CHT001715-LAYS / -FAST.
+    const nextSeq = nextSequenceNumber(AppState.bills, "billNo", /^CHT(\d+)/);
     return `CHT${String(nextSeq).padStart(6, '0')}`;
 }
 
@@ -14115,6 +14132,7 @@ function confirmSavePickList() {
         status: "Created"
     };
 
+    _pickListsAwaitingServer.add(String(newPickList.pickListNo));   // until the server has it
     AppState.pickLists.unshift(newPickList);
     logOrderAction(pickListNo, "PickList", "Created", `Pick List ${pickListNo} created with ${selectedBillNos.length} invoices.`);
     // selectedBills were mutated above (pickStatus/pickListNo/totals) - must be
@@ -15563,7 +15581,15 @@ function syncWithLocalServerStore() {
                 });
             }
 
-            if (Array.isArray(data.pickLists)) AppState.pickLists = data.pickLists;
+            if (Array.isArray(data.pickLists)) {
+                // Keep pick lists this device made that the server has not
+                // confirmed yet; everything else follows the server, so a
+                // deletion made on another device still takes effect here.
+                const serverNos = new Set(data.pickLists.map(p => String(p.pickListNo)));
+                serverNos.forEach(no => _pickListsAwaitingServer.delete(no));
+                const stillUploading = (AppState.pickLists || []).filter(p => p && _pickListsAwaitingServer.has(String(p.pickListNo)));
+                AppState.pickLists = stillUploading.concat(data.pickLists);
+            }
             if (Array.isArray(data.routes) && data.routes.length > 0) AppState.routes = data.routes;
             if (Array.isArray(data.companies) && data.companies.length > 0) AppState.companies = data.companies;
 
