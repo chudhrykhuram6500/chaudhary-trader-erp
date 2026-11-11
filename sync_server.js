@@ -6371,7 +6371,11 @@ function ensureHydrated() {
         } catch (e) {
             _cachedAppState.__hydratedFromCloud = false;
             console.error('✗ Could not load state from Supabase: ' + (e.message || e.name || String(e)) + ' [' + (e.code || 'no code') + ']' +
-                          ' - saving is disabled until it can be reached, so nothing gets overwritten.');
+                          ' - saving is paused, will try again on the next request.');
+            // A failed load used to be cached, so one network blip at start-up
+            // disabled saving until the server restarted. Clear it so the next
+            // request tries again.
+            _hydrationPromise = null;
         }
         return _cachedAppState;
     })();

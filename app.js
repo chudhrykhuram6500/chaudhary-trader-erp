@@ -7164,6 +7164,65 @@ const PARTIAL_SYNC_KEY_FIELDS = {
 };
 
 let _pendingPartialSync = {};   // { collectionName: { keyValue: recordObj } }
+
+/* Outbox: every change this device has made that the server has not yet
+   acknowledged. A failed upload used to be dropped after one error toast -
+   the records stayed only in this browser, and the next 4-second poll then
+   wrote the server's older copy back over them (a processed order went back
+   to Draft). Processing it again produced a second set of bills, numbered
+   after the first set that never left the browser. That is the 30-number gap
+   (CHT001656-001685) on 11 November.
+
+   Records sit here until the server confirms them, are retried with backoff,
+   survive a reload, and are never overwritten by the poll while waiting. */
+const OUTBOX_KEY = "chaudhary_unsent_sync";
+let _outbox = { records: {}, deletions: {} };   // records: {coll:{key:rec}}, deletions: {coll:[keys]}
+let _outboxRetryTimer = null;
+let _outboxRetryDelay = 5000;
+
+try {
+    const saved = JSON.parse(localStorage.getItem(OUTBOX_KEY) || "null");
+    if (saved && saved.records && saved.deletions) _outbox = saved;
+} catch (e) {}
+
+function saveOutbox() {
+    try { localStorage.setItem(OUTBOX_KEY, JSON.stringify(_outbox)); } catch (e) {}
+}
+
+function outboxCount() {
+    let n = 0;
+    Object.values(_outbox.records).forEach(m => n += Object.keys(m).length);
+    Object.values(_outbox.deletions).forEach(a => n += a.length);
+    return n;
+}
+
+function outboxHasRecord(collection, key) {
+    return !!(_outbox.records[collection] && Object.prototype.hasOwnProperty.call(_outbox.records[collection], String(key)));
+}
+
+function outboxHasDeletion(collection, key) {
+    return !!(_outbox.deletions[collection] && _outbox.deletions[collection].indexOf(String(key)) !== -1);
+}
+
+function scheduleOutboxRetry() {
+    if (_outboxRetryTimer || outboxCount() === 0) return;
+    _outboxRetryTimer = setTimeout(() => {
+        _outboxRetryTimer = null;
+        // Put everything still waiting back into the send buffer.
+        Object.keys(_outbox.records).forEach(coll => {
+            if (!_pendingPartialSync[coll]) _pendingPartialSync[coll] = {};
+            Object.entries(_outbox.records[coll]).forEach(([k, rec]) => {
+                if (!_pendingPartialSync[coll][k]) _pendingPartialSync[coll][k] = rec;
+            });
+        });
+        Object.keys(_outbox.deletions).forEach(coll => {
+            if (!_pendingPartialDeletions[coll]) _pendingPartialDeletions[coll] = new Set();
+            _outbox.deletions[coll].forEach(k => _pendingPartialDeletions[coll].add(k));
+        });
+        flushPartialCloudSave();
+    }, _outboxRetryDelay);
+    _outboxRetryDelay = Math.min(_outboxRetryDelay * 2, 60000);
+}
 let _pendingPartialDeletions = {}; // { collectionName: Set(keyValue) }
 let _pendingPartialToasts = []; // [{ toastEl, success, error }]
 let _partialSyncTimer = null;
@@ -7179,6 +7238,10 @@ function queueCloudDelete(collection, keyValue, toastConfig) {
     if (keyValue === undefined || keyValue === null) return;
     if (!_pendingPartialDeletions[collection]) _pendingPartialDeletions[collection] = new Set();
     _pendingPartialDeletions[collection].add(keyValue);
+    if (!_outbox.deletions[collection]) _outbox.deletions[collection] = [];
+    if (_outbox.deletions[collection].indexOf(String(keyValue)) === -1) _outbox.deletions[collection].push(String(keyValue));
+    if (_outbox.records[collection]) delete _outbox.records[collection][String(keyValue)];
+    saveOutbox();
 
     if (toastConfig && toastConfig.loading) {
         const toastEl = showSyncToast(toastConfig.loading, "loading", 0);
@@ -7209,8 +7272,11 @@ function queuePartialCloudSave(partialPayload, toastConfig) {
             const keyVal = rec && rec[keyField];
             if (keyVal === undefined || keyVal === null) return;
             _pendingPartialSync[collection][keyVal] = rec;
+            if (!_outbox.records[collection]) _outbox.records[collection] = {};
+            _outbox.records[collection][String(keyVal)] = rec;
         });
     });
+    saveOutbox();
 
     if (toastConfig && toastConfig.loading) {
         const toastEl = showSyncToast(toastConfig.loading, "loading", 0);
@@ -7257,11 +7323,30 @@ function flushPartialCloudSave() {
     .then(r => r.json())
     .then(res => {
         const success = !!(res && res.success);
-        toastsToResolve.forEach(t => updateSyncToast(t.toastEl, success ? t.success : t.error, success ? "success" : "error", success ? 3000 : 4000));
+        if (success) {
+            // Clear only what this request carried, and only if it has not
+            // been changed again since - a newer edit still has to go out.
+            Object.keys(bufferedCollections).forEach(coll => {
+                Object.entries(bufferedCollections[coll]).forEach(([k, rec]) => {
+                    if (_outbox.records[coll] && _outbox.records[coll][String(k)] === rec) delete _outbox.records[coll][String(k)];
+                });
+            });
+            Object.keys(bufferedDeletions).forEach(coll => {
+                const sent = new Set(Array.from(bufferedDeletions[coll]).map(String));
+                if (_outbox.deletions[coll]) _outbox.deletions[coll] = _outbox.deletions[coll].filter(k => !sent.has(k));
+            });
+            saveOutbox();
+            _outboxRetryDelay = 5000;
+            if (outboxCount() > 0) scheduleOutboxRetry();
+        } else {
+            scheduleOutboxRetry();
+        }
+        toastsToResolve.forEach(t => updateSyncToast(t.toastEl, success ? t.success : t.error + " Retrying automatically.", success ? "success" : "error", success ? 3000 : 5000));
         try { window.dispatchEvent(new CustomEvent('chaudharyPartialSyncDone', { detail: { success, collections: Object.keys(body) } })); } catch(e) {}
     })
     .catch(() => {
-        toastsToResolve.forEach(t => updateSyncToast(t.toastEl, t.error, "error", 4000));
+        scheduleOutboxRetry();
+        toastsToResolve.forEach(t => updateSyncToast(t.toastEl, t.error + " Retrying automatically.", "error", 5000));
         try { window.dispatchEvent(new CustomEvent('chaudharyPartialSyncDone', { detail: { success: false, collections: Object.keys(body) } })); } catch(e) {}
     });
 }
@@ -15536,6 +15621,9 @@ function syncWithLocalServerStore() {
             // triggering an unprompted "syncing..." push on page load.
             if (Array.isArray(data.bills)) {
                 data.bills.forEach(sb => {
+                    // A local change still waiting in the outbox is newer than
+                    // the server's copy; a local delete must not be undone.
+                    if (outboxHasRecord("bills", sb.billNo) || outboxHasDeletion("bills", sb.billNo)) return;
                     const idx = AppState.bills.findIndex(b => b.billNo === sb.billNo || (sb.id && b.id === sb.id));
                     if (idx !== -1) {
                         AppState.bills[idx] = { ...AppState.bills[idx], ...sb };
@@ -15547,6 +15635,7 @@ function syncWithLocalServerStore() {
 
             if (Array.isArray(data.orders)) {
                 data.orders.forEach(so => {
+                    if (outboxHasRecord("orders", so.orderNo) || outboxHasDeletion("orders", so.orderNo)) return;
                     const idx = AppState.orders.findIndex(o => o.orderNo === so.orderNo || (so.id && o.id === so.id));
                     if (idx !== -1) {
                         AppState.orders[idx] = { ...AppState.orders[idx], ...so };
@@ -15558,6 +15647,7 @@ function syncWithLocalServerStore() {
 
             if (Array.isArray(data.shops)) {
                 data.shops.forEach(sShop => {
+                    if (outboxHasRecord("shops", sShop.id) || outboxHasDeletion("shops", sShop.id)) return;
                     const idx = AppState.shops.findIndex(s => s.id === sShop.id);
                     if (idx !== -1) AppState.shops[idx] = { ...AppState.shops[idx], ...sShop };
                     else AppState.shops.push(sShop);
@@ -15566,6 +15656,7 @@ function syncWithLocalServerStore() {
 
             if (Array.isArray(data.skus)) {
                 data.skus.forEach(sSku => {
+                    if (outboxHasRecord("skus", sSku.code) || outboxHasDeletion("skus", sSku.code)) return;
                     const idx = AppState.skus.findIndex(s => s.code === sSku.code);
                     if (idx !== -1) AppState.skus[idx] = { ...AppState.skus[idx], ...sSku };
                     else AppState.skus.push(sSku);
@@ -15587,8 +15678,11 @@ function syncWithLocalServerStore() {
                 // deletion made on another device still takes effect here.
                 const serverNos = new Set(data.pickLists.map(p => String(p.pickListNo)));
                 serverNos.forEach(no => _pickListsAwaitingServer.delete(no));
-                const stillUploading = (AppState.pickLists || []).filter(p => p && _pickListsAwaitingServer.has(String(p.pickListNo)));
-                AppState.pickLists = stillUploading.concat(data.pickLists);
+                const waiting = no => _pickListsAwaitingServer.has(no) || outboxHasRecord("pickLists", no);
+                const stillUploading = (AppState.pickLists || []).filter(p => p && waiting(String(p.pickListNo)));
+                const stillUploadingNos = new Set(stillUploading.map(p => String(p.pickListNo)));
+                AppState.pickLists = stillUploading.concat(data.pickLists.filter(p =>
+                    !stillUploadingNos.has(String(p.pickListNo)) && !outboxHasDeletion("pickLists", p.pickListNo)));
             }
             if (Array.isArray(data.routes) && data.routes.length > 0) AppState.routes = data.routes;
             if (Array.isArray(data.companies) && data.companies.length > 0) AppState.companies = data.companies;
@@ -15608,6 +15702,21 @@ function syncWithLocalServerStore() {
             // full-state save can tell which records this device actually
             // changed and send only those.
             captureServerSnapshot(data);
+
+            if (!AppState.initialServerHydrated && outboxCount() > 0) {
+                // A reload with unsent work: make sure it is on screen and send it.
+                Object.keys(_outbox.records).forEach(coll => {
+                    const keyField = PARTIAL_SYNC_KEY_FIELDS[coll];
+                    if (!keyField || !Array.isArray(AppState[coll])) return;
+                    Object.values(_outbox.records[coll]).forEach(rec => {
+                        const idx = AppState[coll].findIndex(r => r && String(r[keyField]) === String(rec[keyField]));
+                        if (idx !== -1) AppState[coll][idx] = rec; else AppState[coll].unshift(rec);
+                    });
+                });
+                showSyncToast(`⏳ Uploading ${outboxCount()} change(s) saved on this device earlier…`, "loading", 4000);
+                _outboxRetryDelay = 500;
+                scheduleOutboxRetry();
+            }
 
             if (!AppState.initialServerHydrated) {
                 AppState.initialServerHydrated = true;
